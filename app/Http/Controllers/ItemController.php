@@ -76,7 +76,7 @@ class ItemController extends Controller
             $item = $this->itemRepository->create($validated);
 
             return redirect()
-                ->route('items.index')
+                ->route('item.index')
                 ->with('success', 'Item created successfully!');
             // return redirect()->back()->with('success', 'Item created successfully!');
 
@@ -122,7 +122,7 @@ class ItemController extends Controller
         }
     }
 
-    public function update(Request $request, $id): JsonResponse
+    public function update(Request $request, $id): RedirectResponse
     {
         try {
             $validated = $request->validate([
@@ -156,40 +156,28 @@ class ItemController extends Controller
             ]);
 
             $item = $this->itemRepository->update($id, $validated);
+            return redirect()->back()->with('success', 'Item updated successfully');
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Item updated successfully',
-                'data' => $item
-            ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
+
+            throw $e;
+
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update item: ' . $e->getMessage()
-            ], 500);
+
+              return redirect()->back()->with('error', 'Failed to update item: ' . $e->getMessage());
+
         }
     }
 
-    public function destroy($id): JsonResponse
+    public function destroy($id): RedirectResponse
     {
         try {
             $this->itemRepository->delete($id);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Item deleted successfully'
-            ]);
+             return redirect()->back()->with('success', 'Item deleted successfully');
+
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete item: ' . $e->getMessage()
-            ], 500);
+             return redirect()->back()->with('error', 'Failed to delete item: ');
         }
     }
 

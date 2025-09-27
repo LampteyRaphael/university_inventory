@@ -48,6 +48,8 @@ Route::middleware('auth','verified')->group(function () {
         //Items table
         Route::get('/item', [ItemController::class, 'index'])->name('item.index');
         Route::post('/item', [ItemController::class, 'store'])->name('item.store');
+        Route::put('/item/{id}', [ItemController::class, 'update'])->name('item.update');
+        Route::delete('/item/{id}', [ItemController::class, 'destroy'])->name('item.destroy');
         // Route::apiResource('items', ItemController::class);
 
 
