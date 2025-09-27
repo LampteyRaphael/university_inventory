@@ -594,7 +594,7 @@ export default function Departments({ departments = [], auth, universities, user
       });
     } else {
       // Create new department
-      post(route('department_store'), {
+      post(route('department.store'), {
         onSuccess: () => {
           setOpenDialog(false);
           setAlert({ open: true, message: 'Department created successfully', severity: 'success' });

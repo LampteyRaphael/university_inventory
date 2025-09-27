@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ItemCategory extends Model
 {
@@ -142,37 +141,33 @@ class ItemCategory extends Model
     }
 
     /**
-     * Get all descendant categories.
+     * Get all descendant categories (recursive).
      */
     public function descendants(): HasMany
     {
-        return $this->hasMany(ItemCategory::class, 'parent_category_id', 'category_id')
-                    ->with('descendants')
-                    ->orderBy('lft');
+        return $this->children()->with('descendants');
+    }
+
+    /**
+     * Get the root category for this category.
+     * This should be a BelongsTo relationship, not HasOne
+     */
+    public function rootCategory(): BelongsTo
+    {
+        return $this->belongsTo(ItemCategory::class, 'parent_category_id', 'category_id')
+                    ->whereNull('parent_category_id');
     }
 
     /**
      * Get the items in this category.
      */
-    // public function items(): HasMany
-    // {
-    //     return $this->hasMany(Item::class, 'category_id', 'category_id');
-    // }
-
-    /**
-     * Get the root category for this category.
-     */
-    public function rootCategory(): HasOne
+    public function items(): HasMany
     {
-        return $this->hasOne(ItemCategory::class, 'category_id', 'parent_category_id')
-                    ->whereNull('parent_category_id');
+        return $this->hasMany(InventoryItem::class, 'category_id', 'category_id');
     }
 
     /**
      * Scope a query to only include active categories.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeActive($query)
     {
@@ -181,9 +176,6 @@ class ItemCategory extends Model
 
     /**
      * Scope a query to only include root categories (no parent).
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeRoot($query)
     {
@@ -192,9 +184,6 @@ class ItemCategory extends Model
 
     /**
      * Scope a query to only include categories with maintenance required.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeRequiresMaintenance($query)
     {
@@ -203,9 +192,6 @@ class ItemCategory extends Model
 
     /**
      * Scope a query to only include categories that require serial numbers.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeRequiresSerialNumber($query)
     {
@@ -214,56 +200,75 @@ class ItemCategory extends Model
 
     /**
      * Get the full category path as a string.
-     *
-     * @return string
      */
     public function getFullCategoryPathAttribute(): string
     {
         $path = [];
         $category = $this;
         
-        while ($category) {
+        // Limit to prevent infinite loops
+        $maxDepth = 10;
+        $currentDepth = 0;
+        
+        while ($category && $currentDepth < $maxDepth) {
             array_unshift($path, $category->name);
             $category = $category->parent;
+            $currentDepth++;
         }
         
         return implode(' > ', $path);
     }
 
     /**
-     * Check if the category is a root category.
-     *
-     * @return bool
+     * Get the parent category name with fallback.
      */
-    public function isRoot(): bool
+    public function getParentCategoryNameAttribute(): string
+    {
+        return $this->parent ? $this->parent->name : 'Root Category';
+    }
+
+    /**
+     * Get the university name with fallback.
+     */
+    public function getUniversityNameAttribute(): string
+    {
+        return $this->university ? $this->university->name : 'Unknown University';
+    }
+
+    /**
+     * Check if the category is a root category.
+     */
+    public function getIsRootAttribute(): bool
     {
         return is_null($this->parent_category_id);
     }
 
     /**
      * Check if the category is a leaf category (no children).
-     *
-     * @return bool
      */
-    public function isLeaf(): bool
+    public function getIsLeafAttribute(): bool
     {
         return $this->children()->count() === 0;
     }
 
     /**
      * Check if the category has children.
-     *
-     * @return bool
      */
-    public function hasChildren(): bool
+    public function getHasChildrenAttribute(): bool
     {
         return $this->children()->count() > 0;
     }
 
     /**
+     * Get the items count for this category.
+     */
+    public function getItemsCountAttribute(): int
+    {
+        return $this->items()->count();
+    }
+
+    /**
      * Get the depreciation method in human-readable format.
-     *
-     * @return string
      */
     public function getDepreciationMethodNameAttribute(): string
     {
@@ -276,9 +281,6 @@ class ItemCategory extends Model
 
     /**
      * Calculate the daily depreciation amount for an item value.
-     *
-     * @param float $value
-     * @return float
      */
     public function calculateDailyDepreciation(float $value): float
     {
@@ -297,18 +299,14 @@ class ItemCategory extends Model
 
     /**
      * Check if warranty is applicable for items in this category.
-     *
-     * @return bool
      */
-    public function hasWarranty(): bool
+    public function getHasWarrantyAttribute(): bool
     {
         return $this->warranty_period_days > 0;
     }
 
     /**
      * Get the warranty period in a human-readable format.
-     *
-     * @return string
      */
     public function getWarrantyPeriodFormattedAttribute(): string
     {
@@ -326,5 +324,24 @@ class ItemCategory extends Model
         if ($days > 0) $parts[] = $days . ' day' . ($days > 1 ? 's' : '');
 
         return implode(' ', $parts);
+    }
+
+    /**
+     * Get the maintenance interval in a human-readable format.
+     */
+    public function getMaintenanceIntervalFormattedAttribute(): string
+    {
+        if (!$this->requires_maintenance || !$this->maintenance_interval_days) {
+            return 'Not required';
+        }
+
+        $months = floor($this->maintenance_interval_days / 30);
+        $days = $this->maintenance_interval_days % 30;
+
+        $parts = [];
+        if ($months > 0) $parts[] = $months . ' month' . ($months > 1 ? 's' : '');
+        if ($days > 0) $parts[] = $days . ' day' . ($days > 1 ? 's' : '');
+
+        return implode(' ', $parts) . ' interval';
     }
 }

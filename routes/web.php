@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InventoryTransactionController;
+use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RouteController;
@@ -43,7 +45,22 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth','verified')->group(function () {
  
         // Item categories table
-        Route::get('/item_categories', [RouteController::class, 'item_categories'])->name('item_categories');        
+        // Route::get('/item_categories', [RouteController::class, 'item_categories'])->name('item_categories');        
+
+    Route::get('/item-categories', [ItemCategoryController::class, 'index'])->name("item-categories.index");
+    Route::post('/item-categories', [ItemCategoryController::class, 'store'])->name("item-categories.store");
+    Route::get('/item-categories/{id}', [ItemCategoryController::class, 'show'])->name("item-categories.show");
+    Route::put('/item-categories/{id}', [ItemCategoryController::class, 'update'])->name("item-categories.update");
+    Route::delete('/item-categories/{id}', [ItemCategoryController::class, 'destroy'])->name("item-categories.destroy");
+    
+    // Additional routes
+    // Route::post('/item-categories/{id}/restore', [ItemCategoryController::class, 'restore']);
+    // Route::get('/item-categories/roots', [ItemCategoryController::class, 'getRootCategories']);
+    // Route::get('/item-categories/{parentId}/children', [ItemCategoryController::class, 'getChildren']);
+    // Route::get('/item-categories/tree', [ItemCategoryController::class, 'getTree']);
+    // Route::get('/item-categories/maintenance-required', [ItemCategoryController::class, 'getCategoriesWithMaintenance']);
+    // Route::get('/item-categories/check-code', [ItemCategoryController::class, 'checkCodeExists']);
+    //     // item-categories.store
 
         //Items table
         Route::get('/item', [ItemController::class, 'index'])->name('item.index');
@@ -62,7 +79,7 @@ Route::middleware('auth','verified')->group(function () {
 
         //departments
         Route::get('/departments', [RouteController::class, 'departments'])->name('departments');
-        Route::post('/departments', [RouteController::class, 'departmentspost'])->name('departmentspost');
+        Route::post('/departments', [DepartmentController::class, 'store'])->name('department.store');
 
      
         //Suppliers

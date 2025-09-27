@@ -31,25 +31,35 @@ import {
   Switch,
   FormControlLabel,
   CircularProgress,
+  alpha,
 } from "@mui/material";
-import { DataGrid, GridToolbarContainer } from "@mui/x-data-grid";
+import { DataGrid } from "@mui/x-data-grid";
 import * as XLSX from "xlsx";
-import moment from "moment";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import AddIcon from "@mui/icons-material/Add";
-import SaveIcon from "@mui/icons-material/Save";
-import CloseIcon from "@mui/icons-material/Close";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import InventoryIcon from "@mui/icons-material/Inventory";
-import SummarizeIcon from "@mui/icons-material/Summarize";
-import SearchIcon from "@mui/icons-material/Search";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import BuildIcon from "@mui/icons-material/Build";
-import NumbersIcon from "@mui/icons-material/Numbers";
 import { keyframes } from "@emotion/react";
-import { Home } from "@mui/icons-material";
+import moment from "moment";
+import { useForm, router, usePage } from "@inertiajs/react";
+import {
+  UploadFile as UploadFileIcon,
+  Add as AddIcon,
+  Save as SaveIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Refresh as RefreshIcon,
+  Inventory as InventoryIcon,
+  Summarize as SummarizeIcon,
+  Search as SearchIcon,
+  Build as BuildIcon,
+  Numbers as NumbersIcon,
+  Home as HomeIcon,
+  AddCircleOutline,
+  CloudUpload,
+  Download,
+  School as SchoolIcon,
+  Image as ImageIcon,
+  AccountTree as AccountTreeIcon,
+} from "@mui/icons-material";
+import Notification from "@/Components/Notification";
 
 // Animation keyframes
 const fadeIn = keyframes`
@@ -63,240 +73,300 @@ const pulse = keyframes`
   100% { transform: scale(1); }
 `;
 
-const slideIn = keyframes`
-  from { transform: translateX(-20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-`;
-
-export default function ItemCategories({ items, auth, categories }) {
+export default function ItemCategories({ categories=[], auth, filters: initialFilters = {}, universities  }) {
   const [rows, setRows] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState("");
+  const [loading, setLoading] = useState(false);
   const [gridLoading, setGridLoading] = useState(true);
   const [alert, setAlert] = useState({ open: false, message: "", severity: "success" });
-  const [formData, setFormData] = useState({
+  
+  // Use Inertia's form handling with all fields from migration
+  const { data, setData, post, put, delete: destroy, processing, errors, reset } = useForm({
     name: "",
     description: "",
-    category_id: "",
     category_code: "",
+    university_id: "",
     parent_category_id: "",
     warranty_period_days: 0,
     depreciation_rate: 0,
-    depreciation_method: "straight_line",
+    depreciation_method: "",
     requires_serial_number: false,
     requires_maintenance: false,
-    maintenance_interval_days: null,
-    specification_template: null,
+    maintenance_interval_days: "",
+    specification_template: "",
+    image_url: "",
+    lft: "",
+    rgt: "",
+    depth: 0,
     is_active: true
   });
-  const [formErrors, setFormErrors] = useState({});
-  const searchInputRef = useRef(null);
 
+  const { flash } = usePage().props;
+  const searchInputRef = useRef("");
+  
   useEffect(() => {
-    // Simulate data loading
-    const loadData = () => {
-      setLoading(true);
-      setGridLoading(true);
-      
-      setTimeout(() => {
-        const formattedRows = items?.map((data, i) => ({
-          id: data?.category_id ?? i + 1,
-          category_id: data?.category_id ?? "",
-          university_id: data?.university_id ?? "",
-          parent_category_id: data?.parent_category_id ?? "",
-          category_code: data?.category_code ?? "",
-          name: data?.name ?? "",
-          description: data?.description ?? "",
-          image_url: data?.image_url ?? "",
-          warranty_period_days: data?.warranty_period_days ?? 0,
-          depreciation_rate: data?.depreciation_rate ?? 0,
-          depreciation_method: data?.depreciation_method ?? "straight_line",
-          requires_serial_number: data?.requires_serial_number ?? false,
-          requires_maintenance: data?.requires_maintenance ?? false,
-          maintenance_interval_days: data?.maintenance_interval_days ?? null,
-          specification_template: data?.specification_template ? JSON.stringify(data.specification_template) : "",
-          lft: data?.lft ?? null,
-          rgt: data?.rgt ?? null,
-          depth: data?.depth ?? 0,
-          is_active: data?.is_active ?? true,
-          created_at: data?.created_at ? moment(data.created_at).format("Do MMM YYYY h:mm") : "",
-          updated_at: data?.updated_at ? moment(data.updated_at).format("Do MMM YYYY h:mm") : "",
-          deleted_at: data?.deleted_at ? moment(data.deleted_at).format("Do MMM YYYY h:mm") : "",
-        }));
-        setRows(formattedRows);
-        setLoading(false);
-        setGridLoading(false);
-      }, 1500);
-    };
+    setGridLoading(true);
+    // console.log(categories)
+    const timer = setTimeout(() => {
+      const formattedRows = categories?.map((item, index) => ({
+        id: item?.category_id ?? index + 1,
+        ...item,
+        university_id: item?.university_id ?? "",
+        lft: item?.lft ?? "",
+        rgt: item?.rgt ?? "",
+        depth: item?.depth ?? 0,
+        image_url: item?.image_url ?? "",
+        warranty_period_days: item?.warranty_period_days ?? 0,
+        depreciation_rate: item?.depreciation_rate ?? 0,
+        depreciation_method:item?.depreciation_method??'',
+        requires_serial_number: item?.requires_serial_number ?? false,
+        requires_maintenance: item?.requires_maintenance ?? false,
+        requirement:item??"",
+        is_active: item?.is_active ?? true,
+        university: item?.university?.name,
+        created_at: item?.created_at ? moment(item.created_at).format("Do MMM YYYY h:mm") : "",
+        updated_at: item?.updated_at ? moment(item.updated_at).format("Do MMM YYYY h:mm") : "",
+      }));
+      setRows(formattedRows || []);
+      setGridLoading(false);
+    }, 500);
 
-    loadData();
-  }, [items]);
+    return () => clearTimeout(timer);
+  }, [categories]);
 
   // Calculate summary statistics
   const totalCategories = rows.length;
   const activeCategories = rows.filter(row => row.is_active).length;
   const categoriesRequiringMaintenance = rows.filter(row => row.requires_maintenance).length;
   const categoriesRequiringSerial = rows.filter(row => row.requires_serial_number).length;
+  const categoriesWithImages = rows.filter(row => row.image_url).length;
 
   const columns = [
     { 
-      field: "id", 
-      headerName: "#", 
-      width: 70,
-      renderCell: (params) => (
-        <Zoom in={true} style={{ transitionDelay: params.rowIndex * 100 + 'ms' }}>
-          <span>{params.value}</span>
-        </Zoom>
-      )
-    },
-    { 
       field: "category_code", 
-      headerName: "Category Code", 
-      width: 120 
+      headerName: "CODE", 
+      width: 90,
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="600" fontFamily="monospace">
+          {params.row.category_id}
+        </Typography>
+      )
     },
     { 
       field: "name", 
-      headerName: "Name", 
-      width: 180 
-    },
-    { 
-      field: "description", 
-      headerName: "Description", 
-      width: 220 
-    },
-    {
-      field: "parent_category_id",
-      headerName: "Parent Category",
-      width: 150,
+      headerName: "CATEGORY", 
+      width: 180,
       renderCell: (params) => (
-        params.row.parent_category_id ? (
-          <Chip 
-            label={params.row.parent_category_id} 
-            color="primary" 
-            size="small" 
-            variant="outlined"
-          />
-        ) : (
-          <Chip 
-            label="Root Category" 
-            color="success" 
-            size="small" 
-          />
-        )
-      ),
-    },
-    { 
-      field: "warranty_period_days", 
-      headerName: "Warranty Days", 
-      width: 120,
-      renderCell: (params) => `${params.value} days`
-    },
-    {
-      field: "depreciation_rate",
-      headerName: "Dep. Rate (%)",
-      width: 120,
-      renderCell: (params) => `${params.value}%`
-    },
-    { 
-      field: "depreciation_method", 
-      headerName: "Dep. Method", 
-      width: 140,
-      renderCell: (params) => (
-        <Chip 
-          label={params.value.replace('_', ' ').toUpperCase()} 
-          color="info" 
-          size="small" 
-          variant="outlined"
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {params.row.image_url && (
+            <Avatar 
+              src={params.row.image_url || ""} 
+              sx={{ width: 32, height: 32 }}
+              variant="rounded"
+            >
+              <InventoryIcon />
+            </Avatar>
+          )}
+          <Box>
+            <Typography variant="body2" fontWeight="bold" noWrap>
+              {params.value}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {params.row.parent_category_id ? "Child Category" : "Root Category"}
+            </Typography>
+          </Box>
+        </Box>
       )
     },
     {
-      field: "requires_serial_number",
-      headerName: "Req. Serial No.",
-      width: 140,
-      renderCell: (params) =>
-        params.value ? (
-          <Chip label="Yes" color="warning" size="small" />
-        ) : (
-          <Chip label="No" color="default" size="small" variant="outlined" />
-        ),
+      field: "university",
+      headerName: "UNIVERSITY",
+      width: 130,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <SchoolIcon fontSize="small" color="action" />
+          <Typography variant="caption">
+            {params.row.university_name || "—"}
+          </Typography>
+        </Box>
+      )
     },
     {
-      field: "requires_maintenance",
-      headerName: "Req. Maintenance",
-      width: 160,
-      renderCell: (params) =>
-        params.value ? (
-          <Chip label="Yes" color="warning" size="small" />
-        ) : (
-          <Chip label="No" color="default" size="small" variant="outlined" />
-        ),
+      field: "parent_category",
+      headerName: "PARENT",
+      width: 130,
+      renderCell: (params) => (
+        <Typography variant="caption">
+          {params.row.parent_category_name || "—"}
+        </Typography>
+      )
     },
     {
-      field: "maintenance_interval_days",
-      headerName: "Maint. Interval",
-      width: 140,
-      renderCell: (params) => params.value ? `${params.value} days` : "N/A"
+      field: "items_count",
+      headerName: "ITEMS",
+      width: 80,
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="500" textAlign="center">
+          {params.row.items_count || 0}
+        </Typography>
+      )
     },
     {
       field: "depth",
-      headerName: "Depth",
-      width: 100,
+      headerName: "DEPTH",
+      width: 80,
       renderCell: (params) => (
         <Chip 
-          label={`Level ${params.value}`} 
-          color={params.value === 0 ? "success" : "secondary"} 
+          label={params.row.depth || 0} 
           size="small" 
+          color={params.row.depth === 0 ? "primary" : "default"}
+          variant={params.row.depth === 0 ? "filled" : "outlined"}
         />
       )
     },
     {
-      field: "is_active",
-      headerName: "Status",
-      width: 120,
-      renderCell: (params) => {
-        return params.value ? (
+      field: "tree_position",
+      headerName: "TREE POS",
+      width: 100,
+      renderCell: (params) => (
+        <Box>
+          <Typography variant="caption" display="block">
+            L: {params.row.lft || 0}
+          </Typography>
+          <Typography variant="caption" display="block">
+            R: {params.row.rgt || 0}
+          </Typography>
+        </Box>
+      )
+    },
+{
+  field: "specifications",
+  headerName: "SPECS",
+  width: 350,
+  renderCell: (params) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          {/* First row: Quantity left, Unit cost right */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+            <Typography variant="body2" fontWeight="bold">
+             Warranty 🛡️{params.row.warranty_period_days || 0}d
+            </Typography>
+            <Typography variant="body2" fontWeight="bold">
+              Depreciation 📉 {params.row.depreciation_rate || 0}%
+            </Typography>
+          </Box>
+    
+          {/* Second row: Total value aligned to the right */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
+            <Typography variant="caption" color="text.secondary">
+             Method 📊 {params.row.depreciation_method === 'straight_line' ? 'Straight Line' : 'Reducing Balance'}
+            </Typography>
+          </Box>
+        </Box>
+  )
+},
+    {
+      field: "requirement",
+      headerName: "REQS",
+      width: 100,
+      renderCell: (params) => (
+        <Box>
+          {params.row.requires_serial_number && (
+            <Typography variant="caption" display="block">📋 Serial: ✅ </Typography>
+          )}
+          {params.row.requires_maintenance && (
+            <Typography variant="caption" display="block">🔧 Maint: ✅ </Typography>
+          )}
+          {params.row.requires_calibration && (
+            <Typography variant="caption" display="block">⚖️ Calib:✅ </Typography>
+          )}
+        </Box>
+      )
+    },
+    {
+      field: "maintenance",
+      headerName: "MAINT",
+      width: 80,
+      renderCell: (params) => (
+        params.row.requires_maintenance ? (
+          <Typography variant="caption">
+            {params.row.maintenance_interval_days}d
+          </Typography>
+        ) : (
+          <Typography variant="caption" color="text.secondary">-</Typography>
+        )
+      )
+    },
+    {
+      field: "image",
+      headerName: "IMAGE",
+      width: 80,
+      renderCell: (params) => (
+        params.row.image_url ? (
+          <Avatar 
+            src={params.row.image_url} 
+            sx={{ width: 32, height: 32 }}
+            variant="rounded"
+          >
+            <ImageIcon />
+          </Avatar>
+        ) : (
+          <Typography variant="caption" color="text.secondary">No Image</Typography>
+        )
+      )
+    },
+    {
+      field: "updated_at",
+      headerName: "UPDATED",
+      width: 180,
+    },
+    {
+      field: "status",
+      headerName: "STATUS",
+      width: 90,
+      renderCell: (params) => (
+        params.row.is_active ? (
           <Chip label="ACTIVE" color="success" size="small" />
         ) : (
           <Chip label="INACTIVE" color="error" size="small" />
-        );
-      },
+        )
+      )
     },
-    { 
-      field: "created_at", 
-      headerName: "Created At", 
-      width: 180 
+    {
+      field: "created_at",
+      headerName: "CREATED",
+      width: 180
     },
     {
       field: "actions",
-      headerName: "Actions",
-      width: 120,
+      headerName: "ACTIONS",
+      width: 100,
       sortable: false,
       renderCell: (params) => (
-        <Box>
+        <Stack direction="row" spacing={0.5}>
           <Tooltip title="Edit Category">
-            <IconButton onClick={() => handleEdit(params.row)} color="primary" size="small">
+            <IconButton onClick={() => handleEdit(params.row)} size="small" color="primary">
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete Category">
-            <IconButton onClick={() => handleDeleteClick(params.row)} color="error" size="small">
+            <IconButton onClick={() => handleDeleteClick(params.row)} size="small" color="error">
               <DeleteIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-        </Box>
+        </Stack>
       ),
     },
   ];
 
   const filteredRows = rows.filter((row) => {
     return (
-      row.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      row.category_code.toLowerCase().includes(searchText.toLowerCase()) ||
-      row.description.toLowerCase().includes(searchText.toLowerCase())
+      row.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+      row.category_code?.toLowerCase().includes(searchText.toLowerCase()) ||
+      row.description?.toLowerCase().includes(searchText.toLowerCase()) ||
+      row.university_name?.toLowerCase().includes(searchText.toLowerCase())
     );
   });
 
@@ -304,13 +374,9 @@ export default function ItemCategories({ items, auth, categories }) {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(filteredRows);
     XLSX.utils.book_append_sheet(wb, ws, "Item Categories");
-    XLSX.writeFile(wb, "ItemCategories.xlsx");
+    XLSX.writeFile(wb, `ItemCategories_${moment().format('YYYYMMDD_HHmmss')}.xlsx`);
     
-    setAlert({
-      open: true,
-      message: "Categories data exported successfully!",
-      severity: "success"
-    });
+    showAlert("Categories data exported successfully!", "success");
   };
 
   const handleUpload = (event) => {
@@ -320,59 +386,72 @@ export default function ItemCategories({ items, auth, categories }) {
     setGridLoading(true);
     const reader = new FileReader();
     reader.onload = (e) => {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const uploadedRows = XLSX.utils.sheet_to_json(sheet);
-      setRows((prev) => [...prev, ...uploadedRows]);
-      
-      setAlert({
-        open: true,
-        message: "File uploaded successfully!",
-        severity: "success"
-      });
-      setGridLoading(false);
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const uploadedData = XLSX.utils.sheet_to_json(sheet);
+        
+        showAlert(`${uploadedData.length} categories imported successfully!`, "success");
+      } catch (error) {
+        showAlert("Error importing file", "error");
+      } finally {
+        setGridLoading(false);
+      }
     };
     reader.readAsArrayBuffer(file);
   };
 
+  const showAlert = (message, severity = "success") => {
+    setAlert({ open: true, message, severity });
+    setTimeout(() => setAlert({ ...alert, open: false }), 5000);
+  };
+
   const handleCreate = () => {
-    setOpenCreateDialog(true);
-    setFormData({
+    setSelectedItem("");
+    reset();
+    setData({
       name: "",
       description: "",
-      category_id: "",
       category_code: "",
+      university_id: "",
       parent_category_id: "",
       warranty_period_days: 0,
       depreciation_rate: 0,
       depreciation_method: "straight_line",
       requires_serial_number: false,
       requires_maintenance: false,
-      maintenance_interval_days: null,
-      specification_template: null,
+      maintenance_interval_days: "",
+      specification_template: "",
+      image_url: "",
+      lft: "",
+      rgt: "",
+      depth: 0,
       is_active: true
     });
-    setFormErrors({});
+    setOpenCreateDialog(true);
   };
 
   const handleEdit = (row) => {
     setSelectedItem(row);
-    setFormData({
-      name: row.name,
-      description: row.description,
-      category_id: row.category_id,
-      category_code: row.category_code,
-      parent_category_id: row.parent_category_id,
-      warranty_period_days: row.warranty_period_days,
-      depreciation_rate: row.depreciation_rate,
-      depreciation_method: row.depreciation_method,
-      requires_serial_number: row.requires_serial_number,
-      requires_maintenance: row.requires_maintenance,
-      maintenance_interval_days: row.maintenance_interval_days,
-      specification_template: row.specification_template,
-      is_active: row.is_active
+    setData({
+      name: row.name || "",
+      description: row.description || "",
+      category_code: row.category_code || "",
+      university_id: row.university_id || "",
+      parent_category_id: row.parent_category_id || "",
+      warranty_period_days: row.warranty_period_days || 0,
+      depreciation_rate: row.depreciation_rate || 0,
+      depreciation_method: row.depreciation_method || "straight_line",
+      requires_serial_number: row.requires_serial_number || false,
+      requires_maintenance: row.requires_maintenance || false,
+      maintenance_interval_days: row.maintenance_interval_days || "",
+      specification_template: row.specification_template || "",
+      image_url: row.image_url || "",
+      lft: row.lft || "",
+      rgt: row.rgt || "",
+      depth: row.depth || 0,
+      is_active: row.is_active !== undefined ? row.is_active : true
     });
     setOpenCreateDialog(true);
   };
@@ -383,314 +462,293 @@ export default function ItemCategories({ items, auth, categories }) {
   };
 
   const handleDeleteConfirm = () => {
-    setGridLoading(true);
-    // In a real app, you would make an API call here
-    setTimeout(() => {
-      setRows(rows.filter(row => row.id !== selectedItem.id));
-      setOpenDeleteDialog(false);
-      
-      setAlert({
-        open: true,
-        message: "Category deleted successfully!",
-        severity: "success"
-      });
-      setGridLoading(false);
-    }, 500);
-  };
+    if (!selectedItem) return;
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value
+    destroy(route('item-categories.destroy', selectedItem.category_id), {
+      preserveScroll: true,
+      onSuccess: () => {
+        showAlert("Category deleted successfully!", "success");
+        setOpenDeleteDialog(false);
+      },
+      onError: () => {
+        showAlert("Error deleting category", "error");
+      }
     });
-    
-    // Clear error when user starts typing
-    if (formErrors[name]) {
-      setFormErrors({
-        ...formErrors,
-        [name]: ""
-      });
-    }
-  };
-
-  const validateForm = () => {
-    const errors = {};
-    
-    if (!formData.name) errors.name = "Name is required";
-    if (!formData.category_code) errors.category_code = "Category code is required";
-    if (formData.warranty_period_days && isNaN(formData.warranty_period_days)) errors.warranty_period_days = "Must be a valid number";
-    if (formData.depreciation_rate && (formData.depreciation_rate < 0 || formData.depreciation_rate > 100)) {
-      errors.depreciation_rate = "Must be between 0 and 100";
-    }
-    if (formData.maintenance_interval_days && isNaN(formData.maintenance_interval_days)) {
-      errors.maintenance_interval_days = "Must be a valid number";
-    }
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = () => {
-    if (!validateForm()) return;
-    
-    setLoading(true);
-    setGridLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      if (selectedItem) {
-        // Update existing category
-        setRows(rows.map(row => 
-          row.id === selectedItem.id 
-            ? { 
-                ...row, 
-                name: formData.name,
-                description: formData.description,
-                category_code: formData.category_code,
-                parent_category_id: formData.parent_category_id,
-                warranty_period_days: formData.warranty_period_days,
-                depreciation_rate: formData.depreciation_rate,
-                depreciation_method: formData.depreciation_method,
-                requires_serial_number: formData.requires_serial_number,
-                requires_maintenance: formData.requires_maintenance,
-                maintenance_interval_days: formData.maintenance_interval_days,
-                specification_template: formData.specification_template,
-                is_active: formData.is_active,
-                updated_at: moment().format("Do MMM YYYY h:mm")
-              }
-            : row
-        ));
-        
-        setAlert({
-          open: true,
-          message: "Category updated successfully!",
-          severity: "success"
-        });
-      } else {
-        // Add new category
-        const newCategory = {
-          id: Math.max(...rows.map(row => row.id), 0) + 1,
-          category_id: `cat_${Math.random().toString(36).substr(2, 9)}`,
-          university_id: "univ_1", // Default university ID
-          parent_category_id: formData.parent_category_id,
-          category_code: formData.category_code,
-          name: formData.name,
-          description: formData.description,
-          image_url: "",
-          warranty_period_days: formData.warranty_period_days || 0,
-          depreciation_rate: formData.depreciation_rate || 0,
-          depreciation_method: formData.depreciation_method,
-          requires_serial_number: formData.requires_serial_number,
-          requires_maintenance: formData.requires_maintenance,
-          maintenance_interval_days: formData.maintenance_interval_days,
-          specification_template: formData.specification_template,
-          lft: null,
-          rgt: null,
-          depth: formData.parent_category_id ? 1 : 0,
-          is_active: formData.is_active,
-          created_at: moment().format("Do MMM YYYY h:mm"),
-          updated_at: moment().format("Do MMM YYYY h:mm"),
-          deleted_at: ""
-        };
-        
-        setRows([...rows, newCategory]);
-        
-        setAlert({
-          open: true,
-          message: "Category created successfully!",
-          severity: "success"
-        });
-      }
-      
-      setLoading(false);
-      setGridLoading(false);
-      setOpenCreateDialog(false);
-      setSelectedItem(null);
-    }, 1000);
+    if (selectedItem) {
+      // Update existing category
+      put(route('item-categories.update', selectedItem.category_id), {
+        preserveScroll: true,
+        onSuccess: () => {
+          showAlert("Category updated successfully!", "success");
+          setOpenCreateDialog(false);
+          reset();
+        },
+        onError: () => {
+          showAlert("Error updating category", "error");
+        }
+      });
+    } else {
+      // Create new category
+      post(route('item-categories.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+          showAlert("Category created successfully!", "success");
+          setOpenCreateDialog(false);
+          reset();
+        },
+        onError: () => {
+          showAlert("Error creating category", "error");
+        }
+      });
+    }
   };
+
+  const handleRefresh = () => {
+    router.reload({ preserveScroll: true });
+  };
+
+  useEffect(() => {
+    if (flash?.success) {
+      showAlert(flash.success, "success");
+    }
+
+    if (flash?.error) {
+      showAlert(flash.error, "error");
+    }
+  }, [flash]);
+
+  const handleCloseAlert = () => {
+    setAlert((prev) => ({ ...prev, open: false }));
+  };
+
+  // Custom Modern Components
+  const ModernCard = ({ children, sx = {} }) => (
+    <Card sx={{
+      borderRadius: 3,
+      p: 2,
+      background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+      border: '1px solid rgba(0,0,0,0.04)',
+      transition: 'all 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-2px)',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+      },
+      ...sx
+    }}>
+      {children}
+    </Card>
+  );
+
+  const SummaryCard = ({ title, value, icon, color, subtitle }) => (
+    <ModernCard>
+      <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box>
+            <Typography variant="h4" fontWeight={800} color={color} sx={{ mb: 0.5 }}>
+              {value}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" fontWeight={600}>
+              {title}
+            </Typography>
+            {subtitle && (
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                {subtitle}
+              </Typography>
+            )}
+          </Box>
+          <Avatar sx={{ 
+            bgcolor: alpha(color, 0.1), 
+            color: color,
+            width: 48,
+            height: 48
+          }}>
+            {icon}
+          </Avatar>
+        </Stack>
+      </CardContent>
+    </ModernCard>
+  );
 
   return (
     <AuthenticatedLayout 
       auth={auth} 
       title="Item Categories"
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard', icon: <Home sx={{ mr: 0.5, fontSize: 18 }} /> },
+        { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon sx={{ mr: 0.5, fontSize: 18 }} /> },
         { label: 'Item Categories' },
       ]}
     >
-      <Fade in={true} timeout={800}>
+      <Fade in timeout={500}>
         <Box>
-          {alert.open && (
-            <Alert 
-              severity={alert.severity} 
-              onClose={() => setAlert({...alert, open: false})}
-              sx={{ mb: 2 }}
-            >
-              {alert.message}
-            </Alert>
-          )}
+          <Notification 
+            open={alert.open} 
+            severity={alert.severity} 
+            message={alert.message}
+            onClose={handleCloseAlert}
+          />
           
-          {/* Summary Cards */}
-          <Slide in={true} direction="right" timeout={500}>
-            <Grid container spacing={3} sx={{ mb: 3 }}>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card 
-                  sx={{ 
-                    height: '100%', 
-                    borderRadius: 3,
-                    background: 'linear-gradient(45deg, #2196f3 30%, #21cbf3 90%)',
-                    color: 'white',
-                    animation: `${fadeIn} 0.5s ease-in`
-                  }}
-                >
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box>
-                        <Typography variant="h3" fontWeight="bold">
-                          {totalCategories}
-                        </Typography>
-                        <Typography variant="body2">
-                          Total Categories
-                        </Typography>
-                      </Box>
-                      <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 56, height: 56 }}>
-                        <InventoryIcon />
-                      </Avatar>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-              
-              <Grid item xs={12} sm={6} md={3}>
-                <Card 
-                  sx={{ 
-                    height: '100%', 
-                    borderRadius: 3,
-                    background: 'linear-gradient(45deg, #4caf50 30%, #8bc34a 90%)',
-                    color: 'white',
-                    animation: `${fadeIn} 0.5s ease-in`,
-                    animationDelay: '0.1s'
-                  }}
-                >
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box>
-                        <Typography variant="h3" fontWeight="bold">
-                          {activeCategories}
-                        </Typography>
-                        <Typography variant="body2">
-                          Active Categories
-                        </Typography>
-                      </Box>
-                      <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 56, height: 56 }}>
-                        <SummarizeIcon />
-                      </Avatar>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-              
-              <Grid item xs={12} sm={6} md={3}>
-                <Card 
-                  sx={{ 
-                    height: '100%', 
-                    borderRadius: 3,
-                    background: 'linear-gradient(45deg, #ff9800 30%, #ffc107 90%)',
-                    color: 'white',
-                    animation: `${fadeIn} 0.5s ease-in`,
-                    animationDelay: '0.2s'
-                  }}
-                >
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box>
-                        <Typography variant="h3" fontWeight="bold">
-                          {categoriesRequiringMaintenance}
-                        </Typography>
-                        <Typography variant="body2">
-                          Need Maintenance
-                        </Typography>
-                      </Box>
-                      <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 56, height: 56 }}>
-                        <EditIcon />
-                      </Avatar>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-              
-              <Grid item xs={12} sm={6} md={3}>
-                <Card 
-                  sx={{ 
-                    height: '100%', 
-                    borderRadius: 3,
-                    background: 'linear-gradient(45deg, #9c27b0 30%, #e91e63 90%)',
-                    color: 'white',
-                    animation: `${fadeIn} 0.5s ease-in`,
-                    animationDelay: '0.3s'
-                  }}
-                >
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Box>
-                        <Typography variant="h3" fontWeight="bold">
-                          {categoriesRequiringSerial}
-                        </Typography>
-                        <Typography variant="body2">
-                          Require Serial Numbers
-                        </Typography>
-                      </Box>
-                      <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 56, height: 56 }}>
-                        <SaveIcon />
-                      </Avatar>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </Slide>
-          {/* Data Grid with Loading */}
+          {/* Header Section */}
           <Box
             sx={{
-              height: "100%",
-              width: "100%",
+              mb: 3,
+              p: 2,
+              borderRadius: 2,
               backgroundColor: "background.paper",
-              borderRadius: 3,
-              overflow: 'hidden',
-              boxShadow: 3,
-              animation: `${slideIn} 0.5s ease-in`,
-              position: 'relative'
+              boxShadow: 1,
             }}
           >
+            <Grid container spacing={2} alignItems="center" justifyContent="space-between">
+              {/* Left Section - Title and Info */}
+              <Grid size={{ xs:12, md:6 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                  <InventoryIcon color="primary" fontSize="large" />
+                  <Box>
+                    <Typography variant="h5" fontWeight={700} color="text.primary">
+                      Item Categories
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      Manage and organize your inventory categories with nested tree structure
+                    </Typography>
+                  </Box>
+                  {searchText && (
+                    <Chip
+                      label={`${filteredRows.length} of ${rows.length} categories`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ fontWeight: 500 }}
+                    />
+                  )}
+                </Box>
+              </Grid>
+
+              {/* Right Section - Buttons */}
+              <Grid size={{ xs: 12, md:"auto" }}>
+                <Grid
+                  container
+                  spacing={1.5}
+                  alignItems="center"
+                  justifyContent={{ xs: "flex-start", md: "flex-end" }}
+                  wrap="wrap"
+                >
+                  <Grid>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddCircleOutline />}
+                      onClick={handleCreate}
+                      size="small"
+                      sx={{ borderRadius: 2, textTransform: "none" }}
+                    >
+                      New Category
+                    </Button>
+                  </Grid>
+                  <Grid>
+                    <Button
+                      size="small"
+                      startIcon={<CloudUpload />}
+                      component="label"
+                      variant="outlined"
+                      sx={{ borderRadius: 2, textTransform: "none" }}
+                    >
+                      Import
+                      <input
+                        hidden
+                        accept=".xlsx,.xls,.csv"
+                        type="file"
+                        onChange={handleUpload}
+                      />
+                    </Button>
+                  </Grid>
+                  <Grid>
+                    <Button
+                      size="small"
+                      startIcon={<Download />}
+                      onClick={handleExport}
+                      variant="outlined"
+                      sx={{ borderRadius: 2, textTransform: "none" }}
+                    >
+                      Export
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Box>
+          
+          {/* Summary Cards */}
+          <Grid container spacing={2}  sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <SummaryCard 
+                title="Total Categories" 
+                value={totalCategories} 
+                icon={<InventoryIcon />} 
+                color="#2196f3" 
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <SummaryCard 
+                title="Active Categories" 
+                value={activeCategories} 
+                icon={<SummarizeIcon />} 
+                color="#4caf50" 
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <SummaryCard 
+                title="Need Maintenance" 
+                value={categoriesRequiringMaintenance} 
+                icon={<BuildIcon />} 
+                color="#ff9800" 
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <SummaryCard 
+                title="With Images" 
+                value={categoriesWithImages} 
+                icon={<ImageIcon />} 
+                color="#9c27b0" 
+              />
+            </Grid>
+          </Grid>
+
+          {/* Data Grid */}
+          <Box sx={{
+            height: "100%",
+            width: "100%",
+            backgroundColor: "background.paper",
+            borderRadius: 3,
+            overflow: 'hidden',
+            boxShadow: 3,
+            position: 'relative'
+          }}>
             {/* Custom Header */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                width: "100%",
-                p: 2,
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                backgroundColor: 'background.paper'
-              }}
-            >
+            <Box sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              p: 2,
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              backgroundColor: 'background.paper'
+            }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <InventoryIcon color="primary" sx={{ fontSize: 28, mr: 1 }} />
+                <AccountTreeIcon color="primary" sx={{ fontSize: 28, mr: 1 }} />
                 <Typography variant="h6" fontWeight="bold" color="primary">
-                  Item Categories
+                  C.Tree Structure
                 </Typography>
               </Box>
               
               <Stack direction="row" spacing={1} alignItems="center">
                 <TextField
-                  label="Search..."
+                  label="Search categories..."
                   variant="outlined"
                   size="small"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
-                  inputRef={searchInputRef}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -698,11 +756,11 @@ export default function ItemCategories({ items, auth, categories }) {
                       </InputAdornment>
                     ),
                   }}
-                  sx={{ width: 200 }}
+                  sx={{ width: 250 }}
                 />
                 
                 <Tooltip title="Refresh Data">
-                  <IconButton color="primary" size="small">
+                  <IconButton color="primary" size="small" onClick={handleRefresh}>
                     <RefreshIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
@@ -715,7 +773,7 @@ export default function ItemCategories({ items, auth, categories }) {
                   size="small"
                   sx={{ animation: `${pulse} 2s infinite` }}
                 >
-                  New
+                  New Category
                 </Button>
                 
                 <Button
@@ -736,78 +794,64 @@ export default function ItemCategories({ items, auth, categories }) {
                   size="small"
                 >
                   Import
-                  <input
-                    type="file"
-                    hidden
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleUpload}
-                  />
+                  <input type="file" hidden accept=".xlsx,.xls,.csv" onChange={handleUpload} />
                 </Button>
               </Stack>
             </Box>
             
-            {/* Data Grid with Loading Overlay */}
-            {/* < sx={{ position: 'relative' }}> */}
-              <DataGrid
-                autoHeight
-                rows={filteredRows}
-                columns={columns}
-                pageSizeOptions={[5, 10, 20, 50, 100]}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 10 },
-                  },
-                }}
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-cell': {
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                  },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: 'grey.50',
-                    borderBottom: '2px solid',
-                    borderColor: 'divider',
-                  },
-                }}
-                loading={gridLoading}
-              />
-              
-              {/* Custom Loading Overlay */}
-              {gridLoading && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                    zIndex: 1,
-                  }}
-                >
-                  <Box sx={{ textAlign: 'center' }}>
-                    <CircularProgress size={60} thickness={4} />
-                    <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
-                      Loading categories...
-                    </Typography>
-                  </Box>
+            {/* Data Grid */}
+            <DataGrid
+              autoHeight
+              rows={filteredRows}
+              columns={columns}
+              pageSizeOptions={[5, 10, 20, 50, 100]}
+              initialState={{
+                pagination: { paginationModel: { page: 0, pageSize: 10 } },
+                sorting: { sortModel: [{ field: 'lft', sort: 'asc' }] }
+              }}
+              sx={{
+                border: 'none',
+                '& .MuiDataGrid-cell': { borderBottom: '1px solid', borderColor: 'divider' },
+                '& .MuiDataGrid-columnHeaders': { 
+                  backgroundColor: 'grey.50', 
+                  borderBottom: '2px solid',
+                  borderColor: 'divider' 
+                },
+              }}
+              loading={gridLoading}
+            />
+            
+            {/* Custom Loading Overlay */}
+            {gridLoading && (
+              <Box sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                zIndex: 1,
+              }}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <CircularProgress size={60} thickness={4} />
+                  <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+                    Loading categories...
+                  </Typography>
                 </Box>
-              )}
-            {/* </> */}
+              </Box>
+            )}
           </Box>
           
           {/* Create/Edit Dialog */}
           <Dialog 
             open={openCreateDialog} 
-            onClose={() => setOpenCreateDialog(false)}
-            maxWidth="md"
+            onClose={() => !processing && setOpenCreateDialog(false)}
+            maxWidth="sm"
             fullWidth
             TransitionComponent={Slide}
-            transitionDuration={400}
           >
             <DialogTitle sx={{ 
               display: 'flex', 
@@ -816,64 +860,92 @@ export default function ItemCategories({ items, auth, categories }) {
               backgroundColor: 'primary.main',
               color: 'white'
             }}>
-              <Typography variant="h6">
-                {selectedItem ? "Edit Item Category" : "Create New Item Category"}
+              <Typography variant="h6" component={"span"}>
+                {selectedItem ? "Edit Category" : "Create New Category"}
               </Typography>
-              <IconButton onClick={() => setOpenCreateDialog(false)} sx={{ color: 'white' }}>
+              <IconButton 
+                onClick={() => !processing && setOpenCreateDialog(false)} 
+                sx={{ color: 'white' }}
+                disabled={processing}
+              >
                 <CloseIcon />
               </IconButton>
             </DialogTitle>
             
             <DialogContent dividers sx={{ pt: 3 }}>
-              {loading && <LinearProgress />}
+              {processing && <LinearProgress />}
               
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
+
+                <Grid size={{ xs: 12, sm: 12, md: 12 }}>
+                  <FormControl fullWidth error={!!errors.university_id}>
+                    <InputLabel>University </InputLabel>
+                    <Select 
+                      value={data.university_id} 
+                      label="University" 
+                      onChange={(e) => setData('university_id', e.target.value)}
+                    >
+                      {universities?.map(university => (
+                        <MenuItem key={university.university_id} value={university.university_id}>
+                          {university.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {errors.university_id && <FormHelperText>{errors.university_id}</FormHelperText>}
+                  </FormControl>
+                </Grid>
+                
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Category Name"
                     name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    error={!!formErrors.name}
-                    helperText={formErrors.name}
+                    value={data.name}
+                    onChange={(e) => setData('name', e.target.value)}
+                    error={!!errors.name}
+                    helperText={errors.name}
+                    disabled={processing}
                     required
                   />
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6}}>
                   <TextField
                     fullWidth
                     label="Category Code"
                     name="category_code"
-                    value={formData.category_code}
-                    onChange={handleInputChange}
-                    error={!!formErrors.category_code}
-                    helperText={formErrors.category_code}
+                    value={data.category_code}
+                    onChange={(e) => setData('category_code', e.target.value)}
+                    error={!!errors.category_code}
+                    helperText={errors.category_code}
+                    disabled={processing}
                     required
                   />
                 </Grid>
-                
-                <Grid item xs={12}>
+              
+                {/* <Grid size={{ xs: 12, sm: 6}}>
                   <TextField
                     fullWidth
-                    label="Description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    multiline
-                    rows={2}
+                    label="University ID"
+                    name="university_id"
+                    value={data.university_id}
+                    onChange={(e) => setData('university_id', e.target.value)}
+                    error={!!errors.university_id}
+                    helperText={errors.university_id}
+                    disabled={processing}
+                    required
                   />
-                </Grid>
+                </Grid> */}
                 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6}}>
                   <FormControl fullWidth>
                     <InputLabel>Parent Category</InputLabel>
                     <Select
                       name="parent_category_id"
-                      value={formData.parent_category_id}
+                      value={data.parent_category_id}
                       label="Parent Category"
-                      onChange={handleInputChange}
+                      onChange={(e) => setData('parent_category_id', e.target.value)}
+                      disabled={processing}
                     >
                       <MenuItem value="">None (Root Category)</MenuItem>
                       {rows.filter(row => !row.parent_category_id).map((category) => (
@@ -885,43 +957,77 @@ export default function ItemCategories({ items, auth, categories }) {
                   </FormControl>
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12 }}>
+                  <TextField
+                    fullWidth
+                    label="Description"
+                    name="description"
+                    value={data.description}
+                    onChange={(e) => setData('description', e.target.value)}
+                    multiline
+                    rows={2}
+                    disabled={processing}
+                  />
+                </Grid>
+                
+                <Grid size={{ xs: 12, sm: 6}}>
+                  <TextField
+                    fullWidth
+                    label="Image URL"
+                    name="image_url"
+                    value={data.image_url}
+                    onChange={(e) => setData('image_url', e.target.value)}
+                    error={!!errors.image_url}
+                    helperText={errors.image_url}
+                    disabled={processing}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <ImageIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                
+                <Grid size={{ xs: 12, sm: 6}}>
                   <TextField
                     fullWidth
                     label="Warranty Period (Days)"
                     name="warranty_period_days"
                     type="number"
-                    value={formData.warranty_period_days}
-                    onChange={handleInputChange}
-                    error={!!formErrors.warranty_period_days}
-                    helperText={formErrors.warranty_period_days}
+                    value={data.warranty_period_days}
+                    onChange={(e) => setData('warranty_period_days', parseInt(e.target.value) || 0)}
+                    error={!!errors.warranty_period_days}
+                    helperText={errors.warranty_period_days}
+                    disabled={processing}
                   />
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6}}>
                   <TextField
                     fullWidth
                     label="Depreciation Rate (%)"
                     name="depreciation_rate"
                     type="number"
-                    value={formData.depreciation_rate}
-                    onChange={handleInputChange}
-                    error={!!formErrors.depreciation_rate}
-                    helperText={formErrors.depreciation_rate}
-                    InputProps={{
-                      endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                    }}
+                    value={data.depreciation_rate}
+                    onChange={(e) => setData('depreciation_rate', parseFloat(e.target.value) || 0)}
+                    error={!!errors.depreciation_rate}
+                    helperText={errors.depreciation_rate}
+                    disabled={processing}
+                    InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
                   />
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6}}>
                   <FormControl fullWidth>
                     <InputLabel>Depreciation Method</InputLabel>
                     <Select
                       name="depreciation_method"
-                      value={formData.depreciation_method}
+                      value={data.depreciation_method}
                       label="Depreciation Method"
-                      onChange={handleInputChange}
+                      onChange={(e) => setData('depreciation_method', e.target.value)}
+                      disabled={processing}
                     >
                       <MenuItem value="straight_line">Straight Line</MenuItem>
                       <MenuItem value="reducing_balance">Reducing Balance</MenuItem>
@@ -929,55 +1035,95 @@ export default function ItemCategories({ items, auth, categories }) {
                   </FormControl>
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6}}>
                   <TextField
                     fullWidth
                     label="Maintenance Interval (Days)"
                     name="maintenance_interval_days"
                     type="number"
-                    value={formData.maintenance_interval_days}
-                    onChange={handleInputChange}
-                    error={!!formErrors.maintenance_interval_days}
-                    helperText={formErrors.maintenance_interval_days}
+                    value={data.maintenance_interval_days}
+                    onChange={(e) => setData('maintenance_interval_days', parseInt(e.target.value) || "")}
+                    error={!!errors.maintenance_interval_days}
+                    helperText={errors.maintenance_interval_days}
+                    disabled={processing}
                   />
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6}}>
+                  <TextField
+                    fullWidth
+                    label="Depth"
+                    name="depth"
+                    type="number"
+                    value={data.depth}
+                    onChange={(e) => setData('depth', parseInt(e.target.value) || 0)}
+                    error={!!errors.depth}
+                    helperText={errors.depth}
+                    disabled={processing}
+                  />
+                </Grid>
+                
+                <Grid size={{ xs: 12, sm: 6}}>
+                  <TextField
+                    fullWidth
+                    label="Left Position (LFT)"
+                    name="lft"
+                    type="number"
+                    value={data.lft}
+                    onChange={(e) => setData('lft', parseInt(e.target.value) || "")}
+                    error={!!errors.lft}
+                    helperText={errors.lft}
+                    disabled={processing}
+                  />
+                </Grid>
+                
+                <Grid size={{ xs: 12, sm: 6}}>
+                  <TextField
+                    fullWidth
+                    label="Right Position (RGT)"
+                    name="rgt"
+                    type="number"
+                    value={data.rgt}
+                    onChange={(e) => setData('rgt', parseInt(e.target.value) || "")}
+                    error={!!errors.rgt}
+                    helperText={errors.rgt}
+                    disabled={processing}
+                  />
+                </Grid>
+                
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
-                        name="requires_serial_number"
-                        checked={formData.requires_serial_number}
-                        onChange={handleInputChange}
-                        color="primary"
+                        checked={data.requires_serial_number}
+                        onChange={(e) => setData('requires_serial_number', e.target.checked)}
+                        disabled={processing}
                       />
                     }
                     label="Requires Serial Number"
                   />
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <FormControlLabel
                     control={
                       <Switch
-                        name="requires_maintenance"
-                        checked={formData.requires_maintenance}
-                        onChange={handleInputChange}
-                        color="primary"
+                        checked={data.requires_maintenance}
+                        onChange={(e) => setData('requires_maintenance', e.target.checked)}
+                        disabled={processing}
                       />
                     }
                     label="Requires Maintenance"
                   />
                 </Grid>
                 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm:6 }}>
                   <FormControlLabel
                     control={
                       <Switch
-                        name="is_active"
-                        checked={formData.is_active}
-                        onChange={handleInputChange}
-                        color="primary"
+                        checked={data.is_active}
+                        onChange={(e) => setData('is_active', e.target.checked)}
+                        disabled={processing}
                       />
                     }
                     label="Active Category"
@@ -990,51 +1136,40 @@ export default function ItemCategories({ items, auth, categories }) {
               <Button 
                 onClick={() => setOpenCreateDialog(false)}
                 color="inherit"
+                disabled={processing}
               >
                 Cancel
               </Button>
               <Button 
                 onClick={handleSubmit}
                 variant="contained"
-                disabled={loading}
-                startIcon={selectedItem ? <SaveIcon /> : <AddIcon />}
+                disabled={processing}
+                startIcon={processing ? <CircularProgress size={16} /> : (selectedItem ? <SaveIcon /> : <AddIcon />)}
               >
-                {selectedItem ? "Update Category" : "Create Category"}
+                {processing ? 'Processing...' : (selectedItem ? "Update Category" : "Create Category")}
               </Button>
             </DialogActions>
           </Dialog>
           
           {/* Delete Confirmation Dialog */}
-          <Dialog 
-            open={openDeleteDialog} 
-            onClose={() => setOpenDeleteDialog(false)}
-            maxWidth="sm"
-            fullWidth
-          >
-            <DialogTitle>
-              Confirm Delete
-            </DialogTitle>
-            
+          <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)} maxWidth="sm" fullWidth>
+            <DialogTitle>Confirm Delete</DialogTitle>
             <DialogContent>
               <Typography>
                 Are you sure you want to delete the category "{selectedItem?.name}"? This action cannot be undone.
               </Typography>
+              {selectedItem?.items_count > 0 && (
+                <Alert severity="warning" sx={{ mt: 2 }}>
+                  This category contains {selectedItem.items_count} items. Deleting it may affect those items.
+                </Alert>
+              )}
             </DialogContent>
-            
             <DialogActions>
-              <Button 
-                onClick={() => setOpenDeleteDialog(false)}
-                color="inherit"
-              >
+              <Button onClick={() => setOpenDeleteDialog(false)} color="inherit">
                 Cancel
               </Button>
-              <Button 
-                onClick={handleDeleteConfirm}
-                variant="contained"
-                color="error"
-                startIcon={<DeleteIcon />}
-              >
-                Delete
+              <Button onClick={handleDeleteConfirm} variant="contained" color="error" startIcon={<DeleteIcon />}>
+                Delete Category
               </Button>
             </DialogActions>
           </Dialog>
