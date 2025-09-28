@@ -33,8 +33,8 @@ class AuditLogRepository
                 'user_agent' => $auditLog->user_agent,
                 'user_id' => $auditLog->user_id,
                 'performed_at' => $auditLog->performed_at,
-                // 'created_at' => $auditLog->created_at,
-                // 'updated_at' => $auditLog->updated_at,
+                'created_at' => $auditLog->created_at,
+                'updated_at' => $auditLog->updated_at,
                 'university_name' => $auditLog->university ? $auditLog->university->name : null,
                 'university_code' => $auditLog->university ? $auditLog->university->code : null,
                 'user_name' => $auditLog->user ? $auditLog->user->name : null,
@@ -46,6 +46,8 @@ class AuditLogRepository
         
         return $auditLogs;
     }
+
+
 
     public function findById($auditId)
     {
@@ -227,6 +229,73 @@ class AuditLogRepository
         ];
     }
 
+    ////////////////////
+
+/**
+ * Calculate the number of changes between old and new values
+ */
+private function calculateChangesCount($oldValues, $newValues): int
+{
+    // Safely decode JSON values, ensuring we always get arrays
+    $oldArray = $this->safeJsonDecode($oldValues);
+    $newArray = $this->safeJsonDecode($newValues);
+
+    if (empty($oldArray) && empty($newArray)) {
+        return 0;
+    }
+
+    if (empty($oldArray)) {
+        return count($newArray);
+    }
+
+    if (empty($newArray)) {
+        return count($oldArray);
+    }
+
+    // Ensure both are arrays before using array functions
+    if (!is_array($oldArray) || !is_array($newArray)) {
+        // If either is not an array, compare as simple values
+        return $oldArray !== $newArray ? 1 : 0;
+    }
+
+    return count(array_diff_assoc($newArray, $oldArray)) + count(array_diff_assoc($oldArray, $newArray));
+}
+
+/**
+ * Safely decode JSON values, always returning an array
+ */
+private function safeJsonDecode($value): array
+{
+    if (is_null($value) || $value === '') {
+        return [];
+    }
+
+    // If it's already an array, return it
+    if (is_array($value)) {
+        return $value;
+    }
+
+    // If it's a string, try to decode it
+    if (is_string($value)) {
+        $decoded = json_decode($value, true);
+        
+        // If decoding failed or returned null, return empty array
+        if (json_last_error() !== JSON_ERROR_NONE || is_null($decoded)) {
+            return [];
+        }
+        
+        // If decoded value is not an array, wrap it in an array
+        if (!is_array($decoded)) {
+            return [$decoded];
+        }
+        
+        return $decoded;
+    }
+
+    // For any other type (int, float, bool, etc.), wrap in array
+    return [$value];
+}
+    ////////////////////
     public function getPopularTables($universityId = null, $limit = 10)
     {
         $query = AuditLog::query();
@@ -321,26 +390,5 @@ class AuditLogRepository
             return redirect()->back()->with('error', 'Failed to purge old audit logs: ' . $e->getMessage());
         }
     }
-    /**
-     * Calculate the number of changes between old and new values
-     */
-    private function calculateChangesCount($oldValues, $newValues): int
-    {
-        $oldArray = $oldValues ? json_decode($oldValues, true) : [];
-        $newArray = $newValues ? json_decode($newValues, true) : [];
-
-        if (empty($oldArray) && empty($newArray)) {
-            return 0;
-        }
-
-        if (empty($oldArray)) {
-            return count($newArray);
-        }
-
-        if (empty($newArray)) {
-            return count($oldArray);
-        }
-
-        return count(array_diff_assoc($newArray, $oldArray)) + count(array_diff_assoc($oldArray, $newArray));
-    }
+  
 }

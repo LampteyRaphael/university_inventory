@@ -647,7 +647,7 @@ export default function AuditLogs({ logs, auth }) {
             </Grid>
           </Box>
 
-          <Grid container spacing={3} sx={{ mb: 4 }}>
+          {/* <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <SummaryCard
                 title="Total Logs"
@@ -693,7 +693,7 @@ export default function AuditLogs({ logs, auth }) {
                 subtitle="Today's activities"
               />
             </Grid>
-          </Grid>
+          </Grid> */}
 
           <Paper sx={{
             height: "100%",

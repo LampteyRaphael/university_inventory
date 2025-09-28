@@ -119,11 +119,11 @@ Route::middleware('auth','verified')->group(function () {
 
 
         // Audit Logs Routes
-    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
-    Route::get('/audit-logs/create', [AuditLogController::class, 'create'])->name('audit-logs.create');
+    // Route::get('/audit-logs/create', [AuditLogController::class, 'create'])->name('audit-logs.create');
+    // Route::get('/audit-logs/{id}', [AuditLogController::class, 'show'])->name('audit-logs.show');
+    // Route::get('/audit-logs/{id}/edit', [AuditLogController::class, 'edit'])->name('audit-logs.edit');
     Route::post('/audit-logs', [AuditLogController::class, 'store'])->name('audit-logs.store');
-    Route::get('/audit-logs/{id}', [AuditLogController::class, 'show'])->name('audit-logs.show');
-    Route::get('/audit-logs/{id}/edit', [AuditLogController::class, 'edit'])->name('audit-logs.edit');
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::put('/audit-logs/{id}', [AuditLogController::class, 'update'])->name('audit-logs.update');
     Route::delete('/audit-logs/{id}', [AuditLogController::class, 'destroy'])->name('audit-logs.destroy');
     

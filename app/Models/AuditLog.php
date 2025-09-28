@@ -9,35 +9,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AuditLog extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
-    /**
-     * The primary key for the model.
-     *
-     * @var string
-     */
-    protected $primaryKey = 'audit_id';
-
-    /**
-     * The "type" of the primary key ID.
-     *
-     * @var string
-     */
+   protected $primaryKey = 'audit_id';
+    public $incrementing = false;
     protected $keyType = 'string';
 
-    // protected $table=""
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
-    public $incrementing = false;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'audit_id',
         'university_id',
@@ -50,21 +27,16 @@ class AuditLog extends Model
         'ip_address',
         'user_agent',
         'user_id',
-        'performed_at',
+        'performed_at'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'old_values' => 'array',
         'new_values' => 'array',
         'performed_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
+
+ 
 
     /**
      * The attributes that should be hidden for serialization.
