@@ -105,8 +105,15 @@ class RouteController extends Controller
             // $departments=  Department::query()->paginate(10);
             // $departments= Inertia::lazy(fn () => Department::all());
 
-            $universities = University::all();
-            return Inertia::render('Departments/Departments', ['departments'=> $departments, 'universities'=>$universities]);
+            $universities = University::select('university_id','name')->get();
+            return Inertia::render('Departments/Departments', [
+                'departments'=> $departments,
+                 'universities'=>$universities,
+                 'users'=>User::select('id', 'first_name', 'last_name','name')
+                ->orderBy('name')
+                ->limit(100)
+                ->get(),
+                ]);
     }
 
     /*********************************

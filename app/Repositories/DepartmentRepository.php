@@ -10,65 +10,46 @@ use Illuminate\Http\RedirectResponse;
 
 class DepartmentRepository
 {
-    public function getAll($filters = [], $perPage = 500)
+        
+    public function getAll()
     {
-        $query = Department::with([
-            'university:university_id,name',
-            'departmentHead:id,name,email'
-        ])->select([
-            'department_id',
-            'university_id',
-            'department_code',
-            'name',
-            'building',
-            'floor',
-            'room_number',
-            'contact_person',
-            'contact_email',
-            'contact_phone',
-            'annual_budget',
-            'remaining_budget',
-            'department_head_id',
-            'is_active',
-            'custom_fields',
-            'created_at',
-            'updated_at'
-        ]);
-
-        // Apply filters
-        $cleanedFilters = array_filter($filters, function($value) {
-            return $value !== '' && $value !== null;
-        });
-
-        if (!empty($cleanedFilters['university_id'])) {
-            $query->where('university_id', $cleanedFilters['university_id']);
-        }
-
-        if (isset($cleanedFilters['is_active'])) {
-            $query->where('is_active', (bool)$cleanedFilters['is_active']);
-        }
-
-        if (!empty($cleanedFilters['building'])) {
-            $query->where('building', 'like', "%{$cleanedFilters['building']}%");
-        }
-
-        if (!empty($cleanedFilters['search'])) {
-            $search = trim($cleanedFilters['search']);
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('department_code', 'like', "%{$search}%")
-                  ->orWhere('contact_person', 'like', "%{$search}%")
-                  ->orWhere('contact_email', 'like', "%{$search}%");
-            });
-        }
-
-        $orderBy = $cleanedFilters['order_by'] ?? 'name';
-        $orderDirection = $cleanedFilters['order_direction'] ?? 'asc';
-        $query->orderBy($orderBy, $orderDirection);
-
-        return $query->paginate($perPage);
+               $departments = Department::with([
+                'university:university_id,name,code',
+                'departmentHead:id,name,email'
+                ])
+            ->get()
+            ->map(function ($department) {
+                return [
+                'department_id' => $department->department_id,
+                'university_id' => $department->university_id,
+                'department_code' => $department->department_code,
+                'name' => $department->name,
+                'building' => $department->building,
+                'floor' => $department->floor,
+                'room_number' => $department->room_number,
+                'contact_person' => $department->contact_person,
+                'contact_email' => $department->contact_email,
+                'contact_phone' => $department->contact_phone,
+                'annual_budget' => $department->annual_budget,
+                'remaining_budget' => $department->remaining_budget,
+                'department_head_id' => $department->department_head_id,
+                'is_active' => $department->is_active,
+                'custom_fields' => $department->custom_fields,
+                'created_at' => $department->created_at,
+                'updated_at' => $department->updated_at,
+                'university_name' => $department->university ? $department->university->name : null,
+                'university_code' => $department->university ? $department->university->university_code : null,
+                'department_head_name' => $department->departmentHead ? $department->departmentHead->name : null,
+                'department_head_email' => $department->departmentHead ? $department->departmentHead->email : null,
+                'budget_utilization_percent' => $department->annual_budget > 0 
+                    ? number_format((($department->annual_budget - $department->remaining_budget) / $department->annual_budget) * 100, 2)
+                    : 0,
+                ];
+            });  
+            
+            return $departments;
     }
-
+    
     public function findById($departmentId)
     {
         return Department::with(['university', 'departmentHead'])

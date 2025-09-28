@@ -53,7 +53,7 @@ class Department extends Model
      */
     public function departmentHead(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'department_head_id', 'user_id');
+        return $this->belongsTo(User::class, 'department_head_id', 'id');
     }
 
     /**

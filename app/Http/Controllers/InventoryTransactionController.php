@@ -359,7 +359,7 @@ class InventoryTransactionController extends Controller
             DB::commit();
 
 
-            return redirect()->route('inventory-transactions.index')->with('success', 'Inventory Transaction updated successfully!');
+            return redirect()->route('inventory-transactions.index')->with('success', 'Inventory Transaction created successfully!');
            
         } catch (\Exception $e) {
             DB::rollBack();

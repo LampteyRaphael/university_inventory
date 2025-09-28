@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { useForm } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import {
   Box,
   Chip,
@@ -34,6 +34,7 @@ import {
   useTheme,
   useMediaQuery,
   alpha,
+  CircularProgress,
 } from "@mui/material";
 import {
   DataGrid,
@@ -67,7 +68,12 @@ import {
   Cancel as InactiveIcon,
   TrendingUp as BudgetUtilizationIcon,
   Warning as BudgetWarningIcon,
+  AddCircleOutline,
+  CloudUpload,
+  Download,
+  Inventory,
 } from "@mui/icons-material";
+import Notification from "@/Components/Notification";
 
 // Custom Modern Components
 const ModernCard = ({ children, sx = {} }) => (
@@ -185,7 +191,7 @@ const ModernTextField = ({ label, ...props }) => (
   />
 );
 
-export default function Departments({ departments = [], auth, universities, users }) {
+export default function Departments({ departments = [], auth, universities=[], users=[] }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
@@ -194,14 +200,20 @@ export default function Departments({ departments = [], auth, universities, user
   const [searchText, setSearchText] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [gridLoading, setGridLoading] = useState(true);
   const [alert, setAlert] = useState({ open: false, message: "", severity: "success" });
-
+  const { flash } = usePage().props;
+  
+  const showAlert = (message, severity = "success") => {
+    setAlert({ open: true, message, severity });
+    setTimeout(() => setAlert({ ...alert, open: false }), 5000);
+  };
+  
   // Inertia.js Form Handling
   const { data, setData, post, put, processing, errors, reset } = useForm({
     department_id: "",
-    university_id: auth.user?.university_id || "",
+    university_id: "",
     department_code: "",
     name: "",
     building: "",
@@ -214,26 +226,25 @@ export default function Departments({ departments = [], auth, universities, user
     remaining_budget: 0,
     department_head_id: "",
     is_active: true,
-    custom_fields: null,
+    custom_fields: "",
   });
 
   // Process data on component mount
   useEffect(() => {
     setGridLoading(true);
-    
     const processData = setTimeout(() => {
       const formatted = (departments || []).map((dept, index) => ({
         id: dept?.department_id ?? index + 1,
         ...dept,
         annual_budget: Number(dept?.annual_budget ?? 0),
         remaining_budget: Number(dept?.remaining_budget ?? 0),
-        university_id: dept?.university?.name ?? 'A/N',
+        university_id: dept?.university_id,
         created_at: dept?.created_at ? 
           moment(dept.created_at).format("MMM Do YYYY, h:mm a") : "",
         updated_at: dept?.updated_at ? 
           moment(dept.updated_at).format("MMM Do YYYY, h:mm a") : "",
         deleted_at: dept?.deleted_at ? 
-          moment(dept.deleted_at).format("MMM Do YYYY, h:mm a") : null,
+          moment(dept.deleted_at).format("MMM Do YYYY, h:mm a") : "",
       }));
       
       setRows(formatted);
@@ -305,10 +316,9 @@ export default function Departments({ departments = [], auth, universities, user
       headerName: 'UNIVERSITY', 
       width: 200,
       renderCell: (params) => {
-        const university = universities?.find(u => u.university_id === params.row.university_id);
         return (
           <Chip 
-            label={university ? university.name : params.value} 
+            label={params.row.university_name || "N/A"} 
             size="small" 
             variant="outlined"
             color="secondary"
@@ -372,7 +382,7 @@ export default function Departments({ departments = [], auth, universities, user
         return ((row.annual_budget - (row.remaining_budget || 0)) / row.annual_budget) * 100;
       },
       renderCell: (params) => {
-        if (!params || params.value === undefined || params.value === null) {
+        if (!params || params.value === undefined || params.value === "") {
           return <Chip label="N/A" size="small" color="default" />;
         }
         const utilization = Number(params.value);
@@ -519,7 +529,7 @@ export default function Departments({ departments = [], auth, universities, user
   }, []);
 
   const handleCreate = useCallback(() => {
-    setSelectedDepartment(null);
+    setSelectedDepartment("");
     reset({
       university_id: auth.user?.university_id || "",
       department_code: "",
@@ -534,7 +544,7 @@ export default function Departments({ departments = [], auth, universities, user
       remaining_budget: 0,
       department_head_id: "",
       is_active: true,
-      custom_fields: null,
+      custom_fields: "",
     });
     setOpenDialog(true);
   }, [auth, reset]);
@@ -568,7 +578,7 @@ export default function Departments({ departments = [], auth, universities, user
 
   const handleDeleteConfirm = useCallback(() => {
     // Inertia.js delete request
-    post(route('department_delete', { id: selectedDepartment.department_id }), {
+    router.delete(route('department.destroy', { id: selectedDepartment.department_id }), {
       onSuccess: () => {
         setRows(prev => prev.filter(r => r.id !== selectedDepartment.id));
         setOpenDeleteDialog(false);
@@ -583,7 +593,7 @@ export default function Departments({ departments = [], auth, universities, user
   const handleSubmit = useCallback(() => {
     if (selectedDepartment) {
       // Update existing department
-      put(route('department_update', { id: selectedDepartment.department_id }), {
+      put(route('department.update', { id: selectedDepartment.department_id }), {
         onSuccess: () => {
           setOpenDialog(false);
           setAlert({ open: true, message: 'Department updated successfully', severity: 'success' });
@@ -614,6 +624,20 @@ export default function Departments({ departments = [], auth, universities, user
     }, 800);
   }, []);
 
+    useEffect(() => {
+      if (flash?.success) {
+        showAlert(flash.success, "success");
+      }
+  
+      if (flash?.error) {
+        showAlert(flash.error, "error");
+      }
+    }, [flash]);
+  
+    const handleCloseAlert = () => {
+      setAlert((prev) => ({ ...prev, open: false }));
+    };
+
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -625,19 +649,97 @@ export default function Departments({ departments = [], auth, universities, user
     >
       <Fade in timeout={500}>
         <Box>
-          {alert.open && (
-            <Alert 
-              severity={alert.severity} 
-              onClose={() => setAlert(prev => ({...prev, open: false}))} 
-              sx={{ 
-                mb: 2,
-                borderRadius: 2,
-                boxShadow: 2
-              }}
-            >
-              {alert.message}
-            </Alert>
-          )}
+          <Notification 
+            open={alert.open} 
+            severity={alert.severity} 
+            message={alert.message}
+            onClose={handleCloseAlert}
+          />
+
+          <Box
+            sx={{
+              mb: 3,
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: "background.paper",
+              boxShadow: 1,
+            }}
+          >
+            <Grid container spacing={2} alignItems="center" justifyContent="space-between">
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                  <Inventory color="primary" fontSize="large" />
+                  <Box>
+                    <Typography variant="h5" fontWeight={700} color="text.primary">
+                      Inventory Department
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      Manage your inventory Department, track stock levels, and monitor Department performance
+                    </Typography>
+                  </Box>
+                  {searchText && (
+                    <Chip
+                      label={`${rows.length} items filtered`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ fontWeight: 500 }}
+                    />
+                  )}
+                </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: "auto" }}>
+                <Grid
+                  container
+                  spacing={1.5}
+                  alignItems="center"
+                  justifyContent={{ xs: "flex-start", md: "flex-end" }}
+                  wrap="wrap"
+                >
+                  <Grid>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddCircleOutline />}
+                      onClick={handleCreate}
+                      size="small"
+                      sx={{ borderRadius: 2, textTransform: "none" }}
+                    >
+                      New Department
+                    </Button>
+                  </Grid>
+                  <Grid>
+                    <Button
+                      size="small"
+                      startIcon={<CloudUpload />}
+                      component="label"
+                      variant="outlined"
+                      sx={{ borderRadius: 2, textTransform: "none" }}
+                    >
+                      Import
+                      <input
+                        hidden
+                        accept=".xlsx,.xls,.csv"
+                        type="file"
+                        onChange={handleUpload}
+                      />
+                    </Button>
+                  </Grid>
+                  <Grid>
+                    <Button
+                      size="small"
+                      startIcon={<Download />}
+                      onClick={handleExport}
+                      variant="outlined"
+                      sx={{ borderRadius: 2, textTransform: "none" }}
+                    >
+                      Export
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Box>
 
           {/* Summary Cards */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -687,17 +789,20 @@ export default function Departments({ departments = [], auth, universities, user
               boxShadow: 3,
             }}
           >
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: isMobile ? 'column' : 'row',
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              p: 2, 
-              borderBottom: '1px solid', 
-              borderColor: 'divider',
-              gap: 2
-            }}>
-              <Stack  alignItems="center" spacing={1}>
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              backgroundColor: "background.paper",
+              p: 2,
+              borderRadius: 2,
+              boxShadow: 1,
+              mb: 2,
+            }}
+          >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <DepartmentIcon color="primary" />
                 <Typography variant="h6" fontWeight={700}>
                   Departments
@@ -709,14 +814,9 @@ export default function Departments({ departments = [], auth, universities, user
                     variant="outlined" 
                   />
                 )}
-              </Stack>
+              </Box>
 
-              <Stack 
-                direction={isMobile ? 'column' : 'row'} 
-                spacing={1} 
-                alignItems="center"
-                width={isMobile ? '100%' : 'auto'}
-              >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <TextField
                   size="small"
                   placeholder="Search departments..."
@@ -745,7 +845,7 @@ export default function Departments({ departments = [], auth, universities, user
                 >
                   New Department
                 </Button>
-              </Stack>
+              </Box>
             </Box>
 
               <DataGrid
@@ -798,7 +898,6 @@ export default function Departments({ departments = [], auth, universities, user
             onClose={() => setOpenDialog(false)} 
             maxWidth="md" 
             fullWidth 
-            TransitionComponent={Slide}
             transitionDuration={300}
             fullScreen={isMobile}
             PaperProps={{
@@ -842,7 +941,7 @@ export default function Departments({ departments = [], auth, universities, user
                       <InputLabel>University</InputLabel>
                       <Select 
                         name="university_id" 
-                        value={data.university_id} 
+                        value={data.university_id || ""} 
                         label="University" 
                         onChange={(e) => setData('university_id', e.target.value)}
                       >
@@ -862,7 +961,7 @@ export default function Departments({ departments = [], auth, universities, user
                     label="Department Code" 
                     name="department_code" 
                     fullWidth
-                    value={data.department_code} 
+                    value={data.department_code || ""} 
                     onChange={(e) => setData('department_code', e.target.value)} 
                     error={!!errors.department_code}
                     helperText={errors.department_code}
@@ -877,12 +976,12 @@ export default function Departments({ departments = [], auth, universities, user
                   />
                 </Grid>
                 
-                <Grid size={{ xs: 12, sm:4,  md:4,  }}>
+                <Grid size={{ xs: 12, sm:4,  md:4  }}>
                   <TextField 
                     label="Department Name" 
                     fullWidth
                     name="name" 
-                    value={data.name} 
+                    value={data.name || ""} 
                     onChange={(e) => setData('name', e.target.value)} 
                     error={!!errors.name}
                     helperText={errors.name}
@@ -894,7 +993,7 @@ export default function Departments({ departments = [], auth, universities, user
                     label="Building" 
                     name="building" 
                     fullWidth
-                    value={data.building} 
+                    value={data.building || ""} 
                     onChange={(e) => setData('building', e.target.value)} 
                     error={!!errors.building}
                     helperText={errors.building}
@@ -914,7 +1013,7 @@ export default function Departments({ departments = [], auth, universities, user
                     label="Floor" 
                     name="floor" 
                     fullWidth
-                    value={data.floor} 
+                    value={data.floor || ""} 
                     onChange={(e) => setData('floor', e.target.value)} 
                   />
                 </Grid>
@@ -924,7 +1023,7 @@ export default function Departments({ departments = [], auth, universities, user
                     label="Room Number" 
                     name="room_number" 
                     fullWidth
-                    value={data.room_number} 
+                    value={data.room_number || ""} 
                     onChange={(e) => setData('room_number', e.target.value)} 
                     InputProps={{
                       startAdornment: (
@@ -941,7 +1040,7 @@ export default function Departments({ departments = [], auth, universities, user
                     label="Contact Person" 
                     name="contact_person" 
                     fullWidth
-                    value={data.contact_person} 
+                    value={data.contact_person || ""} 
                     onChange={(e) => setData('contact_person', e.target.value)} 
                     error={!!errors.contact_person}
                     helperText={errors.contact_person}
@@ -962,7 +1061,7 @@ export default function Departments({ departments = [], auth, universities, user
                     name="contact_email" 
                     type="email"
                     fullWidth
-                    value={data.contact_email} 
+                    value={data.contact_email || ""} 
                     onChange={(e) => setData('contact_email', e.target.value)} 
                     error={!!errors.contact_email}
                     helperText={errors.contact_email}
@@ -982,7 +1081,7 @@ export default function Departments({ departments = [], auth, universities, user
                     label="Contact Phone" 
                     name="contact_phone"
                     fullWidth 
-                    value={data.contact_phone} 
+                    value={data.contact_phone || ""} 
                     onChange={(e) => setData('contact_phone', e.target.value)} 
                     error={!!errors.contact_phone}
                     helperText={errors.contact_phone}
@@ -1003,7 +1102,7 @@ export default function Departments({ departments = [], auth, universities, user
                     name="annual_budget" 
                     type="number" 
                     fullWidth
-                    value={data.annual_budget} 
+                    value={data.annual_budget || ""} 
                     onChange={(e) => setData('annual_budget', e.target.value)} 
                     error={!!errors.annual_budget}
                     helperText={errors.annual_budget}
@@ -1024,7 +1123,7 @@ export default function Departments({ departments = [], auth, universities, user
                     name="remaining_budget" 
                     type="number" 
                     fullWidth
-                    value={data.remaining_budget} 
+                    value={data.remaining_budget || ""} 
                     onChange={(e) => setData('remaining_budget', e.target.value)} 
                     error={!!errors.remaining_budget}
                     helperText={errors.remaining_budget}
@@ -1044,14 +1143,14 @@ export default function Departments({ departments = [], auth, universities, user
                     <InputLabel>Department Head</InputLabel>
                     <Select 
                       name="department_head_id" 
-                      value={data.department_head_id} 
+                      value={data.department_head_id || ""} 
                       label="Department Head" 
                       onChange={(e) => setData('department_head_id', e.target.value)}
                     >
                       <MenuItem value="">Not assigned</MenuItem>
                       {users?.map(user => (
                         <MenuItem key={user.id} value={user.id}>
-                          {user.first_name} {user.last_name} ({user.email})
+                          {user.name} {user.email}
                         </MenuItem>
                       ))}
                     </Select>
@@ -1072,6 +1171,19 @@ export default function Departments({ departments = [], auth, universities, user
                     sx={{ mt: 1 }}
                   />
                 </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    label="custom_fields (JSON)"
+                    value={data.custom_fields ||""}
+                    onChange={(e) => setData('custom_fields', e.target.value)}
+                    error={!!errors.custom_fields}
+                    helperText={errors.custom_fields || 'Enter a valid JSON object (optional).'}
+                  />
+                </Grid>
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3, borderTop: 1, borderColor: 'divider', gap: 1 }}>
@@ -1086,9 +1198,9 @@ export default function Departments({ departments = [], auth, universities, user
               
               <Button 
                 onClick={handleSubmit} 
-                startIcon={selectedDepartment ? <SaveIcon /> : <AddIcon />} 
                 variant="contained"
                 disabled={processing}
+                startIcon={processing ? <CircularProgress size={16} /> : <AddIcon />}
               >
                 {selectedDepartment ? 'Update Department' : 'Create Department'}
               </Button>
@@ -1120,7 +1232,7 @@ export default function Departments({ departments = [], auth, universities, user
                 variant="contained" 
                 color="error" 
                 onClick={handleDeleteConfirm}
-                startIcon={<DeleteIcon />}
+                startIcon={processing ? <CircularProgress size={16} /> : <DeleteIcon />}
               >
                 Delete Department
               </Button>

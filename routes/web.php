@@ -78,8 +78,10 @@ Route::middleware('auth','verified')->group(function () {
 
 
         //departments
-        Route::get('/departments', [RouteController::class, 'departments'])->name('departments');
+        Route::get('/departments', [DepartmentController::class, 'index'])->name('department.index');
         Route::post('/departments', [DepartmentController::class, 'store'])->name('department.store');
+        Route::put('/departments/{id}', [DepartmentController::class, 'update'])->name('department.update');
+        Route::delete('/departments/{id}', [DepartmentController::class, 'destroy'])->name('department.destroy');
 
      
         //Suppliers

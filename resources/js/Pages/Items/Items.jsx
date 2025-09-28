@@ -847,7 +847,7 @@ export default function InventoryItems({ items, auth, categories, universities }
     if (!selectedItem) return;
 
     try {
-      await router.delete(route('item.destroy', selectedItem.item_id), {
+      router.delete(route('item.destroy', selectedItem.item_id), {
         preserveScroll: true,
         onSuccess: () => {
           showAlert('Item deleted successfully');

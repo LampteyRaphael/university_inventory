@@ -174,7 +174,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
         { text: 'Inventory Overview', icon: <InventoryIcon />, route: 'inventory-transactions.index' },
         { text: 'Items', icon: <Inventory2 />, route: 'item.index' },
         { text: 'Item Categories', icon: <Category />, route: 'item-categories.index' },
-        { text: 'Departments', icon: <Apartment />, route: 'departments' },
+        { text: 'Departments', icon: <Apartment />, route: 'department.index' },
         { text: 'Stock Levels', icon: <BarChartIcon />, route: 'stock_levels' },
         { text: 'Locations', icon: <LocationIcon />, route: 'locations' }
       ]
