@@ -66,7 +66,8 @@ const useAuditManager = (initialLogs, auth) => {
 
   useEffect(() => {
     setLoading(true);
-    const formatted = initialLogs.data?.map((log, index) => ({
+    console.log(initialLogs)
+    const formatted = initialLogs?.map((log, index) => ({
       id: log?.audit_id ?? index + 1,
       ...log,
       old_values: log.old_values ? JSON.parse(log.old_values) : null,

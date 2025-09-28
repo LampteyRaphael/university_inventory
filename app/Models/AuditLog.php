@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AuditLog extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * The primary key for the model.
@@ -24,6 +25,7 @@ class AuditLog extends Model
      */
     protected $keyType = 'string';
 
+    // protected $table=""
     /**
      * Indicates if the IDs are auto-incrementing.
      *
@@ -91,6 +93,10 @@ class AuditLog extends Model
 
     /**
      * Scope a query to only include logs for a specific table.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $tableName
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeForTable($query, string $tableName)
     {
@@ -99,6 +105,10 @@ class AuditLog extends Model
 
     /**
      * Scope a query to only include logs for a specific action.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $action
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeForAction($query, string $action)
     {
@@ -107,6 +117,11 @@ class AuditLog extends Model
 
     /**
      * Scope a query to only include logs for a specific record.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $tableName
+     * @param  string  $recordId
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeForRecord($query, string $tableName, string $recordId)
     {
@@ -116,6 +131,10 @@ class AuditLog extends Model
 
     /**
      * Scope a query to only include logs for a specific user.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $userId
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeForUser($query, string $userId)
     {
@@ -124,6 +143,11 @@ class AuditLog extends Model
 
     /**
      * Scope a query to only include logs from a date range.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $startDate
+     * @param  string  $endDate
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeDateRange($query, string $startDate, string $endDate)
     {
@@ -132,6 +156,10 @@ class AuditLog extends Model
 
     /**
      * Scope a query to only include recent logs.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  int  $days
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeRecent($query, int $days = 30)
     {
@@ -140,6 +168,9 @@ class AuditLog extends Model
 
     /**
      * Scope a query to only include system actions (where user_id is null).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeSystemActions($query)
     {
@@ -148,6 +179,9 @@ class AuditLog extends Model
 
     /**
      * Scope a query to only include user actions (where user_id is not null).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeUserActions($query)
     {
@@ -156,6 +190,8 @@ class AuditLog extends Model
 
     /**
      * Get the number of changes between old and new values.
+     *
+     * @return int
      */
     public function getChangesCountAttribute(): int
     {
@@ -179,6 +215,8 @@ class AuditLog extends Model
 
     /**
      * Check if this is a system action.
+     *
+     * @return bool
      */
     public function getIsSystemActionAttribute(): bool
     {
@@ -187,6 +225,8 @@ class AuditLog extends Model
 
     /**
      * Get the action with proper formatting.
+     *
+     * @return string
      */
     public function getFormattedActionAttribute(): string
     {
@@ -195,6 +235,8 @@ class AuditLog extends Model
 
     /**
      * Get the short URL (truncated for display).
+     *
+     * @return string
      */
     public function getShortUrlAttribute(): string
     {
@@ -207,6 +249,8 @@ class AuditLog extends Model
 
     /**
      * Get the browser name from user agent.
+     *
+     * @return string|null
      */
     public function getBrowserAttribute(): ?string
     {
@@ -214,6 +258,7 @@ class AuditLog extends Model
             return null;
         }
 
+        // Simple browser detection (you can use a package like jenssegers/agent for more accuracy)
         $user_agent = $this->user_agent;
 
         if (strpos($user_agent, 'Chrome') !== false) return 'Chrome';
@@ -227,6 +272,8 @@ class AuditLog extends Model
 
     /**
      * Get the operating system from user agent.
+     *
+     * @return string|null
      */
     public function getOperatingSystemAttribute(): ?string
     {

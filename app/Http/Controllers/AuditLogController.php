@@ -29,7 +29,7 @@ class AuditLogController extends Controller
 
             $stats = $this->auditLogRepository->getAuditStats(Auth::user()->university_id ?? null);
             
-            $popularTables = $this->auditLogRepository->getPopularTables(Auth::user()->university_id ?? null);
+            $popularTables =$this->auditLogRepository->getPopularTables(Auth::user()->university_id ?? null);
 
             return Inertia::render('AuditLog/AuditLog', [
                 'logs' =>$auditLogs,
@@ -157,30 +157,6 @@ class AuditLogController extends Controller
             return $this->auditLogRepository->delete($id);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to delete audit log: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Permanently delete the specified audit log.
-     */
-    public function forceDelete(string $id): RedirectResponse
-    {
-        try {
-            return $this->auditLogRepository->forceDelete($id);
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to permanently delete audit log: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Restore the specified soft-deleted audit log.
-     */
-    public function restore(string $id): RedirectResponse
-    {
-        try {
-            return $this->auditLogRepository->restore($id);
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to restore audit log: ' . $e->getMessage());
         }
     }
 
