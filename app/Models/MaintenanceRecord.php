@@ -65,4 +65,19 @@ class MaintenanceRecord extends Model
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
+
+    public function item()
+    {
+        return $this->belongsTo(InventoryItem::class,'item_id');
+    }
+
+    public function createdByUser()
+    {
+        return $this->belongsTo(User::class,'created_by');
+    }
+
+    public function assignedToUser()
+    {
+        return $this->belongsTo(User::class,'assigned_to');
+    }
 }

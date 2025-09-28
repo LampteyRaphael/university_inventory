@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InventoryTransactionController;
 use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\MaintenanceRecordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RouteController;
 use App\Models\Department;
@@ -104,6 +106,42 @@ Route::middleware('auth','verified')->group(function () {
 
         //universities
         Route::get('/universities', [RouteController::class, 'universities'])->name('universities');  
+
+
+        //maintenance-records
+        Route::get('/maintenance-records', [MaintenanceRecordController::class, 'index'])->name('maintenance_records.index');
+        Route::post('/maintenance-records', [MaintenanceRecordController::class, 'store'])->name('maintenance.store');
+        Route::put('/maintenance-records/{maintenanceRecord}', [MaintenanceRecordController::class, 'update'])->name('maintenance.update');
+        Route::delete('/maintenance-records/{maintenanceRecord}', [MaintenanceRecordController::class, 'destroy'])->name('maintenance.destroy');
+
+
+
+
+
+        // Audit Logs Routes
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('/audit-logs/create', [AuditLogController::class, 'create'])->name('audit-logs.create');
+    Route::post('/audit-logs', [AuditLogController::class, 'store'])->name('audit-logs.store');
+    Route::get('/audit-logs/{id}', [AuditLogController::class, 'show'])->name('audit-logs.show');
+    Route::get('/audit-logs/{id}/edit', [AuditLogController::class, 'edit'])->name('audit-logs.edit');
+    Route::put('/audit-logs/{id}', [AuditLogController::class, 'update'])->name('audit-logs.update');
+    Route::delete('/audit-logs/{id}', [AuditLogController::class, 'destroy'])->name('audit-logs.destroy');
+    
+    // Additional audit log routes
+    // Route::get('/audit-logs/search', [AuditLogController::class, 'search'])->name('audit-logs.search');
+    // Route::get('/audit-logs/action/{action}', [AuditLogController::class, 'filterByAction'])->name('audit-logs.filter.action');
+    // Route::get('/audit-logs/table/{tableName}', [AuditLogController::class, 'filterByTable'])->name('audit-logs.filter.table');
+    // Route::get('/audit-logs/user/{userId}', [AuditLogController::class, 'userLogs'])->name('audit-logs.user');
+    // Route::get('/audit-logs/recent', [AuditLogController::class, 'recent'])->name('audit-logs.recent');
+    
+    // Admin routes
+    // Route::post('/audit-logs/purge', [AuditLogController::class, 'purgeOldLogs'])->name('audit-logs.purge');
+    // Route::get('/audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');
+    // Route::post('/audit-logs/log-action', [AuditLogController::class, 'logAction'])->name('audit-logs.log-action');
+    
+    // Soft delete routes
+    // Route::delete('/audit-logs/{id}/force', [AuditLogController::class, 'forceDelete'])->name('audit-logs.force-delete');
+    // Route::post('/audit-logs/{id}/restore', [AuditLogController::class, 'restore'])->name('audit-logs.restore');
 
 
 });

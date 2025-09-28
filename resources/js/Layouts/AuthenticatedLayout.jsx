@@ -203,7 +203,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
       title: 'Maintenance',
       icon: <MaintenanceIcon />,
       items: [
-        { text: 'Maintenance Records', icon: <MaintenanceIcon />, route: 'maintenance_records' }
+        { text: 'Maintenance Records', icon: <MaintenanceIcon />, route: 'maintenance_records.index' }
       ]
     },
     {
@@ -213,7 +213,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
       items: [
         { text: 'Analytics Dashboard', icon: <AnalyticsIcon /> },
         { text: 'Inventory Reports', icon: <BarChartIcon /> },
-        { text: 'Audit Logs', icon: <AuditIcon />, route: 'audit_logs' }
+        { text: 'Audit Logs', icon: <AuditIcon />, route: 'audit-logs.index' }
       ]
     },
     {

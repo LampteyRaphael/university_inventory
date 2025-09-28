@@ -2,217 +2,349 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
+use App\Models\InventoryItem;
 use App\Models\MaintenanceRecord;
+use App\Models\University;
+use App\Repositories\MaintenanceRecordRepository;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class MaintenanceRecordController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    protected $maintenanceRecordRepository;
+
+    public function __construct(MaintenanceRecordRepository $maintenanceRecordRepository)
     {
-        $query = MaintenanceRecord::with(['university', 'inventoryItem', 'department']);
-
-        // Advanced filtering
-        if ($request->has('filters')) {
-            $filters = json_decode($request->filters, true);
-            
-            foreach ($filters as $filter) {
-                if (isset($filter['field'], $filter['value']) && $filter['value'] !== '') {
-                    if ($filter['field'] === 'maintenance_type') {
-                        $query->whereIn('maintenance_type', (array)$filter['value']);
-                    } elseif ($filter['field'] === 'priority') {
-                        $query->whereIn('priority', (array)$filter['value']);
-                    } elseif ($filter['field'] === 'status') {
-                        $query->whereIn('status', (array)$filter['value']);
-                    } elseif ($filter['field'] === 'date_range') {
-                        $query->whereBetween('scheduled_date', $filter['value']);
-                    } else {
-                        $query->where($filter['field'], 'LIKE', '%' . $filter['value'] . '%');
-                    }
-                }
-            }
-        }
-
-        // Search
-        if ($request->has('search') && $request->search !== '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('maintenance_code', 'LIKE', "%{$search}%")
-                  ->orWhere('description', 'LIKE', "%{$search}%")
-                  ->orWhere('technician', 'LIKE', "%{$search}%")
-                  ->orWhere('vendor', 'LIKE', "%{$search}%");
-            });
-        }
-
-        // Sorting
-        if ($request->has('sortBy') && $request->sortBy !== '') {
-            $direction = $request->boolean('sortDesc', false) ? 'desc' : 'asc';
-            $query->orderBy($request->sortBy, $direction);
-        } else {
-            $query->orderBy('scheduled_date', 'desc');
-        }
-
-        $records = $query->paginate($request->get('perPage', 10));
-
-        return response()->json($records);
+        $this->maintenanceRecordRepository = $maintenanceRecordRepository;
     }
 
-    public function store(Request $request): JsonResponse
+    /**
+     * Display a listing of the maintenance records.
+     */
+    public function index(Request $request)
     {
-        $validated = $request->validate([
-            'university_id' => 'required|uuid|exists:universities,university_id',
-            'item_id' => 'required|uuid|exists:inventory_items,item_id',
-            'department_id' => 'required|uuid|exists:departments,department_id',
-            'maintenance_code' => 'required|string|unique:maintenance_records,maintenance_code',
-            'scheduled_date' => 'required|date',
-            'completed_date' => 'nullable|date',
-            'maintenance_type' => 'required|in:preventive,corrective,predictive,condition_based,emergency',
-            'priority' => 'required|in:low,medium,high,critical',
-            'description' => 'required|string',
-            'work_performed' => 'nullable|string',
-            'root_cause' => 'nullable|string',
-            'recommendations' => 'nullable|string',
-            'labor_cost' => 'nullable|numeric|min:0',
-            'parts_cost' => 'nullable|numeric|min:0',
-            'total_cost' => 'nullable|numeric|min:0',
-            'downtime_hours' => 'nullable|integer|min:0',
-            'technician' => 'nullable|string|max:255',
-            'vendor' => 'nullable|string|max:255',
-            'next_maintenance_date' => 'nullable|date',
-            'status' => 'required|in:scheduled,in_progress,completed,cancelled,deferred',
-            'created_by' => 'required|uuid',
-            'assigned_to' => 'nullable|uuid'
-        ]);
-
         try {
-            DB::beginTransaction();
-
-            $validated['maintenance_id'] = (string) Str::uuid();
+            $maintenanceRecords = $this->maintenanceRecordRepository->getAll();
             
-            if (empty($validated['total_cost'])) {
-                $validated['total_cost'] = ($validated['labor_cost'] ?? 0) + ($validated['parts_cost'] ?? 0);
-            }
-
-            $record = MaintenanceRecord::create($validated);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Maintenance record created successfully!',
-                'data' => $record->load(['university', 'inventoryItem', 'department'])
-            ], 201);
-
+            $stats = $this->maintenanceRecordRepository->getMaintenanceStats(Auth::user()->university_id ?? null);
+            $items = InventoryItem::select('item_id','name')->get();
+            $items = InventoryItem::select('item_id','name')->get();
+            $departments = Department::select('department_id','name')->get();
+            $universities  = University::select('university_id','name')->get();
+            return Inertia::render('Maintenance/Maintenance', [
+                'records' => $maintenanceRecords,
+                'stats' => $stats,
+                'items'=>$items,
+                'departments'=>$departments,
+                'universities'=>$universities,
+                'filters' => $request->only(['search', 'status', 'type', 'priority']),
+            ]);
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create maintenance record: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Failed to load maintenance records: ' . $e->getMessage());
         }
     }
 
-    public function update(Request $request, MaintenanceRecord $maintenanceRecord): JsonResponse
+    /**
+     * Show the form for creating a new maintenance record.
+     */
+    public function create()
     {
-        $validated = $request->validate([
-            'university_id' => 'sometimes|uuid|exists:universities,university_id',
-            'item_id' => 'sometimes|uuid|exists:inventory_items,item_id',
-            'department_id' => 'sometimes|uuid|exists:departments,department_id',
-            'maintenance_code' => 'sometimes|string|unique:maintenance_records,maintenance_code,' . $maintenanceRecord->maintenance_id . ',maintenance_id',
-            'scheduled_date' => 'sometimes|date',
-            'completed_date' => 'nullable|date',
-            'maintenance_type' => 'sometimes|in:preventive,corrective,predictive,condition_based,emergency',
-            'priority' => 'sometimes|in:low,medium,high,critical',
-            'description' => 'sometimes|string',
-            'work_performed' => 'nullable|string',
-            'root_cause' => 'nullable|string',
-            'recommendations' => 'nullable|string',
-            'labor_cost' => 'nullable|numeric|min:0',
-            'parts_cost' => 'nullable|numeric|min:0',
-            'total_cost' => 'nullable|numeric|min:0',
-            'downtime_hours' => 'nullable|integer|min:0',
-            'technician' => 'nullable|string|max:255',
-            'vendor' => 'nullable|string|max:255',
-            'next_maintenance_date' => 'nullable|date',
-            'status' => 'sometimes|in:scheduled,in_progress,completed,cancelled,deferred',
-            'assigned_to' => 'nullable|uuid'
-        ]);
-
         try {
-            DB::beginTransaction();
+            return Inertia::render('Maintenance/Create', [
+                'maintenanceTypes' => ['preventive', 'corrective', 'predictive', 'condition_based', 'emergency'],
+                'priorities' => ['low', 'medium', 'high', 'critical'],
+                'statuses' => ['scheduled', 'in_progress', 'completed', 'cancelled', 'deferred'],
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to load create form: ' . $e->getMessage());
+        }
+    }
 
-            if (isset($validated['labor_cost']) || isset($validated['parts_cost'])) {
-                $labor_cost = $validated['labor_cost'] ?? $maintenanceRecord->labor_cost;
-                $parts_cost = $validated['parts_cost'] ?? $maintenanceRecord->parts_cost;
-                $validated['total_cost'] = $labor_cost + $parts_cost;
-            }
-
-            $maintenanceRecord->update($validated);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Maintenance record updated successfully!',
-                'data' => $maintenanceRecord->fresh(['university', 'inventoryItem', 'department'])
+    /**
+     * Store a newly created maintenance record.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        try {
+            $validated = $request->validate([
+                'university_id' => 'required|uuid',
+                'item_id' => 'required|uuid',
+                'department_id' => 'required|uuid',
+                'maintenance_code' => 'nullable|string|max:255|unique:maintenance_records,maintenance_code',
+                'scheduled_date' => 'required|date',
+                'completed_date' => 'nullable|date',
+                'maintenance_type' => 'required|in:preventive,corrective,predictive,condition_based,emergency',
+                'priority' => 'required|in:low,medium,high,critical',
+                'description' => 'required|string',
+                'work_performed' => 'nullable|string',
+                'root_cause' => 'nullable|string',
+                'recommendations' => 'nullable|string',
+                'labor_cost' => 'nullable|numeric|min:0',
+                'parts_cost' => 'nullable|numeric|min:0',
+                'total_cost' => 'nullable|numeric|min:0',
+                'downtime_hours' => 'nullable|integer|min:0',
+                'technician' => 'nullable|string|max:255',
+                'vendor' => 'nullable|string|max:255',
+                'next_maintenance_date' => 'nullable|date',
+                'status' => 'required|in:scheduled,in_progress,completed,cancelled,deferred',
+                'created_by' => 'nullable|uuid',
+                'assigned_to' => 'nullable|uuid',
             ]);
 
+            return $this->maintenanceRecordRepository->create($validated);
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update maintenance record: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Failed to create maintenance record: ' . $e->getMessage())->withInput();
         }
     }
 
-    public function destroy(MaintenanceRecord $maintenanceRecord): JsonResponse
+    /**
+     * Display the specified maintenance record.
+     */
+    public function show(string $id)
     {
         try {
-            $maintenanceRecord->delete();
+            $maintenanceRecord = $this->maintenanceRecordRepository->findById($id);
+            
+            if (!$maintenanceRecord) {
+                throw new \Exception('Maintenance record not found');
+            }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Maintenance record deleted successfully!'
+            return Inertia::render('Maintenance/Show', [
+                'maintenanceRecord' => $maintenanceRecord,
             ]);
-
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete maintenance record: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Failed to load maintenance record: ' . $e->getMessage());
         }
     }
 
-    public function getSummary(): JsonResponse
+    /**
+     * Show the form for editing the specified maintenance record.
+     */
+    public function edit(string $id)
     {
-        $summary = MaintenanceRecord::selectRaw('
-            COUNT(*) as total_records,
-            SUM(CASE WHEN status = "scheduled" THEN 1 ELSE 0 END) as scheduled,
-            SUM(CASE WHEN status = "in_progress" THEN 1 ELSE 0 END) as in_progress,
-            SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed,
-            SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled,
-            SUM(CASE WHEN status = "deferred" THEN 1 ELSE 0 END) as deferred,
-            SUM(total_cost) as total_maintenance_cost,
-            AVG(total_cost) as avg_maintenance_cost,
-            SUM(downtime_hours) as total_downtime_hours,
-            AVG(downtime_hours) as avg_downtime_hours
-        ')->first();
+        try {
+            $maintenanceRecord = $this->maintenanceRecordRepository->findById($id);
+            
+            if (!$maintenanceRecord) {
+                throw new \Exception('Maintenance record not found');
+            }
 
-        $maintenanceTypeSummary = MaintenanceRecord::groupBy('maintenance_type')
-            ->selectRaw('maintenance_type, COUNT(*) as count')
-            ->get();
+            return Inertia::render('Maintenance/Edit', [
+                'maintenanceRecord' => $maintenanceRecord,
+                'maintenanceTypes' => ['preventive', 'corrective', 'predictive', 'condition_based', 'emergency'],
+                'priorities' => ['low', 'medium', 'high', 'critical'],
+                'statuses' => ['scheduled', 'in_progress', 'completed', 'cancelled', 'deferred'],
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to load edit form: ' . $e->getMessage());
+        }
+    }
 
-        $prioritySummary = MaintenanceRecord::groupBy('priority')
-            ->selectRaw('priority, COUNT(*) as count')
-            ->get();
+    /**
+     * Update the specified maintenance record.
+     */
+    public function update(Request $request, string $id): RedirectResponse
+    {
+        try {
+            $validated = $request->validate([
+                'university_id' => 'required|uuid',
+                'item_id' => 'required|uuid',
+                'department_id' => 'required|uuid',
+                'maintenance_code' => 'nullable|string|max:255|unique:maintenance_records,maintenance_code,' . $id . ',maintenance_id',
+                'scheduled_date' => 'required|date',
+                'completed_date' => 'nullable|date',
+                'maintenance_type' => 'required|in:preventive,corrective,predictive,condition_based,emergency',
+                'priority' => 'required|in:low,medium,high,critical',
+                'description' => 'required|string',
+                'work_performed' => 'nullable|string',
+                'root_cause' => 'nullable|string',
+                'recommendations' => 'nullable|string',
+                'labor_cost' => 'nullable|numeric|min:0',
+                'parts_cost' => 'nullable|numeric|min:0',
+                'total_cost' => 'nullable|numeric|min:0',
+                'downtime_hours' => 'nullable|integer|min:0',
+                'technician' => 'nullable|string|max:255',
+                'vendor' => 'nullable|string|max:255',
+                'next_maintenance_date' => 'nullable|date',
+                'status' => 'required|in:scheduled,in_progress,completed,cancelled,deferred',
+                'assigned_to' => 'nullable|uuid',
+            ]);
 
-        return response()->json([
-            'overall' => $summary,
-            'by_maintenance_type' => $maintenanceTypeSummary,
-            'by_priority' => $prioritySummary
-        ]);
+            return $this->maintenanceRecordRepository->update($id, $validated);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to update maintenance record: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Remove the specified maintenance record.
+     */
+    public function destroy(string $id): RedirectResponse
+    {
+        try {
+            return $this->maintenanceRecordRepository->delete($id);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to delete maintenance record: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Permanently delete the specified maintenance record.
+     */
+    public function forceDelete(string $id): RedirectResponse
+    {
+        try {
+            return $this->maintenanceRecordRepository->forceDelete($id);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to permanently delete maintenance record: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Restore the specified soft-deleted maintenance record.
+     */
+    public function restore(string $id): RedirectResponse
+    {
+        try {
+            return $this->maintenanceRecordRepository->restore($id);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to restore maintenance record: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update maintenance status.
+     */
+    public function updateStatus(Request $request, string $id): RedirectResponse
+    {
+        try {
+            $validated = $request->validate([
+                'status' => 'required|in:scheduled,in_progress,completed,cancelled,deferred',
+                'work_performed' => 'nullable|string',
+            ]);
+
+            return $this->maintenanceRecordRepository->updateStatus(
+                $id, 
+                $validated['status'], 
+                $validated['work_performed'] ?? null
+            );
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to update maintenance status: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Assign technician to maintenance record.
+     */
+    public function assignTechnician(Request $request, string $id): RedirectResponse
+    {
+        try {
+            $validated = $request->validate([
+                'technician' => 'required|string|max:255',
+                'assigned_to' => 'nullable|uuid',
+            ]);
+
+            return $this->maintenanceRecordRepository->assignTechnician(
+                $id, 
+                $validated['technician'], 
+                $validated['assigned_to'] ?? null
+            );
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to assign technician: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get active maintenance records.
+     */
+    public function active()
+    {
+        try {
+            $maintenanceRecords = $this->maintenanceRecordRepository->getActiveMaintenance(Auth::user()->university_id ?? null);
+
+            return Inertia::render('Maintenance/Index', [
+                'maintenanceRecords' => $maintenanceRecords,
+                'filters' => ['status' => 'active'],
+                'stats' => $this->maintenanceRecordRepository->getMaintenanceStats(Auth::user()->university_id ?? null),
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to load active maintenance records: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get overdue maintenance records.
+     */
+    public function overdue()
+    {
+        try {
+            $maintenanceRecords = $this->maintenanceRecordRepository->getOverdueMaintenance(Auth::user()->university_id ?? null);
+
+            return Inertia::render('Maintenance/Index', [
+                'maintenanceRecords' => $maintenanceRecords,
+                'filters' => ['status' => 'overdue'],
+                'stats' => $this->maintenanceRecordRepository->getMaintenanceStats(Auth::user()->university_id ?? null),
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to load overdue maintenance records: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get completed maintenance records.
+     */
+    public function completed()
+    {
+        try {
+            $maintenanceRecords = $this->maintenanceRecordRepository->getCompletedMaintenance(Auth::user()->university_id ?? null);
+
+            return Inertia::render('Maintenance/Index', [
+                'maintenanceRecords' => $maintenanceRecords,
+                'filters' => ['status' => 'completed'],
+                'stats' => $this->maintenanceRecordRepository->getMaintenanceStats(Auth::user()->university_id ?? null),
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to load completed maintenance records: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get maintenance records by item.
+     */
+    public function byItem(string $itemId)
+    {
+        try {
+            $maintenanceRecords = $this->maintenanceRecordRepository->getMaintenanceByItem($itemId, Auth::user()->university_id ?? null);
+
+            return Inertia::render('Maintenance/Index', [
+                'maintenanceRecords' => $maintenanceRecords,
+                'filters' => ['item_id' => $itemId],
+                'stats' => $this->maintenanceRecordRepository->getMaintenanceStats(Auth::user()->university_id ?? null),
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to load maintenance records for item: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get maintenance records by department.
+     */
+    public function byDepartment(string $departmentId)
+    {
+        try {
+            $maintenanceRecords = $this->maintenanceRecordRepository->getMaintenanceByDepartment($departmentId, Auth::user()->university_id ?? null);
+
+            return Inertia::render('Maintenance/Maintenance', [
+                'maintenanceRecords' => $maintenanceRecords,
+                'filters' => ['department_id' => $departmentId],
+                'stats' => $this->maintenanceRecordRepository->getMaintenanceStats(Auth::user()->university_id ?? null),
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to load maintenance records for department: ' . $e->getMessage());
+        }
     }
 }
