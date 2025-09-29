@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InventoryReportController;
 use App\Http\Controllers\InventoryTransactionController;
 use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\ItemController;
@@ -143,6 +144,8 @@ Route::middleware('auth','verified')->group(function () {
     // Route::delete('/audit-logs/{id}/force', [AuditLogController::class, 'forceDelete'])->name('audit-logs.force-delete');
     // Route::post('/audit-logs/{id}/restore', [AuditLogController::class, 'restore'])->name('audit-logs.restore');
 
+    Route::get('/inventory-report',[InventoryReportController::class,'index'])->name('inventory-report.index');
+    Route::post('/reports/generate', [InventoryReportController::class, 'generate'])->name('reports.generate');
 
 });
 
