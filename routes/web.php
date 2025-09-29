@@ -146,6 +146,7 @@ Route::middleware('auth','verified')->group(function () {
 
     Route::get('/inventory-report',[InventoryReportController::class,'index'])->name('inventory-report.index');
     Route::post('/reports/generate', [InventoryReportController::class, 'generate'])->name('reports.generate');
+    Route::post('/reports/generate', [InventoryReportController::class, 'export'])->name('reports.export');
 
 });
 

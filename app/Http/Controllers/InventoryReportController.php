@@ -2,26 +2,52 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ItemCategory;
+use App\Models\Location;
 use App\Services\ReportService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class InventoryReportController extends Controller
 {
-      protected $reportService;
+    protected $reportService;
 
     public function __construct(ReportService $reportService)
     {
         $this->reportService = $reportService;
     }
 
-    public function index(){
+    public function index(Request $request)
+    {
+        // Get initial data for filters
+        $categories = ItemCategory::
+        // where('university_id', Auth::user()->university_id)
+            select('category_id as id', 'name')
+            ->get();
+            
+        $locations = Location::where('university_id', Auth::user()->university_id)
+            ->select('location_id as id', 'name')
+            ->get();
 
-         return Inertia::render('InventoryReport/InventoryReport', [
+        // Check if we have report data from a previous generation
+        $reportData = $request->session()->get('report_data');
+        $filters = $request->session()->get('report_filters');
+
+        // Clear the session data after reading
+        if ($reportData) {
+            $request->session()->forget(['report_data', 'report_filters']);
+        }
+
+        return Inertia::render('InventoryReport/InventoryReport', [
+            'categories' => $categories,
+            'locations' => $locations,
+            'reportData' => $reportData,
+            'filters' => $filters,
         ]);
     }
 
-public function generate(Request $request)
+    public function generate(Request $request)
     {
         $validated = $request->validate([
             'report_type' => 'required|string|in:comprehensive,stock-level,acquisition,depreciation,audit',
@@ -43,24 +69,27 @@ public function generate(Request $request)
             $reportData = match($validated['report_type']) {
                 'comprehensive' => $this->reportService->generateInventoryReport($validated),
                 'stock-level' => $this->reportService->generateStockLevelReport($validated),
-                // 'acquisition' => $this->reportService->generateAcquisitionReport($validated),
-                // 'depreciation' => $this->reportService->generateDepreciationReport($validated),
-                // 'audit' => $this->reportService->generateAuditReport($validated),
+                'acquisition' => $this->reportService->generateAcquisitionReport($validated),
+                'depreciation' => $this->reportService->generateDepreciationReport($validated),
+                'audit' => $this->reportService->generateAuditReport($validated),
                 default => $this->reportService->generateInventoryReport($validated),
             };
 
-            return response()->json([
-                'success' => true,
-                'data' => $reportData,
+            // Store data in session for the next request
+            $request->session()->put('report_data', $reportData);
+            $request->session()->put('report_filters', $validated);
+            $request->session()->put('report_generated_at', now()->toISOString());
+
+            // Redirect back to the index page with success message
+            return redirect()->route('reports.index')->with([
+                'success' => 'Report generated successfully!',
                 'generated_at' => now()->toISOString(),
-                'filters' => $validated,
             ]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
+            return redirect()->back()->with([
                 'error' => 'Failed to generate report: ' . $e->getMessage(),
-            ], 500);
+            ]);
         }
     }
 
@@ -79,17 +108,27 @@ public function generate(Request $request)
                 $validated['config']
             );
 
-            return response()->json([
-                'success' => true,
+            // For file download, you might want to return a different response
+            // For now, we'll redirect back with success
+            return redirect()->back()->with([
+                'success' => 'Report exported successfully!',
                 'export_data' => $exportData,
-                'download_url' => null, // Would be generated for actual file download
             ]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
+            return redirect()->back()->with([
                 'error' => 'Export failed: ' . $e->getMessage(),
-            ], 500);
+            ]);
         }
+    }
+
+    // New method to clear report data
+    public function clear(Request $request)
+    {
+        $request->session()->forget(['report_data', 'report_filters', 'report_generated_at']);
+        
+        return redirect()->route('reports.index')->with([
+            'success' => 'Report data cleared successfully!'
+        ]);
     }
 }

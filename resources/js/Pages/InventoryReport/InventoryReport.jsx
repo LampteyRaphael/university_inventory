@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import {
   Box,
@@ -38,6 +38,16 @@ import {
   RadioGroup,
   Radio,
   FormLabel,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tabs,
+  Tab,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   ExpandMore,
@@ -54,22 +64,45 @@ import {
   Dashboard,
   DateRange,
   FilterList,
+  Print,
+  Visibility,
+  TrendingDown,
+  AttachMoney,
+  Numbers,
 } from '@mui/icons-material';
-// import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-// import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-// import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-
-
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
+// Recharts for diagrams
+import {
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+} from 'recharts';
+
 const ModernReportGenerator = ({ auth, categories: initialCategories, locations: initialLocations }) => {
   const [activeStep, setActiveStep] = useState(0);
+//   {console.log(initialCategories)}
   const [customDateRange, setCustomDateRange] = useState({
     start: null,
     end: null
   });
+  const [activeTab, setActiveTab] = useState(0);
+  
+  // Get report data from Inertia page props
+  const { props } = usePage();
+  const reportData = props.reportData;
 
   const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
     report_type: 'comprehensive',
@@ -142,6 +175,8 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
     { value: 'granular', label: 'Granular Level' },
   ];
 
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d'];
+
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
   };
@@ -172,6 +207,16 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
     post(route('reports.generate'));
   };
 
+  const handleExportReport = () => {
+    if (reportData) {
+      post(route('reports.export'), {
+        report_data: reportData,
+        config: data,
+        format: data.export_format,
+      });
+    }
+  };
+
   const steps = [
     {
       label: 'Report Type',
@@ -195,21 +240,425 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
     },
   ];
 
-  const getReportPreview = () => {
-    const type = reportTypes.find(t => t.value === data.report_type);
-    return {
-      type: type?.label || 'Unknown Report',
-      categories: data.categories.length > 0 ? data.categories.join(', ') : 'All Categories',
-      dateRange: data.date_range === 'custom' 
-        ? `Custom: ${customDateRange.start?.toLocaleDateString()} - ${customDateRange.end?.toLocaleDateString()}`
-        : dateRanges.find(d => d.value === data.date_range)?.label,
-      content: [
-        ...(data.include_summary ? ['Executive Summary'] : []),
-        ...(data.include_charts ? ['Visual Analytics'] : []),
-        ...(data.include_tables ? ['Data Tables'] : []),
-      ].join(' • '),
-      export: data.export_format.toUpperCase(),
-    };
+//   const getReportPreview = () => {
+//     const type = reportTypes.find(t => t.value === data.report_type);
+//     return {
+//       type: type?.label || 'Unknown Report',
+//       categories: data.categories.length > 0 ? data?.categories.join(', ') : 'All Categories',
+//       dateRange: data.date_range === 'custom' 
+//         ? `Custom: ${customDateRange.start?.toLocaleDateString()} - ${customDateRange.end?.toLocaleDateString()}`
+//         : dateRanges.find(d => d.value === data.date_range)?.label,
+//       content: [
+//         ...(data.include_summary ? ['Executive Summary'] : []),
+//         ...(data.include_charts ? ['Visual Analytics'] : []),
+//         ...(data.include_tables ? ['Data Tables'] : []),
+//       ].join(' • '),
+//       export: data.export_format.toUpperCase(),
+//     };
+//   };
+const getReportPreview = () => {
+  const type = reportTypes.find(t => t.value === data.report_type);
+  
+  // Map category IDs to names
+  const categoryNames = data.categories.length > 0 
+    ? data.categories.map(categoryId => {
+        const category = initialCategories?.find(cat => cat.id === categoryId);
+        return category?.name || categoryId;
+      }).join(', ')
+    : 'All Categories';
+
+  return {
+    type: type?.label || 'Unknown Report',
+    categories: categoryNames, // Use the mapped names instead of raw IDs
+    dateRange: data.date_range === 'custom' 
+      ? `Custom: ${customDateRange.start?.toLocaleDateString()} - ${customDateRange.end?.toLocaleDateString()}`
+      : dateRanges.find(d => d.value === data.date_range)?.label,
+    content: [
+      ...(data.include_summary ? ['Executive Summary'] : []),
+      ...(data.include_charts ? ['Visual Analytics'] : []),
+      ...(data.include_tables ? ['Data Tables'] : []),
+    ].join(' • '),
+    export: data.export_format.toUpperCase(),
+  };
+};
+
+  // Chart rendering functions
+  const renderBarChart = (chartData, dataKey, name, xDataKey = 'name') => (
+    <ResponsiveContainer width="100%" height={300}>
+      <RechartsBarChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey={xDataKey} />
+        <YAxis />
+        <RechartsTooltip />
+        <Legend />
+        <Bar dataKey={dataKey} fill="#8884d8" name={name} />
+      </RechartsBarChart>
+    </ResponsiveContainer>
+  );
+
+  const renderPieChart = (chartData, dataKey, nameKey = 'name') => (
+    <ResponsiveContainer width="100%" height={300}>
+      <PieChart>
+        <Pie
+          data={chartData}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+          outerRadius={80}
+          fill="#8884d8"
+          dataKey={dataKey}
+          nameKey={nameKey}
+        >
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <RechartsTooltip />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+
+  const renderLineChart = (chartData, dataKey, name, xDataKey = 'name') => (
+    <ResponsiveContainer width="100%" height={300}>
+      <LineChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey={xDataKey} />
+        <YAxis />
+        <RechartsTooltip />
+        <Legend />
+        <Line type="monotone" dataKey={dataKey} stroke="#8884d8" name={name} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+
+  // Summary Cards Component
+  const SummaryCards = ({ summary }) => {
+    if (!summary) return null;
+
+    return (
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center">
+                <Numbers color="primary" sx={{ mr: 2 }} />
+                <Box>
+                  <Typography color="textSecondary" gutterBottom variant="overline">
+                    Total Transactions
+                  </Typography>
+                  <Typography variant="h6">{summary.total_transactions?.toLocaleString() || 0}</Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center">
+                <AttachMoney color="success" sx={{ mr: 2 }} />
+                <Box>
+                  <Typography color="textSecondary" gutterBottom variant="overline">
+                    Total Value
+                  </Typography>
+                  <Typography variant="h6">${summary.total_value?.toLocaleString() || 0}</Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center">
+                <TrendingUp color="info" sx={{ mr: 2 }} />
+                <Box>
+                  <Typography color="textSecondary" gutterBottom variant="overline">
+                    Incoming Stock
+                  </Typography>
+                  <Typography variant="h6">{summary.incoming_stock?.toLocaleString() || 0}</Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center">
+                <TrendingDown color="warning" sx={{ mr: 2 }} />
+                <Box>
+                  <Typography color="textSecondary" gutterBottom variant="overline">
+                    Outgoing Stock
+                  </Typography>
+                  <Typography variant="h6">{summary.outgoing_stock?.toLocaleString() || 0}</Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    );
+  };
+
+  // Data Table Component
+  const DataTable = ({ title, data, columns }) => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return (
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>{title}</Typography>
+            <Typography color="textSecondary">No data available</Typography>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>{title}</Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  {columns.map((column) => (
+                    <TableCell key={column.key}><strong>{column.label}</strong></TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data.map((row, index) => (
+                  <TableRow key={index}>
+                    {columns.map((column) => (
+                      <TableCell key={column.key}>
+                        {column.render ? column.render(row[column.key], row) : row[column.key]}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Report Display Component
+  const ReportDisplay = () => {
+    if (!reportData) {
+      return (
+        <Alert severity="info" sx={{ mt: 3 }}>
+          Configure your report settings and generate a report to see the results.
+        </Alert>
+      );
+    }
+
+    return (
+      <Box sx={{ mt: 4 }}>
+        <Card>
+          <CardContent>
+            <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+              <Typography variant="h5">
+                {reportTypes.find(t => t.value === data.report_type)?.label || 'Generated Report'}
+              </Typography>
+              <Box>
+                <Tooltip title="Print Report">
+                  <IconButton onClick={() => window.print()} sx={{ mr: 1 }}>
+                    <Print />
+                  </IconButton>
+                </Tooltip>
+                <Button 
+                  variant="outlined" 
+                  startIcon={<Download />}
+                  onClick={handleExportReport}
+                >
+                  Export as {data.export_format.toUpperCase()}
+                </Button>
+              </Box>
+            </Box>
+
+            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+              <Tab label="Summary" icon={<Dashboard />} iconPosition="start" />
+              <Tab label="Charts" icon={<BarChart />} iconPosition="start" />
+              <Tab label="Data Tables" icon={<TableChart />} iconPosition="start" />
+            </Tabs>
+
+            {activeTab === 0 && (
+              <Box>
+                {/* Summary Section */}
+                {reportData.summary && data.include_summary && <SummaryCards summary={reportData.summary} />}
+
+                {/* Critical Items */}
+                {reportData.critical_items && data.include_tables && (
+                  <DataTable
+                    title="Critical Stock Items"
+                    data={reportData.critical_items}
+                    columns={[
+                      { key: 'name', label: 'Item Name' },
+                      { key: 'category', label: 'Category' },
+                      { key: 'quantity', label: 'Quantity' },
+                      { key: 'unit_cost', label: 'Unit Cost', render: (value) => `$${value}` },
+                      { key: 'total_value', label: 'Total Value', render: (value) => `$${value}` },
+                      { key: 'status', label: 'Status', render: (value) => (
+                        <Chip 
+                          label={value} 
+                          color={
+                            value === 'Out of Stock' ? 'error' : 
+                            value === 'Low Stock' ? 'warning' : 'success'
+                          } 
+                          size="small" 
+                        />
+                      )}
+                    ]}
+                  />
+                )}
+
+                {/* Recent Activities */}
+                {reportData.recent_activities && data.include_tables && (
+                  <DataTable
+                    title="Recent Activities"
+                    data={reportData.recent_activities}
+                    columns={[
+                      { key: 'date', label: 'Date' },
+                      { key: 'action', label: 'Action' },
+                      { key: 'item', label: 'Item' },
+                      { key: 'user', label: 'User' },
+                      { key: 'quantity', label: 'Quantity' },
+                      { key: 'value', label: 'Value', render: (value) => `$${value}` },
+                    ]}
+                  />
+                )}
+              </Box>
+            )}
+
+            {activeTab === 1 && data.include_charts && (
+              <Box>
+                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>Visual Analytics</Typography>
+                
+                {/* Monthly Trends Chart */}
+                {reportData.trends?.monthly_trends && data.chart_types?.includes('bar') && (
+                  <Card sx={{ mb: 3 }}>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>Monthly Transactions Trend</Typography>
+                      {renderBarChart(reportData.trends.monthly_trends, 'value', 'Total Value', 'month')}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Category Distribution */}
+                {reportData.trends?.category_distribution && data.chart_types?.includes('pie') && (
+                  <Card sx={{ mb: 3 }}>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>Category Distribution</Typography>
+                      {renderPieChart(reportData.trends.category_distribution, 'value')}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Transaction Type Distribution */}
+                {reportData.trends?.transaction_type_distribution && data.chart_types?.includes('bar') && (
+                  <Card sx={{ mb: 3 }}>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>Transaction Type Distribution</Typography>
+                      {renderBarChart(reportData.trends.transaction_type_distribution, 'value', 'Total Value', 'label')}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Line Chart for Trends */}
+                {reportData.trends?.monthly_trends && data.chart_types?.includes('line') && (
+                  <Card sx={{ mb: 3 }}>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>Monthly Trends (Line Chart)</Typography>
+                      {renderLineChart(reportData.trends.monthly_trends, 'value', 'Total Value', 'month')}
+                    </CardContent>
+                  </Card>
+                )}
+              </Box>
+            )}
+
+            {activeTab === 2 && data.include_tables && (
+              <Box>
+                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>Detailed Data Tables</Typography>
+                
+                {/* Category Breakdown */}
+                {reportData.category_breakdown && (
+                  <DataTable
+                    title="Category Breakdown"
+                    data={reportData.category_breakdown}
+                    columns={[
+                      { key: 'category', label: 'Category' },
+                      { key: 'transactions', label: 'Transactions' },
+                      { key: 'quantity', label: 'Quantity' },
+                      { key: 'total_value', label: 'Total Value', render: (value) => `$${value}` },
+                      { key: 'avg_unit_cost', label: 'Avg Unit Cost', render: (value) => `$${value}` },
+                    ]}
+                  />
+                )}
+
+                {/* Department Analysis */}
+                {reportData.department_analysis && (
+                  <DataTable
+                    title="Department Analysis"
+                    data={reportData.department_analysis}
+                    columns={[
+                      { key: 'department', label: 'Department' },
+                      { key: 'transactions', label: 'Transactions' },
+                      { key: 'total_value', label: 'Total Value', render: (value) => `$${value}` },
+                      { key: 'total_quantity', label: 'Total Quantity' },
+                      { key: 'avg_transaction_value', label: 'Avg Transaction Value', render: (value) => `$${value}` },
+                    ]}
+                  />
+                )}
+
+                {/* Transaction Analysis */}
+                {reportData.transaction_analysis && (
+                  <DataTable
+                    title="Transaction Analysis"
+                    data={reportData.transaction_analysis}
+                    columns={[
+                      { key: 'label', label: 'Transaction Type' },
+                      { key: 'count', label: 'Count' },
+                      { key: 'total_quantity', label: 'Total Quantity' },
+                      { key: 'total_value', label: 'Total Value', render: (value) => `$${value}` },
+                      { key: 'avg_unit_cost', label: 'Avg Unit Cost', render: (value) => `$${value}` },
+                    ]}
+                  />
+                )}
+
+                {/* Stock Movements */}
+                {reportData.stock_movements && (
+                  <DataTable
+                    title="Stock Movements"
+                    data={reportData.stock_movements}
+                    columns={[
+                      { key: 'item_name', label: 'Item Name' },
+                      { key: 'category', label: 'Category' },
+                      { key: 'incoming', label: 'Incoming' },
+                      { key: 'outgoing', label: 'Outgoing' },
+                      { key: 'net_movement', label: 'Net Movement' },
+                      { key: 'status', label: 'Status', render: (value) => (
+                        <Chip 
+                          label={value.replace('_', ' ')} 
+                          color={
+                            value === 'out_of_stock' ? 'error' : 
+                            value === 'low_stock' ? 'warning' : 'success'
+                          } 
+                          size="small" 
+                        />
+                      )}
+                    ]}
+                  />
+                )}
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </Box>
+    );
   };
 
   const preview = getReportPreview();
@@ -242,7 +691,7 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
           </Box>
 
           <Grid container spacing={3}>
-            <Grid item xs={12} md={8}>
+            <Grid size={{ xs:12, md: 8}}>
               <Card elevation={2}>
                 <CardContent sx={{ p: 3 }}>
                   <Stepper activeStep={activeStep} orientation="vertical">
@@ -308,7 +757,41 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                           {index === 1 && (
                             <Box sx={{ mt: 2 }}>
                               <Grid container spacing={2}>
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Categories</InputLabel>
+                                        <Select
+                                        multiple
+                                        value={data.categories}
+                                        onChange={(e) => setData('categories', e.target.value)}
+                                        input={<OutlinedInput label="Categories" />}
+                                        renderValue={(selected) => (
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            {selected.map((categoryId) => {
+                                                // Find the category object that matches this ID
+                                                const category = initialCategories?.find(cat => cat.id === categoryId);
+                                                // Display the category name, fallback to ID if not found
+                                                return (
+                                                <Chip 
+                                                    key={categoryId} 
+                                                    label={category?.name || categoryId} 
+                                                    size="small" 
+                                                />
+                                                );
+                                            })}
+                                            </Box>
+                                        )}
+                                        >
+                                        {initialCategories?.map((category) => (
+                                            <MenuItem key={category.id} value={category.id}>
+                                            <Checkbox checked={data.categories.indexOf(category.id) > -1} />
+                                            <ListItemText primary={category.name} />
+                                            </MenuItem>
+                                        ))}
+                                        </Select>
+                                    </FormControl>
+                                    </Grid>
+                                {/* <Grid size={{ xs:12, md: 6}}>
                                   <FormControl fullWidth>
                                     <InputLabel>Categories</InputLabel>
                                     <Select
@@ -332,9 +815,9 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                                       ))}
                                     </Select>
                                   </FormControl>
-                                </Grid>
-
-                                <Grid item xs={12} sm={6}>
+                                </Grid> */}
+{/* 
+                                <Grid size={{ xs:12, md: 6}}>
                                   <FormControl fullWidth>
                                     <InputLabel>Locations</InputLabel>
                                     <Select
@@ -358,9 +841,43 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                                       ))}
                                     </Select>
                                   </FormControl>
-                                </Grid>
+                                </Grid> */}
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Locations</InputLabel>
+                                        <Select
+                                        multiple
+                                        value={data.locations}
+                                        onChange={(e) => setData('locations', e.target.value)}
+                                        input={<OutlinedInput label="Locations" />}
+                                        renderValue={(selected) => (
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            {selected.map((locationId) => {
+                                                // Find the location object that matches this ID
+                                                const location = initialLocations?.find(loc => loc.id === locationId);
+                                                // Display the location name, fallback to ID if not found
+                                                return (
+                                                <Chip 
+                                                    key={locationId} 
+                                                    label={location?.name || locationId} 
+                                                    size="small" 
+                                                />
+                                                );
+                                            })}
+                                            </Box>
+                                        )}
+                                        >
+                                        {initialLocations?.map((location) => (
+                                            <MenuItem key={location.id} value={location.id}>
+                                            <Checkbox checked={data.locations.indexOf(location.id) > -1} />
+                                            <ListItemText primary={location.name} />
+                                            </MenuItem>
+                                        ))}
+                                        </Select>
+                                    </FormControl>
+                                    </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid size={{ xs:12}}>
                                   <FormControl fullWidth>
                                     <InputLabel>Date Range</InputLabel>
                                     <Select
@@ -378,9 +895,9 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                                 </Grid>
 
                                 {data.date_range === 'custom' && (
-                                  <Grid item xs={12}>
+                                  <Grid size={{ xs:12}}>
                                     <Grid container spacing={2}>
-                                      <Grid item xs={12} sm={6}>
+                                      <Grid size={{ xs:12, md: 6}}>
                                         <DatePicker
                                           label="Start Date"
                                           value={customDateRange.start}
@@ -391,7 +908,7 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                                           slotProps={{ textField: { fullWidth: true } }}
                                         />
                                       </Grid>
-                                      <Grid item xs={12} sm={6}>
+                                      <Grid size={{ xs:12, md: 6}}>
                                         <DatePicker
                                           label="End Date"
                                           value={customDateRange.end}
@@ -412,7 +929,7 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                           {index === 2 && (
                             <Box sx={{ mt: 2 }}>
                               <Grid container spacing={3}>
-                                <Grid item xs={12}>
+                                <Grid size={{ xs:12}}>
                                   <Typography variant="h6" gutterBottom>
                                     Content Sections
                                   </Typography>
@@ -446,7 +963,7 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                                 </Grid>
 
                                 {data.include_charts && (
-                                  <Grid item xs={12}>
+                                  <Grid size={{ xs:12}}>
                                     <FormControl fullWidth>
                                       <InputLabel>Chart Types</InputLabel>
                                       <Select
@@ -477,7 +994,7 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                                   </Grid>
                                 )}
 
-                                <Grid item xs={12}>
+                                <Grid size={{ xs:12}}>
                                   <FormControl fullWidth>
                                     <InputLabel>Data Depth</InputLabel>
                                     <Select
@@ -494,7 +1011,7 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                                   </FormControl>
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid size={{ xs:12}}>
                                   <FormControlLabel
                                     control={
                                       <Switch
@@ -512,7 +1029,7 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                           {index === 3 && (
                             <Box sx={{ mt: 2 }}>
                               <Grid container spacing={2}>
-                                <Grid item xs={12}>
+                                <Grid size={{ xs:12}}>
                                   <FormControl fullWidth>
                                     <InputLabel>Export Format</InputLabel>
                                     <Select
@@ -533,7 +1050,7 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
                                   </FormControl>
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid size={{ xs:12}}>
                                   <FormControlLabel
                                     control={
                                       <Switch
@@ -574,7 +1091,7 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
               </Card>
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs:12, md:4}}>
               <Card elevation={2} sx={{ position: 'sticky', top: 24 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom display="flex" alignItems="center" gap={1}>
@@ -652,6 +1169,9 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
               </Card>
             </Grid>
           </Grid>
+
+          {/* Report Display Section - Added at the bottom */}
+          <ReportDisplay />
         </Box>
       </LocalizationProvider>
     </AuthenticatedLayout>
