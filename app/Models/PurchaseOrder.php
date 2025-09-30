@@ -594,15 +594,22 @@ class PurchaseOrder extends Model
      */
     public function requestedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'requested_by', 'id');
+        return $this->belongsTo(User::class, 'requested_by', 'user_id');
     }
+
+
+    public function receiver()
+    {
+        return $this->belongsTo(User::class, 'received_by', 'user_id');
+    }
+
 
     /**
      * Get the user who approved the purchase order.
      */
     public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'approved_by', 'id');
+        return $this->belongsTo(User::class, 'approved_by', 'user_id');
     }
 
     /**
@@ -610,7 +617,7 @@ class PurchaseOrder extends Model
      */
     public function receivedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'received_by', 'id');
+        return $this->belongsTo(User::class, 'received_by', 'user_id');
     }
 
     /**

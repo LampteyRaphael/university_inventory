@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PurchaseOrderItem extends Model
 {
     use HasFactory;
-    use Auditable;
+   
     /**
      * The primary key for the model.
      *
