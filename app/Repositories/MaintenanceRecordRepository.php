@@ -104,7 +104,7 @@ class MaintenanceRecordRepository
 
                 // Set created_by if not provided
                 if (empty($data['created_by'])) {
-                    $data['created_by'] = Auth::id();
+                    $data['created_by'] = Auth::user()->user_id ?? null;
                 }
 
                 MaintenanceRecord::create($data);

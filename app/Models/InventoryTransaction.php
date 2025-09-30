@@ -372,7 +372,7 @@ class InventoryTransaction extends Model
      */
     public function performedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'performed_by', 'id');
+        return $this->belongsTo(User::class, 'performed_by', 'user_id');
     }
 
     /**
@@ -380,7 +380,7 @@ class InventoryTransaction extends Model
      */
     public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'approved_by', 'id');
+        return $this->belongsTo(User::class, 'approved_by', 'user_id');
     }
 
     /**
@@ -390,11 +390,11 @@ class InventoryTransaction extends Model
     {
         switch ($this->transaction_type) {
             case self::TYPE_PURCHASE:
-                return $this->belongsTo(PurchaseOrder::class, 'reference_id', 'id');
+                return $this->belongsTo(PurchaseOrder::class, 'reference_id', 'user_id');
             case self::TYPE_SALE:
-                return $this->belongsTo(SalesOrder::class, 'reference_id', 'id');
+                return $this->belongsTo(SalesOrder::class, 'reference_id', 'user_id');
             case self::TYPE_TRANSFER:
-                return $this->belongsTo(TransferOrder::class, 'reference_id', 'id');
+                return $this->belongsTo(TransferOrder::class, 'reference_id', 'user_id');
             default:
                 return null;
         }

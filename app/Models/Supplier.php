@@ -415,7 +415,7 @@ class Supplier extends Model
      */
     public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'approved_by', 'id');
+        return $this->belongsTo(User::class, 'approved_by', 'user_id');
     }
 
     /**

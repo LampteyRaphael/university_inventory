@@ -15,7 +15,7 @@ class AuditLogRepository
     {
         $auditLogs = AuditLog::with([
             'university:university_id,name,code',
-            'user:id,name,email'
+            'user:user_id,name,email'
         ])
         ->orderBy('performed_at', 'desc')
         ->get()
@@ -192,7 +192,7 @@ class AuditLogRepository
                     'url' => $url ?? request()->fullUrl(),
                     'ip_address' => $ipAddress ?? request()->ip(),
                     'user_agent' => $userAgent ?? request()->userAgent(),
-                    'user_id' => $userId ?? Auth::id(),
+                    'user_id' => $userId ?? Auth::user()->user_id ?? null,
                     'university_id' => $universityId ?? Auth::user()->university_id ?? null,
                     'performed_at' => now(),
                 ];

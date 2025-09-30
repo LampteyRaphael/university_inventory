@@ -491,7 +491,7 @@ class Location extends Model
      */
     public function manager(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'managed_by', 'id');
+        return $this->belongsTo(User::class, 'managed_by', 'user_id');
     }
 
     /**

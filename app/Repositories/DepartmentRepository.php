@@ -15,7 +15,7 @@ class DepartmentRepository
     {
                $departments = Department::with([
                 'university:university_id,name,code',
-                'departmentHead:id,name,email'
+                'departmentHead:user_id,name,email'
                 ])
             ->get()
             ->map(function ($department) {

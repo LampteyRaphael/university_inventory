@@ -336,8 +336,8 @@ class InventoryTransactionController extends Controller
             if ($request->has('quantity') || $request->has('unit_cost')) {
                 $transaction->total_value = $transaction->quantity * $transaction->unit_cost;
             }
-            $transaction->performed_by=Auth::id();
-            $transaction->approved_by=Auth::id();
+            $transaction->performed_by=Auth::user()->user_id ?? null;
+            $transaction->approved_by=Auth::user()->user_id ?? null;
             $transaction->save();
 
             // Update inventory stock levels if quantity or transaction type changed

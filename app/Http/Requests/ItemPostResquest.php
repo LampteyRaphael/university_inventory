@@ -22,7 +22,7 @@ class ItemPostResquest extends FormRequest
     public function rules(): array
     {
         return [
-                            'university_id' => 'required|uuid|exists:universities,university_id',
+                'university_id' => 'required|uuid|exists:universities,university_id',
                 'category_id' => 'required|uuid|exists:item_categories,category_id',
                 'item_code' => 'required|string|max:50|unique:inventory_items,item_code',
                 'name' => 'required|string|max:255',
@@ -49,8 +49,7 @@ class ItemPostResquest extends FormRequest
                 'rfid_tag' => 'nullable|string|max:255|unique:inventory_items,rfid_tag',
                 'image_url' => 'nullable|url|max:500',
                 'document_url' => 'nullable|url|max:500',
-                // 'created_by' => 'required|uuid|exists:users,id'
-                // 'created_by' => 'required|exists:users,id'
+                'created_by' => 'required|uuid|exists:users,user_id',
         ];
     }
 }

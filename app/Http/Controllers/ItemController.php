@@ -60,7 +60,7 @@ class ItemController extends Controller
         } catch (\Exception $e) {
             Log::error('Items index error:', ['error' => $e->getMessage()]);
             
-            return Inertia::render('Item/Items', [
+            return Inertia::render('Items/Items', [
                 'items' => ['data' => []],
                 'categories' => [],
                 'universities' => []

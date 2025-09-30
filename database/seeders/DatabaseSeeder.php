@@ -8,8 +8,10 @@ use App\Models\User;
 use App\Models\ItemCategory;
 use App\Models\InventoryItem;
 use App\Models\InventoryTransaction;
+use App\Models\MaintenanceRecord;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
+use App\Models\StockLevel;
 use App\Models\Supplier;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -30,7 +32,9 @@ class DatabaseSeeder extends Seeder
     PurchaseOrder::truncate(); 
     University::truncate();
     PurchaseOrderItem::truncate();
-    InventoryTransaction::truncate(); // Add this line
+    InventoryTransaction::truncate(); 
+    StockLevel::truncate();
+    MaintenanceRecord::truncate();
     DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
     // Create 3 universities with pre-defined data
@@ -58,8 +62,11 @@ class DatabaseSeeder extends Seeder
     $allUsers = User::all();
     $this->createInventoryTransactions($universities, $inventoryItems, $departments, $purchaseOrders, $allUsers);
             
+    $this->createStockLevels($universities, $inventoryItems, $departments);
 
-            
+
+    $this->createMaintenanceRecords($universities, $inventoryItems, $departments, $allUsers);
+
         // Output statistics
         $this->outputStatistics();
     }
@@ -922,180 +929,503 @@ class DatabaseSeeder extends Seeder
         return $notes[$transactionType] ?? "Transaction of {$quantity} units for {$item->name}";
     }
 
-    // private function createInventoryTransactions($universities, $inventoryItems, $departments, $purchaseOrders, $users)
-    // {
-    //     $this->command->info("=== Starting Inventory Transactions Seeder ===");
+    private function createStockLevels($universities, $inventoryItems, $departments)
+    {
+        $this->command->info("=== Starting Stock Levels Seeder ===");
         
-    //     $transactionTypes = ['purchase', 'sale', 'transfer', 'adjustment', 'return', 'write_off', 'consumption', 'production', 'donation'];
-    //     $statuses = ['pending', 'completed', 'cancelled', 'reversed'];
+        $countFrequencies = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
         
-    //     $inventoryTransactions = collect();
-    //     $totalTransactionsCreated = 0;
+        $stockLevels = collect();
+        $totalStockLevelsCreated = 0;
 
-    //     $universities->each(function ($university) use (&$inventoryTransactions, $inventoryItems, $departments, $purchaseOrders, $users, $transactionTypes, $statuses, &$totalTransactionsCreated) {
-    //         $this->command->info("Creating inventory transactions for university: {$university->name}");
+        $universities->each(function ($university) use (&$stockLevels, $inventoryItems, $departments, $countFrequencies, &$totalStockLevelsCreated) {
+            $this->command->info("Creating stock levels for university: {$university->name}");
+            
+            $universityItems = $inventoryItems->where('university_id', $university->university_id);
+            $universityDepartments = $departments->where('university_id', $university->university_id);
+            
+            if ($universityItems->isEmpty() || $universityDepartments->isEmpty()) {
+                $this->command->warn("  ⚠️ No items or departments found for university: {$university->name}");
+                return;
+            }
+            
+            // Create stock levels for each item in each department
+            $universityItems->each(function ($item) use ($university, $universityDepartments, $countFrequencies, &$stockLevels, &$totalStockLevelsCreated) {
+                $universityDepartments->each(function ($department) use ($university, $item, $countFrequencies, &$stockLevels, &$totalStockLevelsCreated) {
+                    // Generate realistic stock level data
+                    $currentQuantity = fake()->numberBetween(0, 500);
+                    $committedQuantity = fake()->numberBetween(0, min(50, $currentQuantity));
+                    $availableQuantity = $currentQuantity - $committedQuantity;
+                    $onOrderQuantity = fake()->numberBetween(0, 200);
+                    $averageCost = $item->unit_cost * fake()->randomFloat(2, 0.8, 1.2); // Some variation from unit cost
+                    $totalValue = $currentQuantity * $averageCost;
+                    
+                    // Set reorder levels based on item usage
+                    $reorderLevel = fake()->numberBetween(10, 50);
+                    $safetyStock = fake()->numberBetween(5, 20);
+                    $maxLevel = fake()->optional(70)->numberBetween(100, 1000);
+                    
+                    // Stock movement statistics
+                    $stockMovementStats = [
+                        'daily_movement' => fake()->numberBetween(0, 50),
+                        'weekly_movement' => fake()->numberBetween(0, 200),
+                        'monthly_movement' => fake()->numberBetween(0, 800),
+                        'turnover_rate' => fake()->randomFloat(2, 0.5, 12.0),
+                        'last_month_usage' => fake()->numberBetween(0, 300),
+                        'current_month_usage' => fake()->numberBetween(0, 150),
+                    ];
+                    
+                    try {
+                        $stockLevel = \App\Models\StockLevel::create([
+                            'stock_id' => Str::uuid(),
+                            'university_id' => $university->university_id,
+                            'item_id' => $item->item_id,
+                            'department_id' => $department->department_id,
+                            'location_id' => fake()->optional(60)->passthrough($department->department_id), // Using department as location
+                            'current_quantity' => $currentQuantity,
+                            'committed_quantity' => $committedQuantity,
+                            'available_quantity' => $availableQuantity,
+                            'on_order_quantity' => $onOrderQuantity,
+                            'average_cost' => $averageCost,
+                            'total_value' => $totalValue,
+                            'last_count_date' => fake()->optional(70)->dateTimeBetween('-6 months', 'now'),
+                            'next_count_date' => fake()->optional(60)->dateTimeBetween('now', '+1 year'),
+                            'count_frequency' => fake()->optional(80)->randomElement($countFrequencies),
+                            'reorder_level' => $reorderLevel,
+                            'max_level' => $maxLevel,
+                            'safety_stock' => $safetyStock,
+                            'lead_time_days' => fake()->numberBetween(1, 30),
+                            'service_level' => fake()->randomFloat(2, 85, 99.5),
+                            'stock_movement_stats' => $stockMovementStats,
+                            'last_updated' => now(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        
+                        $stockLevels->push($stockLevel);
+                        $totalStockLevelsCreated++;
+                        $this->command->info("    ✅ Created stock level for {$item->name} in {$department->name} (Available: {$availableQuantity})");
+                        
+                    } catch (\Exception $e) {
+                        $this->command->error("    ❌ Failed to create stock level: {$e->getMessage()}");
+                    }
+                });
+            });
+        });
+        
+        $this->command->info("=== Stock Levels Seeder Completed ===");
+        $this->command->info("Total stock levels created: {$totalStockLevelsCreated}");
+        
+        return $stockLevels;
+    }
+
+
+    // Maintenance Records
+    private function createMaintenanceRecords($universities, $inventoryItems, $departments, $users)
+    {
+        $this->command->info("=== Starting Maintenance Records Seeder ===");
+        
+        $maintenanceTypes = ['preventive', 'corrective', 'predictive', 'condition_based', 'emergency'];
+        $priorities = ['low', 'medium', 'high', 'critical'];
+        $statuses = ['scheduled', 'in_progress', 'completed', 'cancelled', 'deferred'];
+        
+        $maintenanceRecords = collect();
+        $totalRecordsCreated = 0;
+
+        $universities->each(function ($university) use (&$maintenanceRecords, $inventoryItems, $departments, $users, $maintenanceTypes, $priorities, $statuses, &$totalRecordsCreated) {
+            $this->command->info("Creating maintenance records for university: {$university->name}");
+            
+            $universityItems = $inventoryItems->where('university_id', $university->university_id);
+            $universityDepartments = $departments->where('university_id', $university->university_id);
+            $universityUsers = $users->where('university_id', $university->university_id);
+            
+            if ($universityItems->isEmpty() || $universityDepartments->isEmpty() || $universityUsers->isEmpty()) {
+                $this->command->warn("  ⚠️ No items, departments, or users found for university: {$university->name}");
+                return;
+            }
+            
+            // Create maintenance records for each university
+            $recordCount = random_int(15, 30);
+            
+            for ($i = 0; $i < $recordCount; $i++) {
+                $item = $universityItems->random();
+                $department = $universityDepartments->random();
+                $createdBy = $universityUsers->random();
+                $assignedTo = fake()->optional(80)->randomElement($universityUsers);
+                $maintenanceType = fake()->randomElement($maintenanceTypes);
+                $status = fake()->randomElement($statuses);
+                
+                // Generate maintenance code
+                $maintenanceCode = 'MNT-' . $university->code . '-' . date('Y') . '-' . str_pad($i + 1, 5, '0', STR_PAD_LEFT);
+                
+                // Set dates based on status - FIXED: Ensure proper date ordering
+                $scheduledDate = fake()->dateTimeBetween('-6 months', '+3 months');
+                $completedDate = null;
+                $nextMaintenanceDate = null;
+                
+                if ($status === 'completed') {
+                    // FIX: Ensure completed date is after scheduled date by adding at least 1 day
+                    $minCompletedDate = (clone $scheduledDate)->modify('+1 day');
+                    $maxCompletedDate = (clone $scheduledDate)->modify('+2 months');
+                    
+                    // Only generate completed date if min date is not in the future
+                    if ($minCompletedDate <= new \DateTime()) {
+                        $completedDate = fake()->dateTimeBetween($minCompletedDate, $maxCompletedDate);
+                        $nextMaintenanceDate = fake()->optional(70)->dateTimeBetween($completedDate, '+1 year');
+                    } else {
+                        // If scheduled date is in the future, change status to scheduled
+                        $status = 'scheduled';
+                    }
+                }
+                
+                if ($status === 'scheduled' && $scheduledDate > new \DateTime()) {
+                    $nextMaintenanceDate = fake()->optional(60)->dateTimeBetween($scheduledDate, '+6 months');
+                }
+                
+                // Generate costs based on maintenance type and priority
+                $laborCost = fake()->randomFloat(2, 50, 2000);
+                $partsCost = fake()->optional(70)->randomFloat(2, 10, 1500) ?? 0;
+                $totalCost = $laborCost + $partsCost;
+                
+                // Generate downtime based on priority and type
+                $downtimeHours = $this->getDowntimeHours($maintenanceType, $status);
+                
+                try {
+                    $maintenanceRecord = \App\Models\MaintenanceRecord::create([
+                        'maintenance_id' => Str::uuid(),
+                        'university_id' => $university->university_id,
+                        'item_id' => $item->item_id,
+                        'department_id' => $department->department_id,
+                        'maintenance_code' => $maintenanceCode,
+                        'scheduled_date' => $scheduledDate->format('Y-m-d'),
+                        'completed_date' => $completedDate ? $completedDate->format('Y-m-d') : null,
+                        'maintenance_type' => $maintenanceType,
+                        'priority' => fake()->randomElement($priorities),
+                        'description' => $this->getMaintenanceDescription($maintenanceType, $item),
+                        'work_performed' => $status === 'completed' ? $this->getWorkPerformed($maintenanceType) : null,
+                        'root_cause' => $status === 'completed' ? fake()->optional(60)->sentence() : null,
+                        'recommendations' => $status === 'completed' ? fake()->optional(50)->sentence() : null,
+                        'labor_cost' => $laborCost,
+                        'parts_cost' => $partsCost,
+                        'total_cost' => $totalCost,
+                        'downtime_hours' => $downtimeHours,
+                        'technician' => fake()->optional(80)->name(),
+                        'vendor' => fake()->optional(40)->company(),
+                        'next_maintenance_date' => $nextMaintenanceDate ? $nextMaintenanceDate->format('Y-m-d') : null,
+                        'status' => $status,
+                        'created_by' => $createdBy->user_id,
+                        'assigned_to' => $assignedTo ? $assignedTo->user_id : null,
+                        'created_at' => $scheduledDate,
+                        'updated_at' => fake()->dateTimeBetween($scheduledDate, 'now'),
+                    ]);
+                    
+                    $maintenanceRecords->push($maintenanceRecord);
+                    $totalRecordsCreated++;
+                    $this->command->info("    ✅ Created {$maintenanceType} maintenance: {$maintenanceCode} ({$status})");
+                    
+                } catch (\Exception $e) {
+                    $this->command->error("    ❌ Failed to create maintenance record: {$e->getMessage()}");
+                }
+            }
+        });
+        
+        $this->command->info("=== Maintenance Records Seeder Completed ===");
+        $this->command->info("Total maintenance records created: {$totalRecordsCreated}");
+        
+        return $maintenanceRecords;
+    }
+
+    // Helper methods for maintenance records
+    private function getDowntimeHours($maintenanceType, $status)
+    {
+        if ($status !== 'completed') {
+            return 0;
+        }
+        
+        switch ($maintenanceType) {
+            case 'emergency':
+                return fake()->numberBetween(2, 48); // Longer downtime for emergencies
+            case 'corrective':
+                return fake()->numberBetween(1, 24);
+            case 'preventive':
+                return fake()->numberBetween(1, 8);
+            case 'predictive':
+                return fake()->numberBetween(1, 4);
+            case 'condition_based':
+                return fake()->numberBetween(1, 6);
+            default:
+                return fake()->numberBetween(1, 12);
+        }
+    }
+
+    private function getMaintenanceDescription($maintenanceType, $item)
+    {
+        $descriptions = [
+            'preventive' => [
+                "Routine preventive maintenance for {$item->name}",
+                "Scheduled maintenance check for {$item->name}",
+                "Regular service and inspection of {$item->name}",
+                "Preventive maintenance as per maintenance schedule for {$item->name}"
+            ],
+            'corrective' => [
+                "Repair and correction of faults in {$item->name}",
+                "Corrective maintenance to fix reported issues with {$item->name}",
+                "Troubleshooting and repair of {$item->name}",
+                "Fix operational issues with {$item->name}"
+            ],
+            'predictive' => [
+                "Predictive maintenance based on condition monitoring of {$item->name}",
+                "Advanced diagnostics and predictive analysis for {$item->name}",
+                "Condition-based predictive maintenance for {$item->name}",
+                "Monitoring and predictive maintenance activities for {$item->name}"
+            ],
+            'condition_based' => [
+                "Condition-based maintenance triggered by monitoring parameters of {$item->name}",
+                "Maintenance based on actual condition assessment of {$item->name}",
+                "Condition monitoring and maintenance for {$item->name}",
+                "Performance-based maintenance for {$item->name}"
+            ],
+            'emergency' => [
+                "Emergency repair for critical failure of {$item->name}",
+                "Urgent maintenance to restore functionality of {$item->name}",
+                "Emergency response for breakdown of {$item->name}",
+                "Critical repair work for {$item->name}"
+            ]
+        ];
+        
+        return fake()->randomElement($descriptions[$maintenanceType]);
+    }
+
+    private function getWorkPerformed($maintenanceType)
+    {
+        $workDescriptions = [
+            'preventive' => [
+                "Performed routine inspection, cleaning, and lubrication. Checked all components for wear and tear. Replaced consumable parts as needed.",
+                "Completed scheduled maintenance including calibration, testing, and minor adjustments. Verified all safety features are functional.",
+                "Conducted preventive maintenance procedures as per manufacturer specifications. Inspected electrical and mechanical systems."
+            ],
+            'corrective' => [
+                "Identified and repaired faulty components. Replaced damaged parts and tested system functionality. Performed alignment and calibration.",
+                "Troubleshooted reported issues, identified root cause, and implemented corrective actions. Verified repair effectiveness.",
+                "Fixed operational defects, replaced worn components, and restored equipment to optimal working condition."
+            ],
+            'predictive' => [
+                "Analyzed condition monitoring data, performed advanced diagnostics, and addressed potential failure points before breakdown occurs.",
+                "Conducted vibration analysis, thermal imaging, and other predictive techniques to identify early signs of deterioration.",
+                "Used predictive analytics to identify maintenance needs and performed proactive repairs based on data-driven insights."
+            ],
+            'condition_based' => [
+                "Monitored equipment condition parameters and performed maintenance based on actual asset condition rather than fixed schedule.",
+                "Assessed equipment health through various monitoring techniques and performed necessary maintenance actions.",
+                "Evaluated performance metrics and condition indicators to determine optimal maintenance timing and scope."
+            ],
+            'emergency' => [
+                "Emergency response team deployed to address critical failure. Performed urgent repairs to restore essential functionality.",
+                "Immediate corrective actions taken to resolve emergency breakdown. Temporary fixes applied with follow-up scheduled.",
+                "Critical repair work completed under emergency conditions to minimize operational impact and ensure safety."
+            ]
+        ];
+        
+        return fake()->randomElement($workDescriptions[$maintenanceType]);
+    }
+        // private function createMaintenanceRecords($universities, $inventoryItems, $departments, $users)
+    // {
+    //     $this->command->info("=== Starting Maintenance Records Seeder ===");
+        
+    //     $maintenanceTypes = ['preventive', 'corrective', 'predictive', 'condition_based', 'emergency'];
+    //     $priorities = ['low', 'medium', 'high', 'critical'];
+    //     $statuses = ['scheduled', 'in_progress', 'completed', 'cancelled', 'deferred'];
+        
+    //     $maintenanceRecords = collect();
+    //     $totalRecordsCreated = 0;
+
+    //     $universities->each(function ($university) use (&$maintenanceRecords, $inventoryItems, $departments, $users, $maintenanceTypes, $priorities, $statuses, &$totalRecordsCreated) {
+    //         $this->command->info("Creating maintenance records for university: {$university->name}");
             
     //         $universityItems = $inventoryItems->where('university_id', $university->university_id);
     //         $universityDepartments = $departments->where('university_id', $university->university_id);
     //         $universityUsers = $users->where('university_id', $university->university_id);
-    //         $universityPurchaseOrders = $purchaseOrders->where('university_id', $university->university_id);
             
     //         if ($universityItems->isEmpty() || $universityDepartments->isEmpty() || $universityUsers->isEmpty()) {
     //             $this->command->warn("  ⚠️ No items, departments, or users found for university: {$university->name}");
     //             return;
     //         }
             
-    //         // Create multiple transactions per university
-    //         $transactionCount = random_int(20, 50);
+    //         // Create maintenance records for each university
+    //         $recordCount = random_int(15, 30);
             
-    //         for ($i = 0; $i < $transactionCount; $i++) {
+    //         for ($i = 0; $i < $recordCount; $i++) {
     //             $item = $universityItems->random();
     //             $department = $universityDepartments->random();
-    //             $performedBy = $universityUsers->random();
-    //             $approvedBy = fake()->optional(70)->randomElement($universityUsers);
-    //             $transactionType = fake()->randomElement($transactionTypes);
+    //             $createdBy = $universityUsers->random();
+    //             $assignedTo = fake()->optional(80)->randomElement($universityUsers);
+    //             $maintenanceType = fake()->randomElement($maintenanceTypes);
+    //             $status = fake()->randomElement($statuses);
                 
-    //             // Set quantity based on transaction type
-    //             $quantity = $this->getQuantityForTransactionType($transactionType, $item);
-    //             $unitCost = $item->unit_cost;
-    //             $totalValue = $quantity * $unitCost;
+    //             // Generate maintenance code
+    //             $maintenanceCode = 'MNT-' . $university->code . '-' . date('Y') . '-' . str_pad($i + 1, 5, '0', STR_PAD_LEFT);
                 
-    //             // Set reference based on transaction type
-    //             $referenceNumber = $this->generateReferenceNumber($transactionType, $i);
-    //             $referenceId = $this->getReferenceId($transactionType, $universityPurchaseOrders);
+    //             // Set dates based on status
+    //             $scheduledDate = fake()->dateTimeBetween('-6 months', '+3 months');
+    //             $completedDate = null;
+    //             $nextMaintenanceDate = null;
                 
-    //             // Set locations based on transaction type
-    //             $sourceLocationId = $this->getSourceLocation($transactionType, $universityDepartments);
-    //             $destinationLocationId = $this->getDestinationLocation($transactionType, $universityDepartments);
+    //             if ($status === 'completed') {
+    //                 $completedDate = fake()->dateTimeBetween($scheduledDate, 'now');
+    //                 $nextMaintenanceDate = fake()->optional(70)->dateTimeBetween($completedDate, '+1 year');
+    //             } elseif ($status === 'scheduled') {
+    //                 $nextMaintenanceDate = fake()->optional(60)->dateTimeBetween($scheduledDate, '+6 months');
+    //             }
+                
+    //             // Generate costs based on maintenance type and priority
+    //             $laborCost = fake()->randomFloat(2, 50, 2000);
+    //             $partsCost = fake()->optional(70)->randomFloat(2, 10, 1500) ?? 0;
+    //             $totalCost = $laborCost + $partsCost;
+                
+    //             // Generate downtime based on priority and type
+    //             $downtimeHours = $this->getDowntimeHours($maintenanceType, $status);
                 
     //             try {
-    //                 $transaction = \App\Models\InventoryTransaction::create([
-    //                     'transaction_id' => Str::uuid(),
+    //                 $maintenanceRecord = \App\Models\MaintenanceRecord::create([
+    //                     'maintenance_id' => Str::uuid(),
     //                     'university_id' => $university->university_id,
     //                     'item_id' => $item->item_id,
     //                     'department_id' => $department->department_id,
-    //                     'transaction_type' => $transactionType,
-    //                     'quantity' => $quantity,
-    //                     'unit_cost' => $unitCost,
-    //                     'total_value' => $totalValue,
-    //                     'transaction_date' => fake()->dateTimeBetween('-1 year', 'now'),
-    //                     'reference_number' => $referenceNumber,
-    //                     'reference_id' => $referenceId,
-    //                     'batch_number' => fake()->optional(60)->bothify('BATCH-#####'),
-    //                     'expiry_date' => fake()->optional(40)->dateTimeBetween('now', '+2 years'),
-    //                     'notes' => $this->getNotesForTransactionType($transactionType, $item, $quantity),
-    //                     'source_location_id' => $sourceLocationId,
-    //                     'destination_location_id' => $destinationLocationId,
-    //                     'status' => fake()->randomElement($statuses),
-    //                     'performed_by' => $performedBy->user_id,
-    //                     'approved_by' => $approvedBy ? $approvedBy->user_id : null,
-    //                     'created_at' => now(),
-    //                     'updated_at' => now(),
+    //                     'maintenance_code' => $maintenanceCode,
+    //                     'scheduled_date' => $scheduledDate,
+    //                     'completed_date' => $completedDate,
+    //                     'maintenance_type' => $maintenanceType,
+    //                     'priority' => fake()->randomElement($priorities),
+    //                     'description' => $this->getMaintenanceDescription($maintenanceType, $item),
+    //                     'work_performed' => $status === 'completed' ? $this->getWorkPerformed($maintenanceType) : null,
+    //                     'root_cause' => $status === 'completed' ? fake()->optional(60)->sentence() : null,
+    //                     'recommendations' => $status === 'completed' ? fake()->optional(50)->sentence() : null,
+    //                     'labor_cost' => $laborCost,
+    //                     'parts_cost' => $partsCost,
+    //                     'total_cost' => $totalCost,
+    //                     'downtime_hours' => $downtimeHours,
+    //                     'technician' => fake()->optional(80)->name(),
+    //                     'vendor' => fake()->optional(40)->company(),
+    //                     'next_maintenance_date' => $nextMaintenanceDate,
+    //                     'status' => $status,
+    //                     'created_by' => $createdBy->user_id,
+    //                     'assigned_to' => $assignedTo ? $assignedTo->user_id : null,
+    //                     'created_at' => $scheduledDate,
+    //                     'updated_at' => fake()->dateTimeBetween($scheduledDate, 'now'),
     //                 ]);
                     
-    //                 $inventoryTransactions->push($transaction);
-    //                 $totalTransactionsCreated++;
-    //                 $this->command->info("    ✅ Created {$transactionType} transaction: {$referenceNumber} (Qty: {$quantity})");
+    //                 $maintenanceRecords->push($maintenanceRecord);
+    //                 $totalRecordsCreated++;
+    //                 $this->command->info("    ✅ Created {$maintenanceType} maintenance: {$maintenanceCode} ({$status})");
                     
     //             } catch (\Exception $e) {
-    //                 $this->command->error("    ❌ Failed to create transaction: {$e->getMessage()}");
+    //                 $this->command->error("    ❌ Failed to create maintenance record: {$e->getMessage()}");
     //             }
     //         }
     //     });
         
-    //     $this->command->info("=== Inventory Transactions Seeder Completed ===");
-    //     $this->command->info("Total inventory transactions created: {$totalTransactionsCreated}");
+    //     $this->command->info("=== Maintenance Records Seeder Completed ===");
+    //     $this->command->info("Total maintenance records created: {$totalRecordsCreated}");
         
-    //     return $inventoryTransactions;
+    //     return $maintenanceRecords;
     // }
 
-    // Helper methods for the transaction seeder
-    // private function getQuantityForTransactionType($transactionType, $item)
+    // // Helper methods for maintenance records
+    // private function getDowntimeHours($maintenanceType, $status)
     // {
-    //     switch ($transactionType) {
-    //         case 'purchase':
-    //             return fake()->numberBetween(10, 100); // Bulk purchases
-    //         case 'sale':
-    //             return fake()->numberBetween(1, 20); // Smaller sales
-    //         case 'transfer':
-    //             return fake()->numberBetween(5, 50);
-    //         case 'adjustment':
-    //             return fake()->numberBetween(-10, 10); // Can be positive or negative
-    //         case 'return':
-    //             return fake()->numberBetween(1, 15);
-    //         case 'write_off':
-    //             return fake()->numberBetween(-20, -1); // Always negative
-    //         case 'consumption':
-    //             return fake()->numberBetween(1, 25);
-    //         case 'production':
-    //             return fake()->numberBetween(10, 100);
-    //         case 'donation':
-    //             return fake()->numberBetween(5, 30);
+    //     if ($status !== 'completed') {
+    //         return 0;
+    //     }
+        
+    //     switch ($maintenanceType) {
+    //         case 'emergency':
+    //             return fake()->numberBetween(2, 48); // Longer downtime for emergencies
+    //         case 'corrective':
+    //             return fake()->numberBetween(1, 24);
+    //         case 'preventive':
+    //             return fake()->numberBetween(1, 8);
+    //         case 'predictive':
+    //             return fake()->numberBetween(1, 4);
+    //         case 'condition_based':
+    //             return fake()->numberBetween(1, 6);
     //         default:
-    //             return fake()->numberBetween(1, 50);
+    //             return fake()->numberBetween(1, 12);
     //     }
     // }
 
-    // private function generateReferenceNumber($transactionType, $index)
+    // private function getMaintenanceDescription($maintenanceType, $item)
     // {
-    //     $prefixes = [
-    //         'purchase' => 'PO',
-    //         'sale' => 'SO',
-    //         'transfer' => 'TR',
-    //         'adjustment' => 'ADJ',
-    //         'return' => 'RET',
-    //         'write_off' => 'WO',
-    //         'consumption' => 'CON',
-    //         'production' => 'PROD',
-    //         'donation' => 'DON'
+    //     $descriptions = [
+    //         'preventive' => [
+    //             "Routine preventive maintenance for {$item->name}",
+    //             "Scheduled maintenance check for {$item->name}",
+    //             "Regular service and inspection of {$item->name}",
+    //             "Preventive maintenance as per maintenance schedule for {$item->name}"
+    //         ],
+    //         'corrective' => [
+    //             "Repair and correction of faults in {$item->name}",
+    //             "Corrective maintenance to fix reported issues with {$item->name}",
+    //             "Troubleshooting and repair of {$item->name}",
+    //             "Fix operational issues with {$item->name}"
+    //         ],
+    //         'predictive' => [
+    //             "Predictive maintenance based on condition monitoring of {$item->name}",
+    //             "Advanced diagnostics and predictive analysis for {$item->name}",
+    //             "Condition-based predictive maintenance for {$item->name}",
+    //             "Monitoring and predictive maintenance activities for {$item->name}"
+    //         ],
+    //         'condition_based' => [
+    //             "Condition-based maintenance triggered by monitoring parameters of {$item->name}",
+    //             "Maintenance based on actual condition assessment of {$item->name}",
+    //             "Condition monitoring and maintenance for {$item->name}",
+    //             "Performance-based maintenance for {$item->name}"
+    //         ],
+    //         'emergency' => [
+    //             "Emergency repair for critical failure of {$item->name}",
+    //             "Urgent maintenance to restore functionality of {$item->name}",
+    //             "Emergency response for breakdown of {$item->name}",
+    //             "Critical repair work for {$item->name}"
+    //         ]
     //     ];
         
-    //     $prefix = $prefixes[$transactionType] ?? 'TRX';
-    //     return $prefix . '-' . date('Y') . '-' . str_pad($index + 1, 5, '0', STR_PAD_LEFT);
+    //     return fake()->randomElement($descriptions[$maintenanceType]);
     // }
 
-    // private function getReferenceId($transactionType, $purchaseOrders)
+    // private function getWorkPerformed($maintenanceType)
     // {
-    //     if ($transactionType === 'purchase' && $purchaseOrders->isNotEmpty()) {
-    //         return fake()->optional(80)->randomElement($purchaseOrders->pluck('order_id')->toArray());
-    //     }
-    //     return null;
-    // }
-
-    // private function getSourceLocation($transactionType, $departments)
-    // {
-    //     // For transfers, sales, returns - there's usually a source location
-    //     if (in_array($transactionType, ['transfer', 'sale', 'return', 'consumption'])) {
-    //         return fake()->optional(70)->randomElement($departments->pluck('department_id')->toArray());
-    //     }
-    //     return null;
-    // }
-
-    // private function getDestinationLocation($transactionType, $departments)
-    // {
-    //     // For purchases, transfers, production - there's usually a destination
-    //     if (in_array($transactionType, ['purchase', 'transfer', 'production', 'donation'])) {
-    //         return fake()->optional(80)->randomElement($departments->pluck('department_id')->toArray());
-    //     }
-    //     return null;
-    // }
-
-    // private function getNotesForTransactionType($transactionType, $item, $quantity)
-    // {
-    //     $notes = [
-    //         'purchase' => "Purchased {$quantity} units of {$item->name}",
-    //         'sale' => "Sold {$quantity} units of {$item->name}",
-    //         'transfer' => "Transferred {$quantity} units of {$item->name} between locations",
-    //         'adjustment' => "Stock adjustment of {$quantity} units for {$item->name}",
-    //         'return' => "Returned {$quantity} units of {$item->name}",
-    //         'write_off' => "Written off {$quantity} units of {$item->name} due to damage/expiry",
-    //         'consumption' => "Consumed {$quantity} units of {$item->name} for project/department use",
-    //         'production' => "Produced {$quantity} units of {$item->name}",
-    //         'donation' => "Donated {$quantity} units of {$item->name}"
+    //     $workDescriptions = [
+    //         'preventive' => [
+    //             "Performed routine inspection, cleaning, and lubrication. Checked all components for wear and tear. Replaced consumable parts as needed.",
+    //             "Completed scheduled maintenance including calibration, testing, and minor adjustments. Verified all safety features are functional.",
+    //             "Conducted preventive maintenance procedures as per manufacturer specifications. Inspected electrical and mechanical systems."
+    //         ],
+    //         'corrective' => [
+    //             "Identified and repaired faulty components. Replaced damaged parts and tested system functionality. Performed alignment and calibration.",
+    //             "Troubleshooted reported issues, identified root cause, and implemented corrective actions. Verified repair effectiveness.",
+    //             "Fixed operational defects, replaced worn components, and restored equipment to optimal working condition."
+    //         ],
+    //         'predictive' => [
+    //             "Analyzed condition monitoring data, performed advanced diagnostics, and addressed potential failure points before breakdown occurs.",
+    //             "Conducted vibration analysis, thermal imaging, and other predictive techniques to identify early signs of deterioration.",
+    //             "Used predictive analytics to identify maintenance needs and performed proactive repairs based on data-driven insights."
+    //         ],
+    //         'condition_based' => [
+    //             "Monitored equipment condition parameters and performed maintenance based on actual asset condition rather than fixed schedule.",
+    //             "Assessed equipment health through various monitoring techniques and performed necessary maintenance actions.",
+    //             "Evaluated performance metrics and condition indicators to determine optimal maintenance timing and scope."
+    //         ],
+    //         'emergency' => [
+    //             "Emergency response team deployed to address critical failure. Performed urgent repairs to restore essential functionality.",
+    //             "Immediate corrective actions taken to resolve emergency breakdown. Temporary fixes applied with follow-up scheduled.",
+    //             "Critical repair work completed under emergency conditions to minimize operational impact and ensure safety."
+    //         ]
     //     ];
         
-    //     return $notes[$transactionType] ?? "Transaction of {$quantity} units for {$item->name}";
+    //     return fake()->randomElement($workDescriptions[$maintenanceType]);
     // }
+
+
+
 
     private function outputStatistics()
     {
@@ -1105,6 +1435,12 @@ class DatabaseSeeder extends Seeder
         $this->command->info('Departments created: ' . Department::count());
         $this->command->info('Item categories created: ' . ItemCategory::count());
         $this->command->info('Inventory items created: ' . InventoryItem::count());
+        $this->command->info('Suppliers created: ' . Supplier::count());
+        $this->command->info('Purchase orders created: ' . PurchaseOrder::count());
+        $this->command->info('Purchase order items created: ' . PurchaseOrderItem::count());
+        $this->command->info('Inventory transactions created: ' . \App\Models\InventoryTransaction::count());
+        $this->command->info('Stock levels created: ' . \App\Models\StockLevel::count());
+        $this->command->info('Maintenance records created: ' . \App\Models\MaintenanceRecord::count()); // Add this line
         $this->command->info('Total users created: ' . User::count());
         $this->command->info('');
         $this->command->info('=== Login Credentials ===');

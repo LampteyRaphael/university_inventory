@@ -78,7 +78,7 @@ class DepartmentController extends Controller
                 'contact_email' => 'required|email|max:255',
                 'contact_phone' => 'required|string|max:20',
                 'annual_budget' => 'required|numeric|min:0',
-                // 'department_head_id' => 'nullable|uuid',
+                'department_head_id' => 'nullable|uuid',
                 'is_active' => 'boolean',
                 'custom_fields' => 'nullable|array',
             ]);

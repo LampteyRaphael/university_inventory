@@ -99,7 +99,7 @@ class ItemCategoryRepository
 
             // Ensure created_by is set
             if (empty($data['created_by'])) {
-                $data['created_by'] = Auth::id() ?? null;
+                $data['created_by'] = Auth::user()->user_id ?? null;
             }
 
             // Handle specification_template if provided as array
@@ -126,7 +126,7 @@ class ItemCategoryRepository
             }
 
             // Set updated_by
-            $data['updated_by'] = Auth::id() ?? null;
+            $data['updated_by'] = Auth::user()->user_id ?? null;
 
             // Handle specification_template if provided as array
             if (isset($data['specification_template']) && is_array($data['specification_template'])) {

@@ -112,7 +112,7 @@ class ItemRepository
 
             // Ensure created_by is set
             if (empty($data['created_by'])) {
-                $data['created_by'] = Auth::id() ?? null;
+                $data['created_by'] = Auth::user()->user_id ?? null;
             }
 
             // Handle specifications if provided as array
@@ -134,7 +134,7 @@ class ItemRepository
             }
 
             // Set updated_by
-            $data['updated_by'] = Auth::id() ?? null;
+            $data['updated_by'] = Auth::user()->user_id ?? null;
 
             // Handle specifications if provided as array
             if (isset($data['specifications']) && is_array($data['specifications'])) {
@@ -195,7 +195,7 @@ class ItemRepository
             'maximum_stock_level' => $stockData['maximum_stock_level'] ?? null,
             'reorder_point' => $stockData['reorder_point'] ?? null,
             'economic_order_quantity' => $stockData['economic_order_quantity'] ?? null,
-            'updated_by' => Auth::id()
+            'updated_by' => Auth::user()->user_id ?? null
         ]);
     }
 
@@ -207,7 +207,7 @@ class ItemRepository
 
         return $this->update($itemId, [
             'abc_classification' => $classification,
-            'updated_by' => Auth::id()
+            'updated_by' => Auth::user()->user_id ?? null
         ]);
     }
 
