@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Department extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Auditable;
 
     protected $primaryKey = 'department_id';
     public $incrementing = false;
@@ -50,6 +51,11 @@ class Department extends Model
     }
 
     public function head()
+    {
+        return $this->belongsTo(User::class, 'department_head_id', 'user_id');
+    }
+
+    public function departmentHead()
     {
         return $this->belongsTo(User::class, 'department_head_id', 'user_id');
     }

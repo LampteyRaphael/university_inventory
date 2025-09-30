@@ -167,7 +167,7 @@ class RouteController extends Controller
             ]);
     }
 
-    public function stock_levels():Response
+    public function stock_levels()
     {
             $stockLevels=StockLevel::all();
             $universities= University::all();

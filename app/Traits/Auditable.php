@@ -54,7 +54,7 @@ trait Auditable
             $recordId = $model->getKey();
 
             // Remove sensitive fields from logging
-            $sensitiveFields = ['password', 'remember_token', 'api_token', 'email_verified_at'];
+            $sensitiveFields = ['password', 'remember_token', 'api_token', 'email_verified_at','updated_at'];
             
             if ($oldValues) {
                 $oldValues = collect($oldValues)->except($sensitiveFields)->toArray();
@@ -79,8 +79,7 @@ trait Auditable
                 'url' => request()->fullUrl() ?? 'system',
                 'ip_address' => request()->ip() ?? '127.0.0.1',
                 'user_agent' => request()->userAgent() ?? 'Unknown',
-                'id' => Auth::id(),
-                // 'user_id' => Auth::id(),
+                'user_id' => Auth::user()->id??null,
                 'performed_at' => now(),
             ];
 

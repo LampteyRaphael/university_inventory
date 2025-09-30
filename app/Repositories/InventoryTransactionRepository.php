@@ -15,8 +15,8 @@ class InventoryTransactionRepository
         'department:department_id,name',
         'sourceLocation:location_id,name',
         'destinationLocation:location_id,name',
-        'performedBy:id,name,email',
-        'approvedBy:id,name,email'
+        'performedBy:user_id,name,email',
+        'approvedBy:user_id,name,email'
     ])->select([
         'transaction_id',
         'university_id',

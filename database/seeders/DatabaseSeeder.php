@@ -419,7 +419,7 @@ class DatabaseSeeder extends Seeder
 
     private function createInventoryItems($universities)
     {
-        $inventoryItems = collect(); // Create a collection to store all items
+        $inventoryItems = collect();
         
         $universities->each(function ($university) use (&$inventoryItems) {
             $categories = ItemCategory::where('university_id', $university->university_id)->get();
@@ -432,7 +432,7 @@ class DatabaseSeeder extends Seeder
             
             $this->command->info("Creating inventory items for university: {$university->name}");
             
-            $categories->each(function ($category) use ($users, &$inventoryItems) {
+            $categories->each(function ($category) use ($users, &$inventoryItems, $university) {
                 $itemCount = random_int(3, 8);
                 for ($i = 0; $i < $itemCount; $i++) {
                     $item = InventoryItem::create([
@@ -440,7 +440,7 @@ class DatabaseSeeder extends Seeder
                         'university_id' => $category->university_id,
                         'category_id' => $category->category_id,
                         'item_code' => 'ITEM' . fake()->unique()->numberBetween(10000, 99999),
-                        'name' => fake()->words(3, true),
+                        'name' => $this->generateEnglishItemName($category->name),
                         'description' => fake()->sentence(),
                         'unit_of_measure' => 'Piece',
                         'unit_cost' => fake()->randomFloat(2, 10, 1000),
@@ -453,14 +453,136 @@ class DatabaseSeeder extends Seeder
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-                    $inventoryItems->push($item); // Add each item to the collection
+                    $inventoryItems->push($item);
                 }
                 $this->command->info("  - Created {$itemCount} items for category: {$category->name}");
             });
         });
         
-        return $inventoryItems; // Return the collection of created items
+        return $inventoryItems;
     }
+
+    private function generateEnglishItemName($categoryName)
+    {
+        // Faker's built-in English product names
+        $productNames = [
+            'Electronics' => [
+                fake()->word() . ' Laptop', fake()->word() . ' Printer', fake()->word() . ' Monitor',
+                fake()->word() . ' Keyboard', fake()->word() . ' Mouse', fake()->word() . ' Tablet'
+            ],
+            'Furniture' => [
+                fake()->word() . ' Chair', fake()->word() . ' Desk', fake()->word() . ' Table',
+                fake()->word() . ' Cabinet', fake()->word() . ' Bookshelf', fake()->word() . ' Stool'
+            ],
+            'Lab Equipment' => [
+                fake()->word() . ' Microscope', fake()->word() . ' Centrifuge', fake()->word() . ' Analyzer',
+                fake()->word() . ' Balance', fake()->word() . ' Mixer', fake()->word() . ' Incubator'
+            ],
+            'Office Supplies' => [
+                fake()->word() . ' Stapler', fake()->word() . ' Notebook', fake()->word() . ' Pen',
+                fake()->word() . ' Marker', fake()->word() . ' Folder', fake()->word() . ' Calculator'
+            ],
+            'Vehicles' => [
+                fake()->word() . ' Sedan', fake()->word() . ' Van', fake()->word() . ' Truck',
+                fake()->word() . ' Bus', fake()->word() . ' SUV', fake()->word() . ' Cart'
+            ]
+        ];
+        
+        return $productNames[$categoryName][array_rand($productNames[$categoryName])];
+    }
+
+    // private function generateEnglishItemName($categoryName)
+    // {
+    //     $itemTemplates = [
+    //         'Electronics' => [
+    //             'Dell Laptop Computer', 'HP Laser Printer', 'Samsung Monitor', 'Logitech Keyboard',
+    //             'Microsoft Mouse', 'Cisco Network Switch', 'APC UPS Battery', 'Canon Scanner',
+    //             'Epson Projector', 'Apple iPad Tablet', 'Lenovo Desktop PC', 'Western Digital Hard Drive',
+    //             'Seagate External Drive', 'Kingston Memory RAM', 'Intel Processor CPU', 'NVIDIA Graphics Card',
+    //             'Linksys Router', 'Brother Printer', 'Sony Headphones', 'Bose Speakers'
+    //         ],
+    //         'Furniture' => [
+    //             'Office Desk Chair', 'Executive Desk', 'Filing Cabinet', 'Bookshelf Unit',
+    //             'Conference Table', 'Reception Sofa', 'Visitor Chair', 'Storage Cabinet',
+    //             'Workstation Desk', 'Ergonomic Stool', 'Whiteboard Stand', 'Monitor Arm',
+    //             'Keyboard Tray', 'Mobile Pedestal', 'Folding Table', 'Stacking Chair',
+    //             'Executive Chair', 'Guest Chair', 'Coffee Table', 'Side Table'
+    //         ],
+    //         'Lab Equipment' => [
+    //             'Microscope Binocular', 'Centrifuge Machine', 'Spectrophotometer', 'PH Meter',
+    //             'Analytical Balance', 'Hot Plate', 'Magnetic Stirrer', 'Vortex Mixer',
+    //             'Incubator Chamber', 'Autoclave Machine', 'Water Bath', 'PCR Machine',
+    //             'Gel Electrophoresis', 'Microplate Reader', 'Laminar Flow Hood', 'Biosafety Cabinet',
+    //             'Microscope Slides', 'Test Tube Rack', 'Pipette Set', 'Lab Coat'
+    //         ],
+    //         'Office Supplies' => [
+    //             'Stapler Machine', 'Paper Clip Box', 'Sticky Notes', 'Ballpoint Pen',
+    //             'Highlight Marker', 'Notebook Pad', 'File Folder', 'Binder Clip',
+    //             'Rubber Band', 'Tape Dispenser', 'Scissors Tool', 'Envelope Pack',
+    //             'Printer Paper', 'Calculator Device', 'Desk Organizer', 'Whiteboard Marker',
+    //             'Correction Fluid', 'Hole Puncher', 'Ruler Scale', 'Glue Stick'
+    //         ],
+    //         'Vehicles' => [
+    //             'Toyota Camry Sedan', 'Ford Transit Van', 'Honda Civic Car', 'Nissan Patrol SUV',
+    //             'University Bus', 'Maintenance Truck', 'Campus Security Vehicle', 'Delivery Van',
+    //             'Utility Vehicle', 'Golf Cart', 'Motorcycle Bike', 'Pickup Truck',
+    //             'Minibus Shuttle', 'Service Van', 'Administration Car', 'Research Vehicle'
+    //         ]
+    //     ];
+        
+    //     // Default to category name if specific templates not found
+    //     $templates = $itemTemplates[$categoryName] ?? [
+    //         'Professional ' . $categoryName, 'Standard ' . $categoryName, 
+    //         'Premium ' . $categoryName, 'Basic ' . $categoryName,
+    //         'Advanced ' . $categoryName, 'Digital ' . $categoryName
+    //     ];
+        
+    //     return fake()->randomElement($templates);
+    // }
+        // private function createInventoryItems($universities)
+    // {
+    //     $inventoryItems = collect(); // Create a collection to store all items
+        
+    //     $universities->each(function ($university) use (&$inventoryItems) {
+    //         $categories = ItemCategory::where('university_id', $university->university_id)->get();
+    //         $users = User::where('university_id', $university->university_id)->get();
+            
+    //         if ($users->isEmpty()) {
+    //             $this->command->error("No users found for university: {$university->name}");
+    //             return;
+    //         }
+            
+    //         $this->command->info("Creating inventory items for university: {$university->name}");
+            
+    //         $categories->each(function ($category) use ($users, &$inventoryItems) {
+    //             $itemCount = random_int(3, 8);
+    //             for ($i = 0; $i < $itemCount; $i++) {
+    //                 $item = InventoryItem::create([
+    //                     'item_id' => Str::uuid(),
+    //                     'university_id' => $category->university_id,
+    //                     'category_id' => $category->category_id,
+    //                     'item_code' => 'ITEM' . fake()->unique()->numberBetween(10000, 99999),
+    //                     'name' => fake()->words(3, true),
+    //                     'description' => fake()->sentence(),
+    //                     'unit_of_measure' => 'Piece',
+    //                     'unit_cost' => fake()->randomFloat(2, 10, 1000),
+    //                     'current_value' => fake()->randomFloat(2, 5, 800),
+    //                     'minimum_stock_level' => fake()->numberBetween(1, 10),
+    //                     'reorder_point' => fake()->numberBetween(5, 15),
+    //                     'abc_classification' => 'C',
+    //                     'is_active' => true,
+    //                     'created_by' => $users->random()->user_id,
+    //                     'created_at' => now(),
+    //                     'updated_at' => now(),
+    //                 ]);
+    //                 $inventoryItems->push($item); // Add each item to the collection
+    //             }
+    //             $this->command->info("  - Created {$itemCount} items for category: {$category->name}");
+    //         });
+    //     });
+        
+    //     return $inventoryItems; // Return the collection of created items
+    // }
     
     private function createSuppliers($universities)
     {

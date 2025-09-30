@@ -16,8 +16,8 @@ class ItemRepository
         $query = InventoryItem::with([
             'university:university_id,name', // Only select needed fields
             'category:category_id,name',
-            'creator:id,name',
-            'updater:id,name'
+            'creator:user_id,name',
+            'updater:user_id,name'
         ])->select([
             'item_id',
             'university_id',

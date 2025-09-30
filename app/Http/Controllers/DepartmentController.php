@@ -28,7 +28,7 @@ class DepartmentController extends Controller
                 ->orderBy('name')
                 ->get();
 
-            $users = User::select('id', 'name')
+            $users = User::select('user_id', 'name')
                 ->orderBy('name')
                 ->get();    
 
