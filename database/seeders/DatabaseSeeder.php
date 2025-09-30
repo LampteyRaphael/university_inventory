@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\ItemCategory;
 use App\Models\InventoryItem;
 use App\Models\InventoryTransaction;
+use App\Models\Location;
 use App\Models\MaintenanceRecord;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
@@ -35,6 +36,7 @@ class DatabaseSeeder extends Seeder
     InventoryTransaction::truncate(); 
     StockLevel::truncate();
     MaintenanceRecord::truncate();
+    Location::truncate();
     DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
     // Create 3 universities with pre-defined data
@@ -65,7 +67,13 @@ class DatabaseSeeder extends Seeder
     $this->createStockLevels($universities, $inventoryItems, $departments);
 
 
+    // $this->createMaintenanceRecords($universities, $inventoryItems, $departments, $allUsers);
+    // Create maintenance records
     $this->createMaintenanceRecords($universities, $inventoryItems, $departments, $allUsers);
+
+    // Add this line - create locations
+    $locations = $this->createLocations($universities, $departments, $allUsers);
+            
 
         // Output statistics
         $this->outputStatistics();
@@ -1228,202 +1236,189 @@ class DatabaseSeeder extends Seeder
         
         return fake()->randomElement($workDescriptions[$maintenanceType]);
     }
-        // private function createMaintenanceRecords($universities, $inventoryItems, $departments, $users)
-    // {
-    //     $this->command->info("=== Starting Maintenance Records Seeder ===");
+   
+    private function createLocations($universities, $departments, $users)
+    {
+        $this->command->info("=== Starting Locations Seeder ===");
         
-    //     $maintenanceTypes = ['preventive', 'corrective', 'predictive', 'condition_based', 'emergency'];
-    //     $priorities = ['low', 'medium', 'high', 'critical'];
-    //     $statuses = ['scheduled', 'in_progress', 'completed', 'cancelled', 'deferred'];
+        $locationTypes = ['storage', 'office', 'lab', 'classroom', 'workshop', 'outdoor'];
+        $buildings = [
+            'Science Building', 'Engineering Hall', 'Business Tower', 'Liberal Arts Building',
+            'Technology Center', 'Research Complex', 'Main Library', 'Student Center',
+            'Administration Building', 'Arts Building', 'Medical Center', 'Sports Complex'
+        ];
         
-    //     $maintenanceRecords = collect();
-    //     $totalRecordsCreated = 0;
+        $locations = collect();
+        $totalLocationsCreated = 0;
 
-    //     $universities->each(function ($university) use (&$maintenanceRecords, $inventoryItems, $departments, $users, $maintenanceTypes, $priorities, $statuses, &$totalRecordsCreated) {
-    //         $this->command->info("Creating maintenance records for university: {$university->name}");
+        $universities->each(function ($university) use (&$locations, $departments, $users, $locationTypes, $buildings, &$totalLocationsCreated) {
+            $this->command->info("Creating locations for university: {$university->name}");
             
-    //         $universityItems = $inventoryItems->where('university_id', $university->university_id);
-    //         $universityDepartments = $departments->where('university_id', $university->university_id);
-    //         $universityUsers = $users->where('university_id', $university->university_id);
+            $universityDepartments = $departments->where('university_id', $university->university_id);
+            $universityUsers = $users->where('university_id', $university->university_id);
             
-    //         if ($universityItems->isEmpty() || $universityDepartments->isEmpty() || $universityUsers->isEmpty()) {
-    //             $this->command->warn("  ⚠️ No items, departments, or users found for university: {$university->name}");
-    //             return;
-    //         }
+            if ($universityDepartments->isEmpty() || $universityUsers->isEmpty()) {
+                $this->command->warn("  ⚠️ No departments or users found for university: {$university->name}");
+                return;
+            }
             
-    //         // Create maintenance records for each university
-    //         $recordCount = random_int(15, 30);
-            
-    //         for ($i = 0; $i < $recordCount; $i++) {
-    //             $item = $universityItems->random();
-    //             $department = $universityDepartments->random();
-    //             $createdBy = $universityUsers->random();
-    //             $assignedTo = fake()->optional(80)->randomElement($universityUsers);
-    //             $maintenanceType = fake()->randomElement($maintenanceTypes);
-    //             $status = fake()->randomElement($statuses);
+            // Create multiple locations per department
+            $universityDepartments->each(function ($department) use ($university, $universityUsers, $locationTypes, $buildings, &$locations, &$totalLocationsCreated) {
+                $locationCount = random_int(3, 8);
                 
-    //             // Generate maintenance code
-    //             $maintenanceCode = 'MNT-' . $university->code . '-' . date('Y') . '-' . str_pad($i + 1, 5, '0', STR_PAD_LEFT);
-                
-    //             // Set dates based on status
-    //             $scheduledDate = fake()->dateTimeBetween('-6 months', '+3 months');
-    //             $completedDate = null;
-    //             $nextMaintenanceDate = null;
-                
-    //             if ($status === 'completed') {
-    //                 $completedDate = fake()->dateTimeBetween($scheduledDate, 'now');
-    //                 $nextMaintenanceDate = fake()->optional(70)->dateTimeBetween($completedDate, '+1 year');
-    //             } elseif ($status === 'scheduled') {
-    //                 $nextMaintenanceDate = fake()->optional(60)->dateTimeBetween($scheduledDate, '+6 months');
-    //             }
-                
-    //             // Generate costs based on maintenance type and priority
-    //             $laborCost = fake()->randomFloat(2, 50, 2000);
-    //             $partsCost = fake()->optional(70)->randomFloat(2, 10, 1500) ?? 0;
-    //             $totalCost = $laborCost + $partsCost;
-                
-    //             // Generate downtime based on priority and type
-    //             $downtimeHours = $this->getDowntimeHours($maintenanceType, $status);
-                
-    //             try {
-    //                 $maintenanceRecord = \App\Models\MaintenanceRecord::create([
-    //                     'maintenance_id' => Str::uuid(),
-    //                     'university_id' => $university->university_id,
-    //                     'item_id' => $item->item_id,
-    //                     'department_id' => $department->department_id,
-    //                     'maintenance_code' => $maintenanceCode,
-    //                     'scheduled_date' => $scheduledDate,
-    //                     'completed_date' => $completedDate,
-    //                     'maintenance_type' => $maintenanceType,
-    //                     'priority' => fake()->randomElement($priorities),
-    //                     'description' => $this->getMaintenanceDescription($maintenanceType, $item),
-    //                     'work_performed' => $status === 'completed' ? $this->getWorkPerformed($maintenanceType) : null,
-    //                     'root_cause' => $status === 'completed' ? fake()->optional(60)->sentence() : null,
-    //                     'recommendations' => $status === 'completed' ? fake()->optional(50)->sentence() : null,
-    //                     'labor_cost' => $laborCost,
-    //                     'parts_cost' => $partsCost,
-    //                     'total_cost' => $totalCost,
-    //                     'downtime_hours' => $downtimeHours,
-    //                     'technician' => fake()->optional(80)->name(),
-    //                     'vendor' => fake()->optional(40)->company(),
-    //                     'next_maintenance_date' => $nextMaintenanceDate,
-    //                     'status' => $status,
-    //                     'created_by' => $createdBy->user_id,
-    //                     'assigned_to' => $assignedTo ? $assignedTo->user_id : null,
-    //                     'created_at' => $scheduledDate,
-    //                     'updated_at' => fake()->dateTimeBetween($scheduledDate, 'now'),
-    //                 ]);
+                for ($i = 0; $i < $locationCount; $i++) {
+                    $locationType = fake()->randomElement($locationTypes);
+                    $building = fake()->randomElement($buildings);
+                    $managedBy = fake()->optional(60)->randomElement($universityUsers);
                     
-    //                 $maintenanceRecords->push($maintenanceRecord);
-    //                 $totalRecordsCreated++;
-    //                 $this->command->info("    ✅ Created {$maintenanceType} maintenance: {$maintenanceCode} ({$status})");
+                    // Generate location code
+                    $locationCode = 'LOC-' . $university->code . '-' . $department->department_code . '-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT);
                     
-    //             } catch (\Exception $e) {
-    //                 $this->command->error("    ❌ Failed to create maintenance record: {$e->getMessage()}");
-    //             }
-    //         }
-    //     });
+                    // Generate location name based on type and department
+                    $locationName = $this->generateLocationName($locationType, $department, $i);
+                    
+                    // Set location-specific properties
+                    $locationProperties = $this->getLocationProperties($locationType);
+                    
+                    try {
+                        $location = \App\Models\Location::create([
+                            'location_id' => Str::uuid(),
+                            'university_id' => $university->university_id,
+                            'department_id' => $department->department_id,
+                            'location_code' => $locationCode,
+                            'name' => $locationName,
+                            'building' => $building,
+                            'floor' => fake()->randomElement(['G', '1', '2', '3', '4', '5', 'B1', 'B2']),
+                            'room_number' => fake()->bothify('###'),
+                            'aisle' => fake()->optional(40)->bothify('Aisle ?'),
+                            'shelf' => fake()->optional(30)->bothify('Shelf ?'),
+                            'bin' => fake()->optional(20)->bothify('Bin ?'),
+                            'capacity' => fake()->optional(70)->randomFloat(2, 100, 5000),
+                            'current_utilization' => fake()->randomFloat(2, 0, 100),
+                            'location_type' => $locationType,
+                            'is_secured' => fake()->boolean(40),
+                            'is_climate_controlled' => $locationProperties['is_climate_controlled'],
+                            'temperature_min' => $locationProperties['temperature_min'],
+                            'temperature_max' => $locationProperties['temperature_max'],
+                            'humidity_min' => $locationProperties['humidity_min'],
+                            'humidity_max' => $locationProperties['humidity_max'],
+                            'is_active' => fake()->boolean(90),
+                            'managed_by' => $managedBy ? $managedBy->user_id : null,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        
+                        $locations->push($location);
+                        $totalLocationsCreated++;
+                        $this->command->info("    ✅ Created {$locationType} location: {$locationName} ({$locationCode})");
+                        
+                    } catch (\Exception $e) {
+                        $this->command->error("    ❌ Failed to create location: {$e->getMessage()}");
+                    }
+                }
+            });
+        });
         
-    //     $this->command->info("=== Maintenance Records Seeder Completed ===");
-    //     $this->command->info("Total maintenance records created: {$totalRecordsCreated}");
+        $this->command->info("=== Locations Seeder Completed ===");
+        $this->command->info("Total locations created: {$totalLocationsCreated}");
         
-    //     return $maintenanceRecords;
-    // }
+        return $locations;
+    }
 
-    // // Helper methods for maintenance records
-    // private function getDowntimeHours($maintenanceType, $status)
-    // {
-    //     if ($status !== 'completed') {
-    //         return 0;
-    //     }
+    // Helper methods for locations
+    private function generateLocationName($locationType, $department, $index)
+    {
+        $names = [
+            'storage' => [
+                "{$department->name} Storage Room",
+                "{$department->name} Supply Closet",
+                "{$department->name} Equipment Storage",
+                "{$department->name} Materials Room"
+            ],
+            'office' => [
+                "{$department->name} Office #{$index}",
+                "{$department->name} Faculty Office",
+                "{$department->name} Staff Office",
+                "{$department->name} Administration Office"
+            ],
+            'lab' => [
+                "{$department->name} Laboratory #{$index}",
+                "{$department->name} Research Lab",
+                "{$department->name} Computer Lab",
+                "{$department->name} Science Lab"
+            ],
+            'classroom' => [
+                "{$department->name} Classroom #{$index}",
+                "{$department->name} Lecture Hall",
+                "{$department->name} Seminar Room",
+                "{$department->name} Tutorial Room"
+            ],
+            'workshop' => [
+                "{$department->name} Workshop",
+                "{$department->name} Maker Space",
+                "{$department->name} Technical Workshop",
+                "{$department->name} Project Room"
+            ],
+            'outdoor' => [
+                "{$department->name} Outdoor Storage",
+                "{$department->name} Yard Area",
+                "{$department->name} External Compound",
+                "{$department->name} Open Area"
+            ]
+        ];
         
-    //     switch ($maintenanceType) {
-    //         case 'emergency':
-    //             return fake()->numberBetween(2, 48); // Longer downtime for emergencies
-    //         case 'corrective':
-    //             return fake()->numberBetween(1, 24);
-    //         case 'preventive':
-    //             return fake()->numberBetween(1, 8);
-    //         case 'predictive':
-    //             return fake()->numberBetween(1, 4);
-    //         case 'condition_based':
-    //             return fake()->numberBetween(1, 6);
-    //         default:
-    //             return fake()->numberBetween(1, 12);
-    //     }
-    // }
+        return fake()->randomElement($names[$locationType]);
+    }
 
-    // private function getMaintenanceDescription($maintenanceType, $item)
-    // {
-    //     $descriptions = [
-    //         'preventive' => [
-    //             "Routine preventive maintenance for {$item->name}",
-    //             "Scheduled maintenance check for {$item->name}",
-    //             "Regular service and inspection of {$item->name}",
-    //             "Preventive maintenance as per maintenance schedule for {$item->name}"
-    //         ],
-    //         'corrective' => [
-    //             "Repair and correction of faults in {$item->name}",
-    //             "Corrective maintenance to fix reported issues with {$item->name}",
-    //             "Troubleshooting and repair of {$item->name}",
-    //             "Fix operational issues with {$item->name}"
-    //         ],
-    //         'predictive' => [
-    //             "Predictive maintenance based on condition monitoring of {$item->name}",
-    //             "Advanced diagnostics and predictive analysis for {$item->name}",
-    //             "Condition-based predictive maintenance for {$item->name}",
-    //             "Monitoring and predictive maintenance activities for {$item->name}"
-    //         ],
-    //         'condition_based' => [
-    //             "Condition-based maintenance triggered by monitoring parameters of {$item->name}",
-    //             "Maintenance based on actual condition assessment of {$item->name}",
-    //             "Condition monitoring and maintenance for {$item->name}",
-    //             "Performance-based maintenance for {$item->name}"
-    //         ],
-    //         'emergency' => [
-    //             "Emergency repair for critical failure of {$item->name}",
-    //             "Urgent maintenance to restore functionality of {$item->name}",
-    //             "Emergency response for breakdown of {$item->name}",
-    //             "Critical repair work for {$item->name}"
-    //         ]
-    //     ];
+    private function getLocationProperties($locationType)
+    {
+        $properties = [
+            'storage' => [
+                'is_climate_controlled' => fake()->boolean(60),
+                'temperature_min' => fake()->optional(50)->randomFloat(2, 15, 20),
+                'temperature_max' => fake()->optional(50)->randomFloat(2, 20, 25),
+                'humidity_min' => fake()->optional(40)->randomFloat(2, 30, 40),
+                'humidity_max' => fake()->optional(40)->randomFloat(2, 40, 60),
+            ],
+            'lab' => [
+                'is_climate_controlled' => true,
+                'temperature_min' => fake()->randomFloat(2, 18, 20),
+                'temperature_max' => fake()->randomFloat(2, 22, 24),
+                'humidity_min' => fake()->randomFloat(2, 40, 45),
+                'humidity_max' => fake()->randomFloat(2, 45, 55),
+            ],
+            'office' => [
+                'is_climate_controlled' => true,
+                'temperature_min' => fake()->randomFloat(2, 20, 22),
+                'temperature_max' => fake()->randomFloat(2, 22, 24),
+                'humidity_min' => fake()->randomFloat(2, 40, 45),
+                'humidity_max' => fake()->randomFloat(2, 45, 55),
+            ],
+            'classroom' => [
+                'is_climate_controlled' => fake()->boolean(80),
+                'temperature_min' => fake()->optional(70)->randomFloat(2, 18, 20),
+                'temperature_max' => fake()->optional(70)->randomFloat(2, 22, 24),
+                'humidity_min' => fake()->optional(60)->randomFloat(2, 40, 45),
+                'humidity_max' => fake()->optional(60)->randomFloat(2, 45, 55),
+            ],
+            'workshop' => [
+                'is_climate_controlled' => fake()->boolean(30),
+                'temperature_min' => fake()->optional(20)->randomFloat(2, 15, 18),
+                'temperature_max' => fake()->optional(20)->randomFloat(2, 20, 25),
+                'humidity_min' => fake()->optional(15)->randomFloat(2, 30, 40),
+                'humidity_max' => fake()->optional(15)->randomFloat(2, 40, 60),
+            ],
+            'outdoor' => [
+                'is_climate_controlled' => false,
+                'temperature_min' => null,
+                'temperature_max' => null,
+                'humidity_min' => null,
+                'humidity_max' => null,
+            ]
+        ];
         
-    //     return fake()->randomElement($descriptions[$maintenanceType]);
-    // }
-
-    // private function getWorkPerformed($maintenanceType)
-    // {
-    //     $workDescriptions = [
-    //         'preventive' => [
-    //             "Performed routine inspection, cleaning, and lubrication. Checked all components for wear and tear. Replaced consumable parts as needed.",
-    //             "Completed scheduled maintenance including calibration, testing, and minor adjustments. Verified all safety features are functional.",
-    //             "Conducted preventive maintenance procedures as per manufacturer specifications. Inspected electrical and mechanical systems."
-    //         ],
-    //         'corrective' => [
-    //             "Identified and repaired faulty components. Replaced damaged parts and tested system functionality. Performed alignment and calibration.",
-    //             "Troubleshooted reported issues, identified root cause, and implemented corrective actions. Verified repair effectiveness.",
-    //             "Fixed operational defects, replaced worn components, and restored equipment to optimal working condition."
-    //         ],
-    //         'predictive' => [
-    //             "Analyzed condition monitoring data, performed advanced diagnostics, and addressed potential failure points before breakdown occurs.",
-    //             "Conducted vibration analysis, thermal imaging, and other predictive techniques to identify early signs of deterioration.",
-    //             "Used predictive analytics to identify maintenance needs and performed proactive repairs based on data-driven insights."
-    //         ],
-    //         'condition_based' => [
-    //             "Monitored equipment condition parameters and performed maintenance based on actual asset condition rather than fixed schedule.",
-    //             "Assessed equipment health through various monitoring techniques and performed necessary maintenance actions.",
-    //             "Evaluated performance metrics and condition indicators to determine optimal maintenance timing and scope."
-    //         ],
-    //         'emergency' => [
-    //             "Emergency response team deployed to address critical failure. Performed urgent repairs to restore essential functionality.",
-    //             "Immediate corrective actions taken to resolve emergency breakdown. Temporary fixes applied with follow-up scheduled.",
-    //             "Critical repair work completed under emergency conditions to minimize operational impact and ensure safety."
-    //         ]
-    //     ];
-        
-    //     return fake()->randomElement($workDescriptions[$maintenanceType]);
-    // }
-
+        return $properties[$locationType];
+    }
 
 
 
@@ -1440,7 +1435,8 @@ class DatabaseSeeder extends Seeder
         $this->command->info('Purchase order items created: ' . PurchaseOrderItem::count());
         $this->command->info('Inventory transactions created: ' . \App\Models\InventoryTransaction::count());
         $this->command->info('Stock levels created: ' . \App\Models\StockLevel::count());
-        $this->command->info('Maintenance records created: ' . \App\Models\MaintenanceRecord::count()); // Add this line
+        $this->command->info('Maintenance records created: ' . \App\Models\MaintenanceRecord::count());
+        $this->command->info('Locations created: ' . \App\Models\Location::count()); // Add this line
         $this->command->info('Total users created: ' . User::count());
         $this->command->info('');
         $this->command->info('=== Login Credentials ===');
