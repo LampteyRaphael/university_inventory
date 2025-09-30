@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class InventoryItem extends Model
 {
     use HasFactory, SoftDeletes;
-
+    use Auditable;
     protected $table = 'inventory_items';
     protected $primaryKey = 'item_id';
     public $incrementing = false; // Because you're using UUID

@@ -10,6 +10,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\MaintenanceRecordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RouteController;
+use App\Http\Controllers\UserController;
 use App\Models\Department;
 use App\Models\InventoryItem;
 use App\Models\InventoryTransaction;
@@ -47,9 +48,8 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth','verified')->group(function () {
  
-        // Item categories table
-        // Route::get('/item_categories', [RouteController::class, 'item_categories'])->name('item_categories');        
 
+    //Item categories
     Route::get('/item-categories', [ItemCategoryController::class, 'index'])->name("item-categories.index");
     Route::post('/item-categories', [ItemCategoryController::class, 'store'])->name("item-categories.store");
     Route::get('/item-categories/{id}', [ItemCategoryController::class, 'show'])->name("item-categories.show");
@@ -146,7 +146,7 @@ Route::middleware('auth','verified')->group(function () {
 
     Route::get('/inventory-report',[InventoryReportController::class,'index'])->name('inventory-report.index');
     Route::post('/reports/generate', [InventoryReportController::class, 'generate'])->name('reports.generate');
-    Route::post('/reports/generate', [InventoryReportController::class, 'export'])->name('reports.export');
+    // Route::post('/reports/generate', [InventoryReportController::class, 'export'])->name('reports.export');
 
 });
 

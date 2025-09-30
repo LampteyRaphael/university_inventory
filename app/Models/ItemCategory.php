@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,8 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ItemCategory extends Model
 {
-    use SoftDeletes;
-
+    use HasFactory;
+    use SoftDeletes,Auditable;
+   
     /**
      * The primary key for the model.
      *
@@ -139,6 +142,7 @@ class ItemCategory extends Model
         return $this->hasMany(ItemCategory::class, 'parent_category_id', 'category_id')
                     ->orderBy('lft');
     }
+    
 
     /**
      * Get all descendant categories (recursive).

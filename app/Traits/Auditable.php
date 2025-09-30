@@ -7,6 +7,7 @@ use App\Models\University;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 trait Auditable
 {
@@ -32,7 +33,6 @@ trait Auditable
             self::logAudit($model, 'DELETE', $model->getOriginal(), null);
         });
 
-        // For soft deletes
         if (method_exists(static::class, 'bootSoftDeletes')) {
             static::restored(function ($model) {
                 self::logAudit($model, 'RESTORE', null, $model->getAttributes());
@@ -44,15 +44,6 @@ trait Auditable
         }
     }
 
-    public function university(): BelongsTo
-    {
-        return $this->belongsTo(University::class, 'university_id', 'university_id')
-                    ->withDefault(function ($university, $auditLog) {
-                        // Provide default values if university doesn't exist
-                        $university->name = 'Unknown University';
-                        $university->code = 'UNKNOWN';
-                    });
-    }
     /**
      * Log audit entry for model events.
      */
@@ -73,41 +64,130 @@ trait Auditable
                 $newValues = collect($newValues)->except($sensitiveFields)->toArray();
             }
 
-            // Create audit log entry
-            AuditLog::create([
-                'university_id' => self::getUniversityId(),
+            // Get university ID with validation
+            $universityId = self::getValidUniversityId($model);
+
+            // Prepare audit data
+            $auditData = [
+                'audit_id' => \Illuminate\Support\Str::uuid()->toString(),
+                'university_id' => $universityId,
                 'table_name' => $tableName,
                 'record_id' => (string) $recordId,
                 'action' => $action,
-                'old_values' => $oldValues,
-                'new_values' => $newValues,
+                'old_values' => $oldValues ?: null,
+                'new_values' => $newValues ?: null,
                 'url' => request()->fullUrl() ?? 'system',
                 'ip_address' => request()->ip() ?? '127.0.0.1',
-                'user_agent' => request()->userAgent(),
-                'user_id' => Auth::id(),
+                'user_agent' => request()->userAgent() ?? 'Unknown',
+                'id' => Auth::id(),
+                // 'user_id' => Auth::id(),
                 'performed_at' => now(),
-            ]);
+            ];
+
+            // Create audit log entry
+            AuditLog::create($auditData);
 
         } catch (\Exception $e) {
-            // Log the error but don't break the application
-            Log::error('Audit logging failed: ' . $e->getMessage());
+            Log::error('Audit logging failed: ' . $e->getMessage(), [
+                'model' => get_class($model),
+                'action' => $action,
+                'exception' => $e->getTraceAsString()
+            ]);
         }
     }
 
     /**
-     * Get university ID from authenticated user or model.
+     * Get validated university ID.
      */
-    protected static function getUniversityId()
+    protected static function getValidUniversityId($model = null)
     {
+        $universityId = self::getUniversityId($model);
+        
+        // Validate that the university exists
+        if ($universityId && !self::universityExists($universityId)) {
+            Log::warning("University ID {$universityId} does not exist in universities table");
+            
+            // Get a valid university ID or create a default one
+            $universityId = self::getOrCreateDefaultUniversity();
+        }
+        
+        return $universityId;
+    }
+
+    /**
+     * Check if university exists.
+     */
+    protected static function universityExists($universityId)
+    {
+        return DB::table('universities')->where('university_id', $universityId)->exists();
+    }
+
+    /**
+     * Get university ID from various sources.
+     */
+    protected static function getUniversityId($model = null)
+    {
+        // 1. From authenticated user
         if (Auth::check() && Auth::user()->university_id) {
             return Auth::user()->university_id;
         }
 
-        // If model has university_id, use it
-        if (isset($model->university_id)) {
+        // 2. From model
+        if ($model && isset($model->university_id) && !empty($model->university_id)) {
             return $model->university_id;
         }
 
-        return null;
+        // 3. From request
+        if (request()->has('university_id')) {
+            return request()->get('university_id');
+        }
+
+        // 4. Get default university
+        return self::getOrCreateDefaultUniversity();
+    }
+
+    /**
+     * Get or create a default university.
+     */
+    protected static function getOrCreateDefaultUniversity()
+    {
+        try {
+            // Try to get an existing university
+            $defaultUniversity = University::first();
+            
+            if ($defaultUniversity) {
+                return $defaultUniversity->university_id;
+            }
+            
+            // Create a default university if none exists
+            return self::createDefaultUniversity();
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to get or create default university: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Create a default university.
+     */
+    protected static function createDefaultUniversity()
+    {
+        try {
+            $university = University::create([
+                'university_id' => 'DEFAULT001',
+                'name' => 'Default University',
+                'code' => 'DEFAULT',
+                'description' => 'Automatically created default university',
+                'is_active' => true,
+            ]);
+            
+            Log::info('Created default university: ' . $university->university_id);
+            return $university->university_id;
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to create default university: ' . $e->getMessage());
+            return null;
+        }
     }
 }

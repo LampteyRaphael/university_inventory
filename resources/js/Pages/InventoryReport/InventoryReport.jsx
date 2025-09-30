@@ -240,22 +240,6 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
     },
   ];
 
-//   const getReportPreview = () => {
-//     const type = reportTypes.find(t => t.value === data.report_type);
-//     return {
-//       type: type?.label || 'Unknown Report',
-//       categories: data.categories.length > 0 ? data?.categories.join(', ') : 'All Categories',
-//       dateRange: data.date_range === 'custom' 
-//         ? `Custom: ${customDateRange.start?.toLocaleDateString()} - ${customDateRange.end?.toLocaleDateString()}`
-//         : dateRanges.find(d => d.value === data.date_range)?.label,
-//       content: [
-//         ...(data.include_summary ? ['Executive Summary'] : []),
-//         ...(data.include_charts ? ['Visual Analytics'] : []),
-//         ...(data.include_tables ? ['Data Tables'] : []),
-//       ].join(' • '),
-//       export: data.export_format.toUpperCase(),
-//     };
-//   };
 const getReportPreview = () => {
   const type = reportTypes.find(t => t.value === data.report_type);
   
