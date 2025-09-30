@@ -248,7 +248,7 @@ export default function UserIndex({ users, filters, roles, universities, departm
 
                 {/* Quick Stats */}
                 <Grid container spacing={3} sx={{ mb: 4 }}>
-                    {stats.map((stat, index) => (
+                    {stats?.map((stat, index) => (
                         <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>
                             <Card sx={{ bgcolor: stat.color, color: 'white' }}>
                                 <CardContent>

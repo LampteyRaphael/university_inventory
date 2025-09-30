@@ -8,6 +8,11 @@ use App\Models\University;
 
 class UniversityFactory extends Factory
 {
+    protected $model = University::class;
+
+    // Track used universities to avoid duplicates
+    private static $usedUniversities = [];
+
     /**
      * Define the model's default state.
      *
@@ -38,7 +43,16 @@ class UniversityFactory extends Factory
             'Wa Technical University'
         ];
 
-        $name = $this->faker->unique()->randomElement($ghanaianUniversities);
+        // Get available universities (not used yet)
+        $availableUniversities = array_diff($ghanaianUniversities, self::$usedUniversities);
+        
+        // If no universities left, reset or use random
+        if (empty($availableUniversities)) {
+            $name = $this->faker->randomElement($ghanaianUniversities);
+        } else {
+            $name = $this->faker->randomElement($availableUniversities);
+            self::$usedUniversities[] = $name;
+        }
         
         // Generate unique code from university name
         $code = $this->generateGhanaianUniversityCode($name);
@@ -90,10 +104,18 @@ class UniversityFactory extends Factory
                 'ghananian_education_system' => true,
                 'natioanal_accreditation_board' => true,
             ]),
-            'is_active' => true, // Most Ghanaian universities are active
+            'is_active' => true,
             'created_at' => $this->faker->dateTimeBetween('-10 years', 'now'),
             'updated_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
         ];
+    }
+
+    /**
+     * Reset the used universities tracking
+     */
+    public static function resetUsedUniversities(): void
+    {
+        self::$usedUniversities = [];
     }
 
     /**
@@ -102,9 +124,9 @@ class UniversityFactory extends Factory
     private function generateGhanaianUniversityCode(string $name): string
     {
         $abbreviations = [
-            'University of Ghana' => 'UG',
+            // 'University of Ghana' => 'UG',
             'Kwame Nkrumah University of Science and Technology' => 'KNUST',
-            'University of Cape Coast' => 'UCC',
+            // 'University of Cape Coast' => 'UCC',
             'University of Education, Winneba' => 'UEW',
             'University of Professional Studies' => 'UPSA',
             'Ghana Institute of Management and Public Administration' => 'GIMPA',
@@ -146,7 +168,7 @@ class UniversityFactory extends Factory
     {
         $domains = [
             'University of Ghana' => 'ug.edu.gh',
-            'Kwame Nkrumah University of Science and Technology' => 'knust.edu.gh',
+            // 'Kwame Nkrumah University of Science and Technology' => 'knust.edu.gh',
             'University of Cape Coast' => 'ucc.edu.gh',
             'University of Education, Winneba' => 'uew.edu.gh',
             'University of Professional Studies' => 'upsa.edu.gh',
