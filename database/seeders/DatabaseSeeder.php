@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\User;
 use App\Models\ItemCategory;
 use App\Models\InventoryItem;
+use App\Models\InventoryTransaction;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Supplier;
@@ -19,39 +20,44 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Clear any existing data first
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        User::truncate();
-        Department::truncate();
-        ItemCategory::truncate();
-        InventoryItem::truncate();
-        Supplier::truncate(); 
-        PurchaseOrder::truncate(); 
-        University::truncate();
-        PurchaseOrderItem::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+     // Clear any existing data first
+    DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+    User::truncate();
+    Department::truncate();
+    ItemCategory::truncate();
+    InventoryItem::truncate();
+    Supplier::truncate(); 
+    PurchaseOrder::truncate(); 
+    University::truncate();
+    PurchaseOrderItem::truncate();
+    InventoryTransaction::truncate(); // Add this line
+    DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // Create 3 universities with pre-defined data
-        $universities = $this->createUniversities();
-        
-        // Create departments with guaranteed unique codes per university
-        $departments = $this->createDepartments($universities);
-        
-        // Create all users
-        $this->createUsers($universities, $departments);
-        
-        // Create item categories
-        $this->createItemCategories($universities);
-        
-        // Create inventory items
-        $inventoryItems=$this->createInventoryItems($universities);
+    // Create 3 universities with pre-defined data
+    $universities = $this->createUniversities();
+    
+    // Create departments with guaranteed unique codes per university
+    $departments = $this->createDepartments($universities);
+    
+    // Create all users
+    $this->createUsers($universities, $departments);
+    
+    // Create item categories
+    $this->createItemCategories($universities);
+    
+    // Create inventory items
+    $inventoryItems = $this->createInventoryItems($universities);
 
-        $suppliers=$this->createSuppliers($universities);
+    $suppliers = $this->createSuppliers($universities);
 
-        $purchaseOrders=$this->createPurchaseOrders($universities, $departments, $suppliers);
+    $purchaseOrders = $this->createPurchaseOrders($universities, $departments, $suppliers);
 
-        $this->createPurchaseOrderItems($purchaseOrders, $inventoryItems);
+    $this->createPurchaseOrderItems($purchaseOrders, $inventoryItems);
 
+    // Add this line - create inventory transactions
+    $allUsers = User::all();
+    $this->createInventoryTransactions($universities, $inventoryItems, $departments, $purchaseOrders, $allUsers);
+            
 
             
         // Output statistics
@@ -637,7 +643,7 @@ class DatabaseSeeder extends Seeder
             $this->command->info("  Processing {$selectedItems->count()} selected items");
             
             foreach ($selectedItems as $item) {
-                $quantityOrdered = random_int(1, 100);
+                $quantityOrdered = random_int(2, 100); // CHANGED: Minimum 2 to avoid the error
                 $unitPrice = fake()->randomFloat(2, 10, 1000);
                 $taxRate = fake()->randomFloat(2, 0, 25);
                 $discountRate = fake()->optional(0.3, 0)->randomFloat(2, 5, 15);
@@ -662,6 +668,7 @@ class DatabaseSeeder extends Seeder
                         $quantityReceived = $quantityOrdered;
                         break;
                     case PurchaseOrderItem::STATUS_PARTIALLY_RECEIVED:
+                        // FIXED: Now safe because quantityOrdered is at least 2
                         $quantityReceived = random_int(1, $quantityOrdered - 1);
                         break;
                     case PurchaseOrderItem::STATUS_CANCELLED:
@@ -721,134 +728,13 @@ class DatabaseSeeder extends Seeder
         return $purchaseOrderItems;
     }
 
-    // private function createPurchaseOrderItems($purchaseOrders, $inventoryItems)
-    // {
-    //     // Add detailed debugging
-    //     $this->command->info("=== Starting Purchase Order Items Seeder ===");
-    //     $this->command->info("Purchase Orders count: " . $purchaseOrders->count());
-    //     $this->command->info("Inventory Items count: " . $inventoryItems->count());
-        
-    //     if (!$inventoryItems || $inventoryItems->isEmpty()) {
-    //         $this->command->error("No inventory items provided to create purchase order items");
-    //         return collect();
-    //     }
+///////////////////////////////////////////////////////
 
-    //     if ($purchaseOrders->isEmpty()) {
-    //         $this->command->error("No purchase orders provided");
-    //         return collect();
-    //     }
 
-    //     $statuses = ['ordered', 'partially_received', 'received', 'cancelled'];
-    //     $purchaseOrderItems = collect();
-    //     $totalItemsCreated = 0;
 
-    //     $purchaseOrders->each(function ($purchaseOrder) use (&$purchaseOrderItems, $inventoryItems, $statuses, &$totalItemsCreated) {
-    //         $itemCount = random_int(2, 8);
-    //         $this->command->info("Creating {$itemCount} items for purchase order: {$purchaseOrder->po_number} (University: {$purchaseOrder->university_id})");
-            
-    //         // Get items that belong to the same university as the purchase order
-    //         $universityItems = $inventoryItems->where('university_id', $purchaseOrder->university_id);
-            
-    //         $this->command->info("  Found {$universityItems->count()} inventory items for this university");
-            
-    //         if ($universityItems->isEmpty()) {
-    //             $this->command->warn("  ⚠️ No inventory items found for university: {$purchaseOrder->university_id}");
-    //             return;
-    //         }
-            
-    //         // Ensure we don't request more items than available
-    //         $actualItemCount = min($itemCount, $universityItems->count());
-    //         $this->command->info("  Selecting {$actualItemCount} random items");
-            
-    //         // Select random items for this purchase order
-    //         $selectedItems = $universityItems->random($actualItemCount);
-            
-    //         // If we got a single item instead of collection, convert to collection
-    //         if (!is_iterable($selectedItems)) {
-    //             $selectedItems = collect([$selectedItems]);
-    //         }
 
-    //         $this->command->info("  Processing {$selectedItems->count()} selected items");
-            
-    //         foreach ($selectedItems as $item) {
-    //             $quantityOrdered = random_int(1, 100);
-    //             $quantityReceived = 0;
-    //             $quantityCancelled = 0;
-    //             $unitPrice = fake()->randomFloat(2, 10, 1000);
-    //             $taxRate = fake()->randomFloat(2, 0, 25);
-    //             $discountRate = fake()->optional(30)->randomFloat(2, 5, 15) ?? 0;
-                
-    //             // Calculate line total
-    //             $subtotal = $quantityOrdered * $unitPrice;
-    //             $discountAmount = $subtotal * ($discountRate / 100);
-    //             $taxAmount = ($subtotal - $discountAmount) * ($taxRate / 100);
-    //             $lineTotal = $subtotal - $discountAmount + $taxAmount;
-                
-    //             // Determine status and set quantities accordingly
-    //             $status = fake()->randomElement($statuses);
-                
-    //             switch ($status) {
-    //                 case 'received':
-    //                     $quantityReceived = $quantityOrdered;
-    //                     break;
-    //                 case 'partially_received':
-    //                     $quantityReceived = random_int(1, $quantityOrdered - 1);
-    //                     break;
-    //                 case 'cancelled':
-    //                     $quantityCancelled = $quantityOrdered;
-    //                     break;
-    //                 default: // ordered
-    //                     $quantityReceived = 0;
-    //                     $quantityCancelled = 0;
-    //             }
-                
-    //             // Set delivery dates based on purchase order dates and status
-    //             $expectedDeliveryDate = $purchaseOrder->expected_delivery_date 
-    //                 ? fake()->dateTimeBetween($purchaseOrder->order_date, $purchaseOrder->expected_delivery_date)
-    //                 : null;
-                    
-    //             $actualDeliveryDate = null;
-    //             if ($status === 'received' || $status === 'partially_received') {
-    //                 $actualDeliveryDate = $expectedDeliveryDate 
-    //                     ? fake()->dateTimeBetween($purchaseOrder->order_date, $expectedDeliveryDate)
-    //                     : fake()->dateTimeBetween($purchaseOrder->order_date, '+1 month');
-    //             }
-                
-    //             try {
-    //                 $purchaseOrderItem = \App\Models\PurchaseOrderItem::create([
-    //                     'order_item_id' => Str::uuid(),
-    //                     'order_id' => $purchaseOrder->order_id,
-    //                     'item_id' => $item->item_id,
-    //                     'quantity_ordered' => $quantityOrdered,
-    //                     'quantity_received' => $quantityReceived,
-    //                     'quantity_cancelled' => $quantityCancelled,
-    //                     'unit_price' => $unitPrice,
-    //                     'tax_rate' => $taxRate,
-    //                     'discount_rate' => $discountRate,
-    //                     'line_total' => $lineTotal,
-    //                     'expected_delivery_date' => $expectedDeliveryDate,
-    //                     'actual_delivery_date' => $actualDeliveryDate,
-    //                     'status' => $status,
-    //                     'notes' => fake()->optional(20)->sentence(),
-    //                     'created_at' => $purchaseOrder->order_date,
-    //                     'updated_at' => fake()->dateTimeBetween($purchaseOrder->order_date, 'now'),
-    //                 ]);
-                    
-    //                 $purchaseOrderItems->push($purchaseOrderItem);
-    //                 $totalItemsCreated++;
-    //                 $this->command->info("    ✅ Created item: {$item->item_name} (Qty: {$quantityOrdered}, Status: {$status}, Total: \${$lineTotal})");
-                    
-    //             } catch (\Exception $e) {
-    //                 $this->command->error("    ❌ Failed to create item: {$e->getMessage()}");
-    //             }
-    //         }
-    //     });
-        
-    //     $this->command->info("=== Purchase Order Items Seeder Completed ===");
-    //     $this->command->info("Total purchase order items created: {$totalItemsCreated}");
-        
-    //     return $purchaseOrderItems;
-    // }
+
+//////////////////////////////////////////////////////////////
 
     private function generateSupplierName(): string
     {
@@ -860,6 +746,356 @@ class DatabaseSeeder extends Seeder
             fake()->randomElement($businessTypes) . ' ' . 
             fake()->randomElement($companyTypes);
     }
+
+    private function createInventoryTransactions($universities, $inventoryItems, $departments, $purchaseOrders, $users)
+    {
+        $this->command->info("=== Starting Inventory Transactions Seeder ===");
+        
+        $transactionTypes = ['purchase', 'sale', 'transfer', 'adjustment', 'return', 'write_off', 'consumption', 'production', 'donation'];
+        $statuses = ['pending', 'completed', 'cancelled', 'reversed'];
+        
+        $inventoryTransactions = collect();
+        $totalTransactionsCreated = 0;
+
+        $universities->each(function ($university) use (&$inventoryTransactions, $inventoryItems, $departments, $purchaseOrders, $users, $transactionTypes, $statuses, &$totalTransactionsCreated) {
+            $this->command->info("Creating inventory transactions for university: {$university->name}");
+            
+            $universityItems = $inventoryItems->where('university_id', $university->university_id);
+            $universityDepartments = $departments->where('university_id', $university->university_id);
+            $universityUsers = $users->where('university_id', $university->university_id);
+            $universityPurchaseOrders = $purchaseOrders->where('university_id', $university->university_id);
+            
+            if ($universityItems->isEmpty() || $universityDepartments->isEmpty() || $universityUsers->isEmpty()) {
+                $this->command->warn("  ⚠️ No items, departments, or users found for university: {$university->name}");
+                return;
+            }
+            
+            // Create multiple transactions per university
+            $transactionCount = random_int(20, 50);
+            
+            for ($i = 0; $i < $transactionCount; $i++) {
+                $item = $universityItems->random();
+                $department = $universityDepartments->random();
+                $performedBy = $universityUsers->random();
+                $approvedBy = fake()->optional(70)->randomElement($universityUsers);
+                $transactionType = fake()->randomElement($transactionTypes);
+                
+                // Set quantity based on transaction type
+                $quantity = $this->getQuantityForTransactionType($transactionType, $item);
+                $unitCost = $item->unit_cost;
+                $totalValue = $quantity * $unitCost;
+                
+                // Set reference based on transaction type
+                $referenceNumber = $this->generateReferenceNumber($transactionType, $i);
+                $referenceId = $this->getReferenceId($transactionType, $universityPurchaseOrders);
+                
+                // Set locations based on transaction type
+                $sourceLocationId = $this->getSourceLocation($transactionType, $universityDepartments);
+                $destinationLocationId = $this->getDestinationLocation($transactionType, $universityDepartments);
+                $expiryDate = fake()->optional(40)->dateTimeBetween('now', '+2 years');
+                $formattedExpiryDate = $expiryDate ? $expiryDate->format('Y-m-d') : null;
+
+                try {
+                    $transaction = \App\Models\InventoryTransaction::create([
+                        'transaction_id' => Str::uuid(),
+                        'university_id' => $university->university_id,
+                        'item_id' => $item->item_id,
+                        'department_id' => $department->department_id,
+                        'transaction_type' => $transactionType,
+                        'quantity' => $quantity,
+                        'unit_cost' => $unitCost,
+                        'total_value' => $totalValue,
+                        'transaction_date' => fake()->dateTimeBetween('-1 year', 'now'),
+                        'reference_number' => $referenceNumber,
+                        'reference_id' => $referenceId,
+                        'batch_number' => fake()->optional(60)->bothify('BATCH-#####'),
+                        'expiry_date' => $formattedExpiryDate,
+                        'notes' => $this->getNotesForTransactionType($transactionType, $item, $quantity),
+                        'source_location_id' => $sourceLocationId,
+                        'destination_location_id' => $destinationLocationId,
+                        'status' => fake()->randomElement($statuses),
+                        'performed_by' => $performedBy->user_id,
+                        'approved_by' => $approvedBy ? $approvedBy->user_id : null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    
+                    $inventoryTransactions->push($transaction);
+                    $totalTransactionsCreated++;
+                    $this->command->info("    ✅ Created {$transactionType} transaction: {$referenceNumber} (Qty: {$quantity})");
+                    
+                } catch (\Exception $e) {
+                    $this->command->error("    ❌ Failed to create transaction: {$e->getMessage()}");
+                }
+            }
+        });
+        
+        $this->command->info("=== Inventory Transactions Seeder Completed ===");
+        $this->command->info("Total inventory transactions created: {$totalTransactionsCreated}");
+        
+        return $inventoryTransactions;
+    }
+
+    // Helper methods for the transaction seeder
+    private function getQuantityForTransactionType($transactionType, $item)
+    {
+        switch ($transactionType) {
+            case 'purchase':
+                return fake()->numberBetween(10, 100);
+            case 'sale':
+                return fake()->numberBetween(1, 20);
+            case 'transfer':
+                return fake()->numberBetween(5, 50);
+            case 'adjustment':
+                return fake()->numberBetween(-10, 10);
+            case 'return':
+                return fake()->numberBetween(1, 15);
+            case 'write_off':
+                return fake()->numberBetween(-20, -1);
+            case 'consumption':
+                return fake()->numberBetween(1, 25);
+            case 'production':
+                return fake()->numberBetween(10, 100);
+            case 'donation':
+                return fake()->numberBetween(5, 30);
+            default:
+                return fake()->numberBetween(1, 50);
+        }
+    }
+
+    private function generateReferenceNumber($transactionType, $index)
+    {
+        $prefixes = [
+            'purchase' => 'PO',
+            'sale' => 'SO',
+            'transfer' => 'TR',
+            'adjustment' => 'ADJ',
+            'return' => 'RET',
+            'write_off' => 'WO',
+            'consumption' => 'CON',
+            'production' => 'PROD',
+            'donation' => 'DON'
+        ];
+        
+        $prefix = $prefixes[$transactionType] ?? 'TRX';
+        return $prefix . '-' . date('Y') . '-' . str_pad($index + 1, 5, '0', STR_PAD_LEFT);
+    }
+
+    private function getReferenceId($transactionType, $purchaseOrders)
+    {
+        if ($transactionType === 'purchase' && $purchaseOrders->isNotEmpty()) {
+            return fake()->optional(80)->randomElement($purchaseOrders->pluck('order_id')->toArray());
+        }
+        return null;
+    }
+
+    private function getSourceLocation($transactionType, $departments)
+    {
+        if (in_array($transactionType, ['transfer', 'sale', 'return', 'consumption'])) {
+            return fake()->optional(70)->randomElement($departments->pluck('department_id')->toArray());
+        }
+        return null;
+    }
+
+    private function getDestinationLocation($transactionType, $departments)
+    {
+        if (in_array($transactionType, ['purchase', 'transfer', 'production', 'donation'])) {
+            return fake()->optional(80)->randomElement($departments->pluck('department_id')->toArray());
+        }
+        return null;
+    }
+
+    private function getNotesForTransactionType($transactionType, $item, $quantity)
+    {
+        $notes = [
+            'purchase' => "Purchased {$quantity} units of {$item->name}",
+            'sale' => "Sold {$quantity} units of {$item->name}",
+            'transfer' => "Transferred {$quantity} units of {$item->name} between locations",
+            'adjustment' => "Stock adjustment of {$quantity} units for {$item->name}",
+            'return' => "Returned {$quantity} units of {$item->name}",
+            'write_off' => "Written off {$quantity} units of {$item->name} due to damage/expiry",
+            'consumption' => "Consumed {$quantity} units of {$item->name} for project/department use",
+            'production' => "Produced {$quantity} units of {$item->name}",
+            'donation' => "Donated {$quantity} units of {$item->name}"
+        ];
+        
+        return $notes[$transactionType] ?? "Transaction of {$quantity} units for {$item->name}";
+    }
+
+    // private function createInventoryTransactions($universities, $inventoryItems, $departments, $purchaseOrders, $users)
+    // {
+    //     $this->command->info("=== Starting Inventory Transactions Seeder ===");
+        
+    //     $transactionTypes = ['purchase', 'sale', 'transfer', 'adjustment', 'return', 'write_off', 'consumption', 'production', 'donation'];
+    //     $statuses = ['pending', 'completed', 'cancelled', 'reversed'];
+        
+    //     $inventoryTransactions = collect();
+    //     $totalTransactionsCreated = 0;
+
+    //     $universities->each(function ($university) use (&$inventoryTransactions, $inventoryItems, $departments, $purchaseOrders, $users, $transactionTypes, $statuses, &$totalTransactionsCreated) {
+    //         $this->command->info("Creating inventory transactions for university: {$university->name}");
+            
+    //         $universityItems = $inventoryItems->where('university_id', $university->university_id);
+    //         $universityDepartments = $departments->where('university_id', $university->university_id);
+    //         $universityUsers = $users->where('university_id', $university->university_id);
+    //         $universityPurchaseOrders = $purchaseOrders->where('university_id', $university->university_id);
+            
+    //         if ($universityItems->isEmpty() || $universityDepartments->isEmpty() || $universityUsers->isEmpty()) {
+    //             $this->command->warn("  ⚠️ No items, departments, or users found for university: {$university->name}");
+    //             return;
+    //         }
+            
+    //         // Create multiple transactions per university
+    //         $transactionCount = random_int(20, 50);
+            
+    //         for ($i = 0; $i < $transactionCount; $i++) {
+    //             $item = $universityItems->random();
+    //             $department = $universityDepartments->random();
+    //             $performedBy = $universityUsers->random();
+    //             $approvedBy = fake()->optional(70)->randomElement($universityUsers);
+    //             $transactionType = fake()->randomElement($transactionTypes);
+                
+    //             // Set quantity based on transaction type
+    //             $quantity = $this->getQuantityForTransactionType($transactionType, $item);
+    //             $unitCost = $item->unit_cost;
+    //             $totalValue = $quantity * $unitCost;
+                
+    //             // Set reference based on transaction type
+    //             $referenceNumber = $this->generateReferenceNumber($transactionType, $i);
+    //             $referenceId = $this->getReferenceId($transactionType, $universityPurchaseOrders);
+                
+    //             // Set locations based on transaction type
+    //             $sourceLocationId = $this->getSourceLocation($transactionType, $universityDepartments);
+    //             $destinationLocationId = $this->getDestinationLocation($transactionType, $universityDepartments);
+                
+    //             try {
+    //                 $transaction = \App\Models\InventoryTransaction::create([
+    //                     'transaction_id' => Str::uuid(),
+    //                     'university_id' => $university->university_id,
+    //                     'item_id' => $item->item_id,
+    //                     'department_id' => $department->department_id,
+    //                     'transaction_type' => $transactionType,
+    //                     'quantity' => $quantity,
+    //                     'unit_cost' => $unitCost,
+    //                     'total_value' => $totalValue,
+    //                     'transaction_date' => fake()->dateTimeBetween('-1 year', 'now'),
+    //                     'reference_number' => $referenceNumber,
+    //                     'reference_id' => $referenceId,
+    //                     'batch_number' => fake()->optional(60)->bothify('BATCH-#####'),
+    //                     'expiry_date' => fake()->optional(40)->dateTimeBetween('now', '+2 years'),
+    //                     'notes' => $this->getNotesForTransactionType($transactionType, $item, $quantity),
+    //                     'source_location_id' => $sourceLocationId,
+    //                     'destination_location_id' => $destinationLocationId,
+    //                     'status' => fake()->randomElement($statuses),
+    //                     'performed_by' => $performedBy->user_id,
+    //                     'approved_by' => $approvedBy ? $approvedBy->user_id : null,
+    //                     'created_at' => now(),
+    //                     'updated_at' => now(),
+    //                 ]);
+                    
+    //                 $inventoryTransactions->push($transaction);
+    //                 $totalTransactionsCreated++;
+    //                 $this->command->info("    ✅ Created {$transactionType} transaction: {$referenceNumber} (Qty: {$quantity})");
+                    
+    //             } catch (\Exception $e) {
+    //                 $this->command->error("    ❌ Failed to create transaction: {$e->getMessage()}");
+    //             }
+    //         }
+    //     });
+        
+    //     $this->command->info("=== Inventory Transactions Seeder Completed ===");
+    //     $this->command->info("Total inventory transactions created: {$totalTransactionsCreated}");
+        
+    //     return $inventoryTransactions;
+    // }
+
+    // Helper methods for the transaction seeder
+    // private function getQuantityForTransactionType($transactionType, $item)
+    // {
+    //     switch ($transactionType) {
+    //         case 'purchase':
+    //             return fake()->numberBetween(10, 100); // Bulk purchases
+    //         case 'sale':
+    //             return fake()->numberBetween(1, 20); // Smaller sales
+    //         case 'transfer':
+    //             return fake()->numberBetween(5, 50);
+    //         case 'adjustment':
+    //             return fake()->numberBetween(-10, 10); // Can be positive or negative
+    //         case 'return':
+    //             return fake()->numberBetween(1, 15);
+    //         case 'write_off':
+    //             return fake()->numberBetween(-20, -1); // Always negative
+    //         case 'consumption':
+    //             return fake()->numberBetween(1, 25);
+    //         case 'production':
+    //             return fake()->numberBetween(10, 100);
+    //         case 'donation':
+    //             return fake()->numberBetween(5, 30);
+    //         default:
+    //             return fake()->numberBetween(1, 50);
+    //     }
+    // }
+
+    // private function generateReferenceNumber($transactionType, $index)
+    // {
+    //     $prefixes = [
+    //         'purchase' => 'PO',
+    //         'sale' => 'SO',
+    //         'transfer' => 'TR',
+    //         'adjustment' => 'ADJ',
+    //         'return' => 'RET',
+    //         'write_off' => 'WO',
+    //         'consumption' => 'CON',
+    //         'production' => 'PROD',
+    //         'donation' => 'DON'
+    //     ];
+        
+    //     $prefix = $prefixes[$transactionType] ?? 'TRX';
+    //     return $prefix . '-' . date('Y') . '-' . str_pad($index + 1, 5, '0', STR_PAD_LEFT);
+    // }
+
+    // private function getReferenceId($transactionType, $purchaseOrders)
+    // {
+    //     if ($transactionType === 'purchase' && $purchaseOrders->isNotEmpty()) {
+    //         return fake()->optional(80)->randomElement($purchaseOrders->pluck('order_id')->toArray());
+    //     }
+    //     return null;
+    // }
+
+    // private function getSourceLocation($transactionType, $departments)
+    // {
+    //     // For transfers, sales, returns - there's usually a source location
+    //     if (in_array($transactionType, ['transfer', 'sale', 'return', 'consumption'])) {
+    //         return fake()->optional(70)->randomElement($departments->pluck('department_id')->toArray());
+    //     }
+    //     return null;
+    // }
+
+    // private function getDestinationLocation($transactionType, $departments)
+    // {
+    //     // For purchases, transfers, production - there's usually a destination
+    //     if (in_array($transactionType, ['purchase', 'transfer', 'production', 'donation'])) {
+    //         return fake()->optional(80)->randomElement($departments->pluck('department_id')->toArray());
+    //     }
+    //     return null;
+    // }
+
+    // private function getNotesForTransactionType($transactionType, $item, $quantity)
+    // {
+    //     $notes = [
+    //         'purchase' => "Purchased {$quantity} units of {$item->name}",
+    //         'sale' => "Sold {$quantity} units of {$item->name}",
+    //         'transfer' => "Transferred {$quantity} units of {$item->name} between locations",
+    //         'adjustment' => "Stock adjustment of {$quantity} units for {$item->name}",
+    //         'return' => "Returned {$quantity} units of {$item->name}",
+    //         'write_off' => "Written off {$quantity} units of {$item->name} due to damage/expiry",
+    //         'consumption' => "Consumed {$quantity} units of {$item->name} for project/department use",
+    //         'production' => "Produced {$quantity} units of {$item->name}",
+    //         'donation' => "Donated {$quantity} units of {$item->name}"
+    //     ];
+        
+    //     return $notes[$transactionType] ?? "Transaction of {$quantity} units for {$item->name}";
+    // }
 
     private function outputStatistics()
     {
