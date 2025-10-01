@@ -125,6 +125,7 @@ export default function ItemCategories({ categories=[], auth, filters: initialFi
         requires_serial_number: item?.requires_serial_number ?? false,
         requires_maintenance: item?.requires_maintenance ?? false,
         requirement:item??"",
+        parent_category_id:item?.parent_category_id??'',
         is_active: item?.is_active ?? true,
         university: item?.university?.name,
         created_at: item?.created_at ? moment(item.created_at).format("Do MMM YYYY h:mm") : "",
@@ -175,7 +176,7 @@ export default function ItemCategories({ categories=[], auth, filters: initialFi
               {params.value}
             </Typography>
             <Typography variant="caption" color="text.secondary" noWrap>
-              {params.row.parent_category_id ? "Child Category" : "Root Category"}
+              {params.row.parent_category_name || "—"}
             </Typography>
           </Box>
         </Box>
@@ -184,7 +185,7 @@ export default function ItemCategories({ categories=[], auth, filters: initialFi
     {
       field: "university",
       headerName: "UNIVERSITY",
-      width: 130,
+      width: 250,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <SchoolIcon fontSize="small" color="action" />
@@ -192,16 +193,6 @@ export default function ItemCategories({ categories=[], auth, filters: initialFi
             {params.row.university_name || "—"}
           </Typography>
         </Box>
-      )
-    },
-    {
-      field: "parent_category",
-      headerName: "PARENT",
-      width: 130,
-      renderCell: (params) => (
-        <Typography variant="caption">
-          {params.row.parent_category_name || "—"}
-        </Typography>
       )
     },
     {
@@ -923,20 +914,6 @@ export default function ItemCategories({ categories=[], auth, filters: initialFi
                   />
                 </Grid>
               
-                {/* <Grid size={{ xs: 12, sm: 6}}>
-                  <TextField
-                    fullWidth
-                    label="University ID"
-                    name="university_id"
-                    value={data.university_id}
-                    onChange={(e) => setData('university_id', e.target.value)}
-                    error={!!errors.university_id}
-                    helperText={errors.university_id}
-                    disabled={processing}
-                    required
-                  />
-                </Grid> */}
-                
                 <Grid size={{ xs: 12, sm: 6}}>
                   <FormControl fullWidth>
                     <InputLabel>Parent Category</InputLabel>

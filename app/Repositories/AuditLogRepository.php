@@ -34,7 +34,7 @@ class AuditLogRepository
                 'user_id' => $auditLog->user_id,
                 'performed_at' => $auditLog->performed_at,
                 'created_at' => $auditLog->created_at,
-                // 'updated_at' => $auditLog->updated_at,
+                'updated_at' => $auditLog->updated_at,
                 'university_name' => $auditLog->university ? $auditLog->university->name : null,
                 'university_code' => $auditLog->university ? $auditLog->university->code : null,
                 'user_name' => $auditLog->user ? $auditLog->user->name : null,

@@ -70,8 +70,9 @@ const useAuditManager = (initialLogs, auth) => {
     const formatted = initialLogs?.map((log, index) => ({
       id: log?.audit_id ?? index + 1,
       ...log,
-      old_values: log.old_values ? JSON.parse(log.old_values) : null,
-      new_values: log.new_values ? JSON.parse(log.new_values) : null,
+    
+      old_values: log.old_values ? log.old_values: null,
+      new_values: log.new_values ? log.new_values : null,
       performed_at: log?.performed_at ? moment(log.performed_at).format("MMM DD, YYYY HH:mm") : "",
       created_at: log?.created_at ? moment(log.created_at).format("MMM DD, YYYY") : "",
     }));

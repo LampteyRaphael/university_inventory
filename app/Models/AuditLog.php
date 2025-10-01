@@ -36,7 +36,7 @@ class AuditLog extends Model
         'performed_at' => 'datetime',
     ];
 
- 
+    public $timestamps =false;
 
     /**
      * The attributes that should be hidden for serialization.
