@@ -27,27 +27,16 @@ class ItemController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only([
-                'university_id', 'category_id', 'abc_classification', 
-                'is_active', 'search', 'order_by', 'order_direction'
-            ]);
 
-            // Clean filters
-            $cleanedFilters = array_map(function($value) {
-                return $value === '' ? null : $value;
-            }, $filters);
-
-            $items = $this->itemRepository->getAll($cleanedFilters);
+            $items = $this->itemRepository->getAll();
             
             // Optimize categories and universities queries
             $categories = ItemCategory::select('category_id', 'name')
                 ->orderBy('name')
-                ->limit(100)
                 ->get();
                 
             $universities = University::select('university_id', 'name')
                 ->orderBy('name')
-                ->limit(100)
                 ->get();
 
 

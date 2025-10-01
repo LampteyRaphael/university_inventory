@@ -15,25 +15,44 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $users = User::with(['university', 'department'])
-            ->when($request->search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('employee_id', 'like', "%{$search}%");
-            })
-            ->when($request->role, function ($query, $role) {
-                $query->where('role', $role);
-            })
-            ->when($request->is_active, function ($query, $isActive) {
-                $query->where('is_active', $isActive === 'active');
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(10)
-            ->withQueryString();
+        $users = User::with([
+                'university:university_id,name,code',
+                // 'department:department_id,name,code'
+            ])
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'user_id'          => $user->user_id,
+                    'university_id'    => $user->university_id,
+                    'department_id'    => $user->department_id,
+                    'employee_id'      => $user->employee_id,
+                    'username'         => $user->username,
+                    'email'            => $user->email,
+                    'password'         => $user->password, // ⚠️ normally you don’t expose password
+                    'name'             => $user->name,
+                    'first_name'       => $user->first_name,
+                    'last_name'        => $user->last_name,
+                    'phone'            => $user->phone,
+                    'position'         => $user->position,
+                    'role'             => $user->role,
+                    'permissions'      => $user->permissions,
+                    'is_active'        => $user->is_active,
+                    'hire_date'        => $user->hire_date,
+                    'termination_date' => $user->termination_date,
+                    'profile_image'    => $user->profile_image,
+                    'timezone'         => $user->timezone,
+                    'language'         => $user->language,
+                    'last_login_at'    => $user->last_login_at,
+                    'last_login_ip'    => $user->last_login_ip,
+                    'university'       => $user->university->name??null,
+                    'department'       => $user->department->name??null,
+                ];
+            });
+
+           
 
         return Inertia::render('Users/Index', [
             'users' => $users,
-            'filters' => $request->only(['search', 'role', 'is_active']),
             'roles' => [
                 'super_admin',
                 'inventory_manager', 
@@ -74,7 +93,7 @@ class UserController extends Controller
             'username' => 'nullable|string|unique:users',
             'email' => 'required|string|email|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'name' => 'required|string|unique:users',
+            // 'name' => 'required|string|unique:users',
             'first_name' => 'nullable|string',
             'last_name' => 'nullable|string',
             'phone' => 'nullable|string|max:20',
@@ -95,7 +114,7 @@ class UserController extends Controller
             'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'name' => $request->name,
+            'name' => $request->username,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'phone' => $request->phone,

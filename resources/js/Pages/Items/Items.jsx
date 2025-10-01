@@ -72,7 +72,7 @@ const useInventoryManager = (initialItems, auth) => {
 
   useEffect(() => {
     setLoading(true);
-    const formatted = initialItems.data?.map((item, index) => ({
+    const formatted = initialItems?.map((item, index) => ({
       id: item?.item_id ?? index + 1,
       ...item,
       unit_cost: Number(item?.unit_cost ?? 0),
@@ -273,12 +273,13 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
         abc_classification: item?.abc_classification || 'C',
         weight_kg: item?.weight_kg ?? null,
         volume_cubic_m: item?.volume_cubic_m ?? null,
-        is_hazardous: !!item?.is_hazardous,
+        is_hazardous: item?.is_hazardous,
         hazard_type: item?.hazard_type || '',
         handling_instructions: item?.handling_instructions || '',
         storage_conditions: item?.storage_conditions || '',
         shelf_life_days: item?.shelf_life_days ?? null,
-        expiry_date: item?.expiry_date || '',
+        expiry_date:moment(item?.expiry_date).format('YYYY-MM-DD'),
+        // expiry_date: item?.expiry_date || '',
         barcode: item?.barcode || '',
         qr_code: item?.qr_code || '',
         rfid_tag: item?.rfid_tag || '',
@@ -296,7 +297,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
   const handleSubmit = () => {
     if (data.specifications) {
       try {
-        const parsed = JSON.parse(data.specifications);
+        const parsed = (data.specifications);
         setData('specifications', parsed);
       } catch (e) {
         setData('errors', { ...errors, specifications: 'Invalid JSON format for specifications.' });
@@ -877,16 +878,40 @@ export default function InventoryItems({ items, auth, categories, universities }
   };
 
   const columns = [
-    {
-      field: 'item_code',
-      headerName: 'CODE',
-      width: 120,
-      renderCell: (params) => (
-        <Typography variant="body2" fontWeight="600" fontFamily="monospace">
-          {params.value}
-        </Typography>
-      ),
-    },
+      {
+        field: 'item_id',
+        headerName: 'ID',
+        width: 120,
+        renderCell: (params) => {
+          const id = params.value;
+          const shortId = id ? id.substring(0, 8) : '';
+    
+          return (
+            <Tooltip title={id} arrow>
+              <Typography variant="body2" noWrap>
+                {shortId}
+              </Typography>
+            </Tooltip>
+          );
+        }
+      },
+      {
+        field: 'item_code',
+        headerName: 'CODE',
+        width: 120,
+        renderCell: (params) => {
+          const id = params.value;
+          const shortId = id ? id.substring(0, 8) : '';
+    
+          return (
+            <Tooltip title={id} arrow>
+              <Typography variant="body2" noWrap>
+                {shortId}
+              </Typography>
+            </Tooltip>
+          );
+        }
+      },
     {
       field: 'name',
       headerName: 'ITEM',
@@ -980,30 +1005,65 @@ export default function InventoryItems({ items, auth, categories, universities }
           <Chip label="Safe" size="small" color="success" variant="outlined" />
         ),
     },
+    // {
+    //   field: 'storage',
+    //   headerName: 'STORAGE & EXPIRY',
+    //   width: 200,
+    //   renderCell: (params) => (
+    //     <Box>
+    //       {params.row.storage_conditions && (
+    //         <Typography variant="caption" noWrap>
+    //           {params.row.storage_conditions}
+    //         </Typography>
+    //       )}
+    //       {params.row.expiry_date && (
+    //         <Typography variant="caption" color="error" noWrap>
+    //           Exp: {new Date(params.row.expiry_date).toLocaleDateString()}
+    //         </Typography>
+    //       )}
+    //       {params.row.shelf_life_days && (
+    //         <Typography variant="caption" color="text.secondary" noWrap>
+    //           Shelf: {params.row.shelf_life_days} days
+    //         </Typography>
+    //       )}
+    //     </Box>
+    //   ),
+    // },
     {
-      field: 'storage',
-      headerName: 'STORAGE & EXPIRY',
-      width: 200,
-      renderCell: (params) => (
-        <Box>
-          {params.row.storage_conditions && (
-            <Typography variant="caption" noWrap>
-              {params.row.storage_conditions}
+  field: 'storage',
+  headerName: 'STORAGE & EXPIRY',
+  width: 220,
+  renderCell: (params) => {
+    const { storage_conditions, expiry_date, shelf_life_days } = params.row;
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+        {storage_conditions && (
+          <Tooltip title={storage_conditions} arrow>
+            <Typography
+              variant="caption"
+              noWrap
+              sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
+              {storage_conditions}
             </Typography>
-          )}
-          {params.row.expiry_date && (
-            <Typography variant="caption" color="error" noWrap>
-              Exp: {new Date(params.row.expiry_date).toLocaleDateString()}
-            </Typography>
-          )}
-          {params.row.shelf_life_days && (
-            <Typography variant="caption" color="text.secondary" noWrap>
-              Shelf: {params.row.shelf_life_days} days
-            </Typography>
-          )}
-        </Box>
-      ),
-    },
+          </Tooltip>
+        )}
+        {expiry_date && (
+          <Typography variant="caption" color="error" noWrap>
+            Exp: {new Date(expiry_date).toLocaleDateString()}
+          </Typography>
+        )}
+        {shelf_life_days && (
+          <Typography variant="caption" color="text.secondary" noWrap>
+            Shelf: {shelf_life_days} days
+          </Typography>
+        )}
+      </Box>
+    );
+  },
+}
+,
     {
       field: 'abc_classification',
       headerName: 'CLASS',
@@ -1164,7 +1224,7 @@ export default function InventoryItems({ items, auth, categories, universities }
           </Box>
 
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard
                 title="Total Items"
                 value={statistics.totalItems}
@@ -1173,7 +1233,7 @@ export default function InventoryItems({ items, auth, categories, universities }
                 subtitle="All inventory items"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard
                 title="Total Value"
                 value={`₵${statistics.totalValue.toLocaleString()}`}
@@ -1182,7 +1242,7 @@ export default function InventoryItems({ items, auth, categories, universities }
                 subtitle="Current inventory value"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard
                 title="Active Items"
                 value={statistics.activeItems}
@@ -1191,7 +1251,7 @@ export default function InventoryItems({ items, auth, categories, universities }
                 subtitle="Currently active"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard
                 title="Low Stock"
                 value={statistics.lowStockItems}

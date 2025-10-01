@@ -27,43 +27,14 @@ class InventoryTransactionController extends Controller
     public function transactionIndex(Request $request)
     {
         try {
-            $filters = $request->only([
-                'university_id',
-                'item_id', 
-                'department_id',
-                'transaction_type',
-                'status',
-                'reference_number',
-                'batch_number',
-                'performed_by',
-                'start_date',
-                'end_date',
-                'search',
-                'min_quantity',
-                'max_quantity',
-                'min_value',
-                'max_value',
-                'order_by',
-                'order_direction'
-            ]);
-
-            $transactions = $this->transactionRepository->getAllTransactions($filters);
+            $transactions = $this->transactionRepository->getAllTransactions();
             
             // Get dropdown data
-            $items = InventoryItem::select('item_id', 'item_code', 'name')
-                ->orderBy('name')
-                ->limit(100)
-                ->get();
+            $items = InventoryItem::select('item_id', 'item_code', 'name')->orderBy('name')->get();
                 
-            $departments = Department::select('department_id', 'name')
-                ->orderBy('name')
-                ->limit(100)
-                ->get();
+            $departments = Department::select('department_id', 'name')->orderBy('name')->get();
 
-                $locations = Location::select('location_id', 'name')
-                ->orderBy('name')
-                ->limit(100)
-                ->get();
+            $locations = Location::select('location_id', 'name')->orderBy('name')->get();
 
             $transactionTypes = [
                 'purchase', 'sale', 'transfer', 'adjustment', 'return', 
@@ -80,7 +51,6 @@ class InventoryTransactionController extends Controller
                 'departments' => $departments,
                 'transactionTypes' => $transactionTypes,
                 'statuses' => $statuses,
-                'filters' => $filters // Changed from 'transactions' to 'filters'
             ]);
 
         } catch (\Exception $e) {

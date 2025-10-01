@@ -191,26 +191,27 @@ const { data, setData, post, put, processing, errors, reset, clearErrors } = use
   // Process data on component mount
   useEffect(() => {
     setGridLoading(true);
+    console.log(transactions)
     // Simulate data processing
     const processData = setTimeout(() => {
-      const formatted = transactions?.data.map((transaction, index) => ({
+      const formatted = transactions?.map((transaction, index) => ({
         id: transaction?.transaction_id ?? index + 1,
         ...transaction,
         unit_cost: Number(transaction?.unit_cost ?? 0),
         total_value: Number(transaction?.total_value ?? 0),
         transaction_date: transaction?.transaction_date??"", 
           // moment(transaction.transaction_date).format("MMM Do YYYY, h:mm a") : "",
-        expiry_date: transaction?.expiry_date??"",
+        // expiry_date: transaction?.expiry_date??"",
           // moment(transaction.expiry_date).format("MMM Do YYYY") : "",
-        created_at: transaction?.created_at??"",
+        // created_at: transaction?.created_at??"",
           // moment(transaction.created_at).format("MMM Do YYYY, h:mm a") : "",
-        updated_at: transaction?.updated_at ? 
-          moment(transaction.updated_at).format("MMM Do YYYY, h:mm a") : "",
-          performed_by: transaction?.performed_by?.name??"",
-          approved_by: transaction?.approved_by?.name??"",
-          location:transaction?.source_location??"",
-          department:transaction?.department??"",
-          item: transaction?.item??"",
+        // updated_at: transaction?.updated_at ? 
+          // moment(transaction.updated_at).format("MMM Do YYYY, h:mm a") : "",
+          // performed_by: transaction?.performed_by?.name??"",
+          // approved_by: transaction?.approved_by?.name??"",
+          location:transaction?.sourceLocation??"",
+          // department:transaction?.department??"",
+          // item: transaction?.item??"",
       }));
       
       setRows(formatted);
@@ -238,7 +239,23 @@ const { data, setData, post, put, processing, errors, reset, clearErrors } = use
   }, [rows]);
 
 const columns = useMemo(() => [
-  { field: 'transaction_id', headerName: 'ID', width: 90 },
+  {
+    field: 'transaction_id',
+    headerName: 'ID',
+    width: 120,
+    renderCell: (params) => {
+      const id = params.value;
+      const shortId = id ? id.substring(0, 8) : '';
+
+      return (
+        <Tooltip title={id} arrow>
+          <Typography variant="body2" noWrap>
+            {shortId}
+          </Typography>
+        </Tooltip>
+      );
+    }
+  },
   { 
     field: 'transaction_type', 
     headerName: 'Type', 
@@ -263,10 +280,10 @@ const columns = useMemo(() => [
     renderCell: (params) => (
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
             <Typography variant="body2" fontWeight="bold" noWrap>
-              {params.row?.item?.name??'No item'}
+              {params.row?.item??'No item'}
             </Typography>
             <Typography variant="caption" color="text.secondary" noWrap>
-              {params.row.department?.name} • {params.row.location?.name}
+              {params.row.department??''} {params.row.sourceLocation? '•':''} {params.row.sourceLocation??''}
             </Typography>
           </Box>
     )
@@ -350,27 +367,33 @@ const columns = useMemo(() => [
     </Box>
   )
 },
-  { 
-    field: 'location_flow', 
-    headerName: 'Location Flow', 
-    width: 150,
-    renderCell: (params) => {
-      const src = params.row?.source_location_id ? 
-        (locations?.find(l => l.location_id === params.row.source_location_id)?.name || "N/A") : "N/A";
-      const dst = params.row?.destination_location_id ? 
-        (locations?.find(l => l.location_id === params.row.destination_location_id)?.name || "N/A") : "N/A";
-      return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Typography variant="body2" fontWeight="medium">
-            {src} → {dst}
+{
+  field: 'location_flow',
+  headerName: 'Location Flow',
+  width: 350,
+  renderCell: (params) => {
+    const { sourceLocation, destinationLocation } = params.row;
+
+    // Function to shorten text
+    const truncate = (text, maxLength = 15) => {
+      if (!text) return '';
+      return text.length > maxLength ? text.slice(0, maxLength) + '…' : text;
+    };
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Tooltip title={`${sourceLocation} → ${destinationLocation}`} arrow>
+          <Typography variant="body2" fontWeight="medium" noWrap>
+            {truncate(sourceLocation)} → {truncate(destinationLocation)}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Source → Destination
-          </Typography>
-        </Box>
-      );
-    }
-  },
+        </Tooltip>
+        <Typography variant="caption" color="text.secondary">
+          Source → Destination
+        </Typography>
+      </Box>
+    );
+  }
+},
   { 
     field: 'status_notes', 
     headerName: 'Status & Notes', 
@@ -403,12 +426,12 @@ const columns = useMemo(() => [
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
         <Tooltip title={params.row.performed_by}>
         <Typography variant="caption">
-          👤 Performed: {params.row.performed_by || 'System'}
+          👤 Performed: {params.row.performedBy || 'System'}
         </Typography>
         </Tooltip>
         <Tooltip title={params.row.approved_by}>
-        <Typography variant="caption" color={params.row.approved_by ? "success.main" : "warning.main"}>
-          ✅ Approved: {params.row.approved_by ? 'Yes' : 'Pending'}
+        <Typography variant="caption" color={params.row.approvedBy ? "success.main" : "warning.main"}>
+          ✅ Approved: {params.row.approvedBy ? 'Yes' : 'Pending'}
         </Typography>
         </Tooltip>
       </Box>
@@ -786,7 +809,7 @@ const handleSubmit = useCallback(() => {
             <Grid size={{ xs:12, sm:6, md:6}}>
               <SummaryCard 
                 title="Total Value" 
-                value={`₵${totalValue.toFixed(2)}`} 
+                value={`₵${totalValue?.toFixed(2)}`} 
                 icon={<TotalValueIcon />} 
                 color={theme.palette.success.main} 
               />

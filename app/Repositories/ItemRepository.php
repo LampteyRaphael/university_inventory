@@ -11,81 +11,54 @@ use Illuminate\Support\Facades\DB;
 class ItemRepository
 {
 
-    public function getAll($filters = [], $perPage = 15)
+    public function getAll()
     {
         $query = InventoryItem::with([
             'university:university_id,name', // Only select needed fields
             'category:category_id,name',
             'creator:user_id,name',
             'updater:user_id,name'
-        ])->select([
-            'item_id',
-            'university_id',
-            'category_id',
-            'item_code',
-            'name',
-            'description', // Keep description but limit length if needed
-            'unit_of_measure',
-            'unit_cost',
-            'current_value',
-            'minimum_stock_level',
-            'maximum_stock_level',
-            'reorder_point',
-            'economic_order_quantity',
-            'abc_classification',
-            'weight_kg',
-            'volume_cubic_m',
-            'is_hazardous',
-            'hazard_type',
-            'storage_conditions',
-            'shelf_life_days',
-            'expiry_date',
-            'barcode',
-            'qr_code',
-            'rfid_tag',
-            'image_url',
-            'is_active',
-            'created_by',
-            'updated_by',
-            'created_at',
-            'updated_at'
-        ]);
-
-        // Apply filters
-        $cleanedFilters = array_filter($filters, function($value) {
-            return $value !== '' && $value !== null;
+        ])->get()->map(function ($item){
+          return [
+                    'item_id' => $item->item_id,
+                    'university_id' => $item->university_id,
+                    'university' => $item->university->name??null,
+                    'category_id' => $item->category_id,
+                    'category' => $item->category->name??'',
+                    'item_code' => $item->item_code,
+                    'name' => $item->name??null,
+                    'description' => $item->description, // limit description length
+                    'unit_of_measure' => $item->unit_of_measure,
+                    'unit_cost' => $item->unit_cost,
+                    'current_value' => $item->current_value,
+                    'minimum_stock_level' => $item->minimum_stock_level,
+                    'maximum_stock_level' => $item->maximum_stock_level,
+                    'reorder_point' => $item->reorder_point,
+                    'economic_order_quantity' => $item->economic_order_quantity,
+                    'abc_classification' => $item->abc_classification,
+                    'weight_kg' => $item->weight_kg,
+                    'volume_cubic_m' => $item->volume_cubic_m,
+                    'is_hazardous' => $item->is_hazardous,
+                    'hazard_type' => $item->hazard_type,
+                    'storage_conditions' => $item->storage_conditions,
+                    'handling_instructions' => $item->handling_instructions,
+                    'specifications' => $item->specifications,
+                    'shelf_life_days' => $item->shelf_life_days,
+                    'expiry_date' => $item->expiry_date,
+                    'barcode' => $item->barcode,
+                    'qr_code' => $item->qr_code,
+                    'rfid_tag' => $item->rfid_tag,
+                    'image_url' => $item->image_url,
+                    'is_active' => $item->is_active,
+                    'created_by' => $item->created_by,
+                    'creator' => $item->creator->name??null,
+                    'updated_by' => $item->updated_by,
+                    'updater' => $item->updater->name??null,
+                    'created_at' => $item->created_at,
+                    'updated_at' => $item->updated_at,
+          ];
         });
-
-        if (!empty($cleanedFilters['university_id'])) {
-            $query->where('university_id', $cleanedFilters['university_id']);
-        }
-
-        if (!empty($cleanedFilters['category_id'])) {
-            $query->where('category_id', $cleanedFilters['category_id']);
-        }
-
-        if (!empty($cleanedFilters['abc_classification'])) {
-            $query->where('abc_classification', $cleanedFilters['abc_classification']);
-        }
-
-        if (isset($cleanedFilters['is_active'])) {
-            $query->where('is_active', (bool)$cleanedFilters['is_active']);
-        }
-
-        if (!empty($cleanedFilters['search'])) {
-            $search = trim($cleanedFilters['search']);
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                ->orWhere('item_code', 'like', "%{$search}%")
-                ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        $orderBy = $cleanedFilters['order_by'] ?? 'created_at';
-        $orderDirection = $cleanedFilters['order_direction'] ?? 'desc';
-        $query->orderBy($orderBy, $orderDirection);
-
-        return $query->paginate($perPage);
+        return $query;
     }
 
     public function findById($itemId)

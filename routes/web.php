@@ -48,6 +48,11 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth','verified')->group(function () {
  
+    Route::resource('users', UserController::class);
+    Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole'])->name('users.assign-role');
+    Route::post('/users/import', [UserController::class, 'import'])->name('users.import');
+    Route::get('/users/export', [UserController::class, 'export'])->name('users.export');
+
 
     //Item categories
     Route::get('/item-categories', [ItemCategoryController::class, 'index'])->name("item-categories.index");

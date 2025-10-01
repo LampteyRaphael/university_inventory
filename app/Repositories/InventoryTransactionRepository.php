@@ -7,7 +7,7 @@ use App\Models\InventoryTransaction;
 class InventoryTransactionRepository
 {
 
- public function getAllTransactions($filters = [], $perPage = 500)
+ public function getAllTransactions()
 {
     $query = InventoryTransaction::with([
         'university:university_id,name',
@@ -17,125 +17,132 @@ class InventoryTransactionRepository
         'destinationLocation:location_id,name',
         'performedBy:user_id,name,email',
         'approvedBy:user_id,name,email'
-    ])->select([
-        'transaction_id',
-        'university_id',
-        'item_id',
-        'department_id',
-        'transaction_type',
-        'quantity',
-        'unit_cost',
-        'total_value',
-        'transaction_date',
-        'reference_number',
-        'reference_id',
-        'batch_number',
-        'expiry_date',
-        'source_location_id',
-        'destination_location_id',
-        'status',
-        'performed_by',
-        'approved_by',
-        'created_at',
-        'updated_at'
-        // Exclude 'notes' for list view to improve performance
-    ]);
+    ])->get()->map(function ($transaction){
 
-    // Clean filters
-    $cleanedFilters = array_filter($filters, function($value) {
-        return $value !== '' && $value !== null && $value !== 'null' && $value !== 'undefined';
+        return [
+            'transaction_id'=>$transaction->transaction_id,
+            'university_id'=>$transaction->university_id,
+            'item_id'=>$transaction->item_id,
+            'item'=>$transaction->item?$transaction->item->name:null,
+            'department_id'=>$transaction->department_id,
+            'department'=>$transaction->department->name??null,
+            'transaction_type'=>$transaction->transaction_type,
+            'quantity'=>$transaction->quantity,
+            'unit_cost'=>$transaction->unit_cost,
+            'total_value'=>$transaction->total_value,
+            'transaction_date'=>$transaction->transaction_date,
+            'reference_number'=>$transaction->reference_number,
+            'reference_id'=>$transaction->reference_id,
+            'batch_number'=>$transaction->batch_number,
+            'expiry_date'=>$transaction->expiry_date,
+            'source_location_id'=>$transaction->source_location_id,
+            'sourceLocation'=>$transaction->sourceLocation->name??null,
+            'destination_location_id'=>$transaction->destination_location_id,
+            'destinationLocation'=>$transaction->destinationLocation->name??null,
+            'status'=>$transaction->status,
+            'performedBy'=>$transaction->performedBy->name??'',
+            'approvedBy'=>$transaction->approvedBy->name??'',
+            'created_at'=>$transaction->created_at,
+            'updated_at'=>$transaction->updated_at,
+        ];
+
     });
 
-    // Apply filters
-    if (!empty($cleanedFilters['university_id'])) {
-        $query->where('university_id', $cleanedFilters['university_id']);
-    }
+    // // Clean filters
+    // $cleanedFilters = array_filter($filters, function($value) {
+    //     return $value !== '' && $value !== null && $value !== 'null' && $value !== 'undefined';
+    // });
 
-    if (!empty($cleanedFilters['item_id'])) {
-        $query->where('item_id', $cleanedFilters['item_id']);
-    }
+    // // Apply filters
+    // if (!empty($cleanedFilters['university_id'])) {
+    //     $query->where('university_id', $cleanedFilters['university_id']);
+    // }
 
-    if (!empty($cleanedFilters['department_id'])) {
-        $query->where('department_id', $cleanedFilters['department_id']);
-    }
+    // if (!empty($cleanedFilters['item_id'])) {
+    //     $query->where('item_id', $cleanedFilters['item_id']);
+    // }
 
-    if (!empty($cleanedFilters['transaction_type'])) {
-        $query->where('transaction_type', $cleanedFilters['transaction_type']);
-    }
+    // if (!empty($cleanedFilters['department_id'])) {
+    //     $query->where('department_id', $cleanedFilters['department_id']);
+    // }
 
-    if (!empty($cleanedFilters['status'])) {
-        $query->where('status', $cleanedFilters['status']);
-    }
+    // if (!empty($cleanedFilters['transaction_type'])) {
+    //     $query->where('transaction_type', $cleanedFilters['transaction_type']);
+    // }
 
-    if (!empty($cleanedFilters['reference_number'])) {
-        $query->where('reference_number', 'like', "%{$cleanedFilters['reference_number']}%");
-    }
+    // if (!empty($cleanedFilters['status'])) {
+    //     $query->where('status', $cleanedFilters['status']);
+    // }
 
-    if (!empty($cleanedFilters['batch_number'])) {
-        $query->where('batch_number', 'like', "%{$cleanedFilters['batch_number']}%");
-    }
+    // if (!empty($cleanedFilters['reference_number'])) {
+    //     $query->where('reference_number', 'like', "%{$cleanedFilters['reference_number']}%");
+    // }
 
-    if (!empty($cleanedFilters['performed_by'])) {
-        $query->where('performed_by', $cleanedFilters['performed_by']);
-    }
+    // if (!empty($cleanedFilters['batch_number'])) {
+    //     $query->where('batch_number', 'like', "%{$cleanedFilters['batch_number']}%");
+    // }
 
-    // Date range filters
-    if (!empty($cleanedFilters['start_date'])) {
-        $query->whereDate('transaction_date', '>=', $cleanedFilters['start_date']);
-    }
+    // if (!empty($cleanedFilters['performed_by'])) {
+    //     $query->where('performed_by', $cleanedFilters['performed_by']);
+    // }
 
-    if (!empty($cleanedFilters['end_date'])) {
-        $query->whereDate('transaction_date', '<=', $cleanedFilters['end_date']);
-    }
+    // // Date range filters
+    // if (!empty($cleanedFilters['start_date'])) {
+    //     $query->whereDate('transaction_date', '>=', $cleanedFilters['start_date']);
+    // }
 
-    // Search across multiple fields
-    if (!empty($cleanedFilters['search'])) {
-        $search = trim($cleanedFilters['search']);
-        $query->where(function($q) use ($search) {
-            $q->where('reference_number', 'like', "%{$search}%")
-              ->orWhere('batch_number', 'like', "%{$search}%")
-              ->orWhereHas('item', function($itemQuery) use ($search) {
-                  $itemQuery->where('name', 'like', "%{$search}%")
-                           ->orWhere('item_code', 'like', "%{$search}%");
-              });
-        });
-    }
+    // if (!empty($cleanedFilters['end_date'])) {
+    //     $query->whereDate('transaction_date', '<=', $cleanedFilters['end_date']);
+    // }
 
-    // Quantity filters
-    if (isset($cleanedFilters['min_quantity'])) {
-        $query->where('quantity', '>=', (int)$cleanedFilters['min_quantity']);
-    }
+    // // Search across multiple fields
+    // if (!empty($cleanedFilters['search'])) {
+    //     $search = trim($cleanedFilters['search']);
+    //     $query->where(function($q) use ($search) {
+    //         $q->where('reference_number', 'like', "%{$search}%")
+    //           ->orWhere('batch_number', 'like', "%{$search}%")
+    //           ->orWhereHas('item', function($itemQuery) use ($search) {
+    //               $itemQuery->where('name', 'like', "%{$search}%")
+    //                        ->orWhere('item_code', 'like', "%{$search}%");
+    //           });
+    //     });
+    // }
 
-    if (isset($cleanedFilters['max_quantity'])) {
-        $query->where('quantity', '<=', (int)$cleanedFilters['max_quantity']);
-    }
+    // // Quantity filters
+    // if (isset($cleanedFilters['min_quantity'])) {
+    //     $query->where('quantity', '>=', (int)$cleanedFilters['min_quantity']);
+    // }
 
-    // Value filters
-    if (isset($cleanedFilters['min_value'])) {
-        $query->where('total_value', '>=', (float)$cleanedFilters['min_value']);
-    }
+    // if (isset($cleanedFilters['max_quantity'])) {
+    //     $query->where('quantity', '<=', (int)$cleanedFilters['max_quantity']);
+    // }
 
-    if (isset($cleanedFilters['max_value'])) {
-        $query->where('total_value', '<=', (float)$cleanedFilters['max_value']);
-    }
+    // // Value filters
+    // if (isset($cleanedFilters['min_value'])) {
+    //     $query->where('total_value', '>=', (float)$cleanedFilters['min_value']);
+    // }
 
-    // Order by with validation
-    $allowedOrderColumns = [
-        'transaction_date', 'created_at', 'quantity', 'total_value', 
-        'reference_number', 'batch_number'
-    ];
+    // if (isset($cleanedFilters['max_value'])) {
+    //     $query->where('total_value', '<=', (float)$cleanedFilters['max_value']);
+    // }
+
+    // // Order by with validation
+    // $allowedOrderColumns = [
+    //     'transaction_date', 'created_at', 'quantity', 'total_value', 
+    //     'reference_number', 'batch_number'
+    // ];
     
-    $orderBy = in_array($cleanedFilters['order_by'] ?? '', $allowedOrderColumns) 
-        ? $cleanedFilters['order_by'] 
-        : 'transaction_date';
+    // $orderBy = in_array($cleanedFilters['order_by'] ?? '', $allowedOrderColumns) 
+    //     ? $cleanedFilters['order_by'] 
+    //     : 'transaction_date';
         
-    $orderDirection = in_array(strtolower($cleanedFilters['order_direction'] ?? ''), ['asc', 'desc']) 
-        ? $cleanedFilters['order_direction'] 
-        : 'desc';
+    // $orderDirection = in_array(strtolower($cleanedFilters['order_direction'] ?? ''), ['asc', 'desc']) 
+    //     ? $cleanedFilters['order_direction'] 
+    //     : 'desc';
 
-    $query->orderBy($orderBy, $orderDirection);
+    // $query->orderBy($orderBy, $orderDirection);
 
-    return $query->paginate($perPage);
+    return $query;
 }
 
 }
