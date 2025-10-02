@@ -10,6 +10,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\MaintenanceRecordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RouteController;
+use App\Http\Controllers\StockLevelsController;
 use App\Http\Controllers\UserController;
 use App\Models\Department;
 use App\Models\InventoryItem;
@@ -104,8 +105,12 @@ Route::middleware('auth','verified')->group(function () {
         Route::get('/purchase_order_items', [RouteController::class, 'purchase_order_items'])->name('purchase_order_items');  
   
         //stock_levels
-        Route::get('/stock_levels', [RouteController::class, 'stock_levels'])->name('stock_levels');  
-
+        // Route::get('/stock_levels', [RouteController::class, 'stock_levels'])->name('stock_levels');  
+        
+        Route::resource('stock-levels', StockLevelsController::class);
+        Route::post('/stock-levels/import', [StockLevelsController::class, 'import'])->name('stock-levels.import');
+        Route::post('/stock-levels/bulk-update', [StockLevelsController::class, 'bulkUpdate'])->name('stock-levels.bulk-update');
+        
         //locations
         Route::get('/locations', [RouteController::class, 'locations'])->name('locations');  
 

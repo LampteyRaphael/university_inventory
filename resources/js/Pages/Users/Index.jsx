@@ -174,7 +174,7 @@ export default function UserManagement({ users, auth, roles, universities, depar
   // Process data on component mount
   useEffect(() => {
     setGridLoading(true);
-    console.log(users);
+    // console.log(users);
     
     const processData = setTimeout(() => {
       const formatted = users?.map((user, index) => ({

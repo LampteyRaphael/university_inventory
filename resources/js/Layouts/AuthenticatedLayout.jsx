@@ -175,7 +175,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
         { text: 'Items', icon: <Inventory2 />, route: 'item.index' },
         { text: 'Item Categories', icon: <Category />, route: 'item-categories.index' },
         { text: 'Departments', icon: <Apartment />, route: 'department.index' },
-        { text: 'Stock Levels', icon: <BarChartIcon />, route: 'stock_levels' },
+        { text: 'Stock Levels', icon: <BarChartIcon />, route: 'stock-levels.index' },
         { text: 'Locations', icon: <LocationIcon />, route: 'locations' }
       ]
     },
@@ -565,7 +565,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
         {/* Breadcrumbs */}
         <Toolbar variant="dense" sx={{ bgcolor: 'grey.50', borderTop: '1px solid', borderColor: 'grey.200' }}>
           <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />}>
-            {displayBreadcrumbs.map((item, index) => 
+            {displayBreadcrumbs?.map((item, index) => 
               item.href ? (
                 <Link 
                   key={index} 

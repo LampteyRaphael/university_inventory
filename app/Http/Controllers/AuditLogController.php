@@ -27,15 +27,17 @@ class AuditLogController extends Controller
         try {
             $auditLogs = $this->auditLogRepository->getAll();
 
-            // $stats = $this->auditLogRepository->getAuditStats(Auth::user()->university_id ?? null);
             
-            // $popularTables =$this->auditLogRepository->getPopularTables(Auth::user()->university_id ?? null);
+
+            $stats = $this->auditLogRepository->getAuditStats(Auth::user()->university_id ?? null);
+            
+            $popularTables =$this->auditLogRepository->getPopularTables(Auth::user()->university_id ?? null);
 
             return Inertia::render('AuditLog/AuditLog', [
                 'logs' =>$auditLogs,
-                // 'stats' =>$stats,
-                // 'popularTables' => $popularTables,
-                // 'filters' => $request->only(['search', 'action', 'table_name']),
+                'stats' =>$stats,
+                'popularTables' => $popularTables,
+                'filters' => $request->only(['search', 'action', 'table_name']),
             ]);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to load audit logs: ' . $e->getMessage());

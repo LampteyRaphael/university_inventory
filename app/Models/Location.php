@@ -13,6 +13,7 @@ class Location extends Model
 {
     use HasFactory, SoftDeletes,Auditable;
 
+    protected $table='locations';
     /**
      * The primary key for the model.
      *

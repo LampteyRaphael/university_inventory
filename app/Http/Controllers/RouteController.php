@@ -86,13 +86,7 @@ class RouteController extends Controller
 
     public function inventorytransactions(Request $request):RedirectResponse
     {
-
-
-        // var_dump($request->all());
-
-
         return back()->with('success', 'Successfully posted');
-
     }
 
     /*********************************
@@ -167,22 +161,6 @@ class RouteController extends Controller
             ]);
     }
 
-    public function stock_levels()
-    {
-            $stockLevels=StockLevel::all();
-            $universities= University::all();
-            $items= InventoryItem::all();
-            $departments=Department::all();
-            $locations=Location::all();
-            return Inertia::render('StockLevels/StockLevels', [
-                'locations'=>$locations,
-                'stockLevels'=>$stockLevels,
-                'universities'=>$universities,
-                'items'=>$items,
-                'departments'=>$departments
-            ]);
-    }
-
     public function locations():Response
     {
             $stockLevels=StockLevel::all();
@@ -199,7 +177,6 @@ class RouteController extends Controller
             ]);
     }
 
-
     public function universities():Response
     {
             $universities= University::all();
@@ -207,9 +184,6 @@ class RouteController extends Controller
                 'universities'=>$universities,
             ]);
     }
-
-
-
 
 
 }

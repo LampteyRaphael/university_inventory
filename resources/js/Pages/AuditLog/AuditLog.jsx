@@ -218,7 +218,7 @@ const AuditDetailDialog = ({ open, onClose, log = null }) => {
   if (!log) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ 
         backgroundColor: 'primary.main', 
         color: 'white', 
@@ -537,7 +537,7 @@ export default function AuditLogs({ logs, auth }) {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <LinkIcon fontSize="small" color="action" />
           <Typography variant="caption" sx={{ wordBreak: 'break-all' }}>
-            {params.value.length > 40 ? params.value.substring(0, 40) + '...' : params.value}
+            {params?.value?.length > 40 ? params.value.substring(0, 40) + '...' : params.value}
           </Typography>
         </Box>
       ),

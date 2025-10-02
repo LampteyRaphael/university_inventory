@@ -1005,30 +1005,6 @@ export default function InventoryItems({ items, auth, categories, universities }
           <Chip label="Safe" size="small" color="success" variant="outlined" />
         ),
     },
-    // {
-    //   field: 'storage',
-    //   headerName: 'STORAGE & EXPIRY',
-    //   width: 200,
-    //   renderCell: (params) => (
-    //     <Box>
-    //       {params.row.storage_conditions && (
-    //         <Typography variant="caption" noWrap>
-    //           {params.row.storage_conditions}
-    //         </Typography>
-    //       )}
-    //       {params.row.expiry_date && (
-    //         <Typography variant="caption" color="error" noWrap>
-    //           Exp: {new Date(params.row.expiry_date).toLocaleDateString()}
-    //         </Typography>
-    //       )}
-    //       {params.row.shelf_life_days && (
-    //         <Typography variant="caption" color="text.secondary" noWrap>
-    //           Shelf: {params.row.shelf_life_days} days
-    //         </Typography>
-    //       )}
-    //     </Box>
-    //   ),
-    // },
     {
   field: 'storage',
   headerName: 'STORAGE & EXPIRY',

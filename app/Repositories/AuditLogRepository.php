@@ -26,8 +26,8 @@ class AuditLogRepository
                 'table_name' => $auditLog->table_name,
                 'record_id' => $auditLog->record_id,
                 'action' => $auditLog->action,
-                'old_values' => $auditLog->old_values,
-                'new_values' => $auditLog->new_values,
+                'old_values' => $auditLog->old_values??null,
+                'new_values' =>  $auditLog->new_values??[],
                 'url' => $auditLog->url,
                 'ip_address' => $auditLog->ip_address,
                 'user_agent' => $auditLog->user_agent,
@@ -236,7 +236,6 @@ class AuditLogRepository
  */
 private function calculateChangesCount($oldValues, $newValues): int
 {
-    // Safely decode JSON values, ensuring we always get arrays
     $oldArray = $this->safeJsonDecode($oldValues);
     $newArray = $this->safeJsonDecode($newValues);
 
@@ -252,14 +251,67 @@ private function calculateChangesCount($oldValues, $newValues): int
         return count($oldArray);
     }
 
-    // Ensure both are arrays before using array functions
     if (!is_array($oldArray) || !is_array($newArray)) {
-        // If either is not an array, compare as simple values
         return $oldArray !== $newArray ? 1 : 0;
     }
 
-    return count(array_diff_assoc($newArray, $oldArray)) + count(array_diff_assoc($oldArray, $newArray));
+    return $this->countArrayDifferences($oldArray, $newArray);
 }
+
+/**
+ * Recursively count differences between two arrays
+ */
+private function countArrayDifferences(array $old, array $new): int
+{
+    $count = 0;
+
+    // Check keys in new array
+    foreach ($new as $key => $value) {
+        if (!array_key_exists($key, $old)) {
+            $count++;
+        } elseif (is_array($value) && is_array($old[$key])) {
+            $count += $this->countArrayDifferences($old[$key], $value);
+        } elseif ($value !== $old[$key]) {
+            $count++;
+        }
+    }
+
+    // Check keys removed from old array
+    foreach ($old as $key => $value) {
+        if (!array_key_exists($key, $new)) {
+            $count++;
+        }
+    }
+
+    return $count;
+}
+
+// private function calculateChangesCount($oldValues, $newValues): int
+// {
+//     // Safely decode JSON values, ensuring we always get arrays
+//     $oldArray = $this->safeJsonDecode($oldValues);
+//     $newArray = $this->safeJsonDecode($newValues);
+
+//     if (empty($oldArray) && empty($newArray)) {
+//         return 0;
+//     }
+
+//     if (empty($oldArray)) {
+//         return count($newArray);
+//     }
+
+//     if (empty($newArray)) {
+//         return count($oldArray);
+//     }
+
+//     // Ensure both are arrays before using array functions
+//     if (!is_array($oldArray) || !is_array($newArray)) {
+//         // If either is not an array, compare as simple values
+//         return $oldArray !== $newArray ? 1 : 0;
+//     }
+
+//     return count(array_diff_assoc($newArray, $oldArray)) + count(array_diff_assoc($oldArray, $newArray));
+// }
 
 /**
  * Safely decode JSON values, always returning an array
