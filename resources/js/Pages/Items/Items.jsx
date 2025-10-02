@@ -72,6 +72,7 @@ const useInventoryManager = (initialItems, auth) => {
 
   useEffect(() => {
     setLoading(true);
+    // console.log(initialItems)
     const formatted = initialItems?.map((item, index) => ({
       id: item?.item_id ?? index + 1,
       ...item,
@@ -85,6 +86,8 @@ const useInventoryManager = (initialItems, auth) => {
       volume_cubic_m: item?.volume_cubic_m ? Number(item.volume_cubic_m) : null,
       is_hazardous: !!item?.is_hazardous,
       is_active: item?.is_active ?? true,
+      // expiry_date:item?.expiry_date??null,
+      expiry_date:moment(item?.expiry_date).format('YYYY-MM-DD'),
       created_at: item?.created_at ? moment(item.created_at).format("MMM DD, YYYY") : "",
       updated_at: item?.updated_at ? moment(item.updated_at).format("MMM DD, YYYY") : "",
     }));
@@ -244,7 +247,8 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
     handling_instructions: item?.handling_instructions || '',
     storage_conditions: item?.storage_conditions || '',
     shelf_life_days: item?.shelf_life_days ?? null,
-    expiry_date: item?.expiry_date || '',
+    // expiry_date: item?.expiry_date || '',
+    expiry_date:moment(item?.expiry_date).format('YYYY-MM-DD'),
     barcode: item?.barcode || '',
     qr_code: item?.qr_code || '',
     rfid_tag: item?.rfid_tag || '',
@@ -334,7 +338,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" disableRestoreFocus fullWidth>
       <DialogTitle sx={{ 
         backgroundColor: 'primary.main', 
         color: 'white', 
@@ -356,7 +360,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             <TextField
               fullWidth
               label="Item Code"
-              value={data.item_code}
+              value={data.item_code || ""}
               onChange={(e) => setData('item_code', e.target.value)}
               error={!!errors.item_code}
               helperText={errors.item_code}
@@ -367,7 +371,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             <TextField
               fullWidth
               label="Item Name"
-              value={data.name}
+              value={data.name || ""}
               onChange={(e) => setData('name', e.target.value)}
               error={!!errors.name}
               helperText={errors.name}
@@ -378,7 +382,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             <FormControl fullWidth error={!!errors.university_id}>
               <InputLabel>University</InputLabel>
               <Select 
-                value={data.university_id} 
+                value={data.university_id ||""} 
                 label="University" 
                 onChange={(e) => setData('university_id', e.target.value)}
               >
@@ -396,7 +400,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             <FormControl fullWidth error={!!errors.category_id}>
               <InputLabel>Category</InputLabel>
               <Select
-                value={data.category_id}
+                value={data.category_id||""}
                 label="Category"
                 onChange={(e) => setData('category_id', e.target.value)}
               >
@@ -416,7 +420,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             <TextField
               fullWidth
               label="Unit of Measure"
-              value={data.unit_of_measure}
+              value={data.unit_of_measure||""}
               onChange={(e) => setData('unit_of_measure', e.target.value)}
               error={!!errors.unit_of_measure}
               helperText={errors.unit_of_measure}
@@ -428,7 +432,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
               fullWidth
               type="number"
               label="Unit Cost"
-              value={data.unit_cost}
+              value={data.unit_cost||""}
               onChange={(e) => setData('unit_cost', e.target.value)}
               InputProps={{ startAdornment: <InputAdornment position="start">₵</InputAdornment> }}
             />
@@ -439,7 +443,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
               fullWidth
               type="number"
               label="Current Value"
-              value={data.current_value}
+              value={data.current_value||""}
               onChange={(e) => setData('current_value', e.target.value)}
               InputProps={{ startAdornment: <InputAdornment position="start">₵</InputAdornment> }}
             />
@@ -450,7 +454,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
               fullWidth
               type="number"
               label="Minimum Stock Level"
-              value={data.minimum_stock_level}
+              value={data.minimum_stock_level||""}
               onChange={(e) => setData('minimum_stock_level', e.target.value)}
             />
           </Grid>
@@ -460,7 +464,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
               fullWidth
               type="number"
               label="Maximum Stock Level"
-              value={data.maximum_stock_level ?? ''}
+              value={data.maximum_stock_level ||""}
               onChange={(e) => setData('maximum_stock_level', e.target.value)}
             />
           </Grid>
@@ -470,7 +474,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
               fullWidth
               type="number"
               label="Reorder Point"
-              value={data.reorder_point}
+              value={data.reorder_point||""}
               onChange={(e) => setData('reorder_point', e.target.value)}
             />
           </Grid>
@@ -480,7 +484,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
               fullWidth
               type="number"
               label="Economic Order Quantity"
-              value={data.economic_order_quantity ?? ''}
+              value={data.economic_order_quantity ||""}
               onChange={(e) => setData('economic_order_quantity', e.target.value)}
             />
           </Grid>
@@ -489,7 +493,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             <FormControl fullWidth>
               <InputLabel>ABC Classification</InputLabel>
               <Select
-                value={data.abc_classification}
+                value={data.abc_classification||""}
                 label="ABC Classification"
                 onChange={(e) => setData('abc_classification', e.target.value)}
               >
@@ -505,7 +509,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
               fullWidth
               type="number"
               label="Weight (kg)"
-              value={data.weight_kg ?? ''}
+              value={data.weight_kg ||""}
               onChange={(e) => setData('weight_kg', e.target.value)}
             />
           </Grid>
@@ -515,7 +519,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
               fullWidth
               type="number"
               label="Volume (m³)"
-              value={data.volume_cubic_m ?? ''}
+              value={data.volume_cubic_m ||""}
               onChange={(e) => setData('volume_cubic_m', e.target.value)}
             />
           </Grid>
@@ -532,13 +536,13 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             />
           </Grid>
 
-          {data.is_hazardous && (
+          {data?.is_hazardous && (
             <>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
                   label="Hazard Type"
-                  value={data.hazard_type}
+                  value={data.hazard_type||""}
                   onChange={(e) => setData('hazard_type', e.target.value)}
                 />
               </Grid>
@@ -549,7 +553,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
                   multiline
                   rows={2}
                   label="Handling Instructions"
-                  value={data.handling_instructions}
+                  value={data.handling_instructions||""}
                   onChange={(e) => setData('handling_instructions', e.target.value)}
                 />
               </Grid>
@@ -560,7 +564,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             <TextField
               fullWidth
               label="Storage Conditions"
-              value={data.storage_conditions}
+              value={data.storage_conditions||""}
               onChange={(e) => setData('storage_conditions', e.target.value)}
             />
           </Grid>
@@ -570,7 +574,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
               fullWidth
               type="number"
               label="Shelf Life (days)"
-              value={data.shelf_life_days ?? ''}
+              value={data.shelf_life_days ||""}
               onChange={(e) => setData('shelf_life_days', e.target.value)}
             />
           </Grid>
@@ -581,7 +585,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
               type="date"
               label="Expiry Date"
               InputLabelProps={{ shrink: true }}
-              value={data.expiry_date || ''}
+              value={data?.expiry_date || ""}
               onChange={(e) => setData('expiry_date', e.target.value)}
             />
           </Grid>
@@ -590,7 +594,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             <TextField
               fullWidth
               label="Barcode"
-              value={data.barcode}
+              value={data.barcode|| "" }
               onChange={(e) => setData('barcode', e.target.value)}
               error={!!errors.barcode}
               helperText={errors.barcode}
@@ -601,7 +605,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             <TextField
               fullWidth
               label="QR Code"
-              value={data.qr_code}
+              value={data.qr_code||""}
               onChange={(e) => setData('qr_code', e.target.value)}
             />
           </Grid>
@@ -610,7 +614,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             <TextField
               fullWidth
               label="RFID Tag"
-              value={data.rfid_tag}
+              value={data.rfid_tag||""}
               onChange={(e) => setData('rfid_tag', e.target.value)}
             />
           </Grid>
@@ -722,13 +726,13 @@ const DeleteConfirmationDialog = ({ open, onClose, item, onConfirm }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableRestoreFocus>
       <DialogTitle sx={{ 
         backgroundColor: 'error.main', 
         color: 'white',
         display: 'flex',
         alignItems: 'center',
-        gap: 1
+        gap: 1,
       }}>
         <WarningIcon />
         Confirm Deletion
@@ -776,7 +780,7 @@ const DeleteConfirmationDialog = ({ open, onClose, item, onConfirm }) => {
 };
 
 // Main Component
-export default function InventoryItems({ items, auth, categories, universities }) {
+export default function InventoryItems({ items=[], auth, categories=[], universities=[] }) {
   const theme = useTheme();
   const [alert, setAlert] = useState({ open: false, message: "", severity: "success" });
   const [dialogOpen, setDialogOpen] = useState(false);

@@ -120,7 +120,7 @@ const SummaryCard = ({ title, value, icon, color, subtitle }) => (
 );
 
 
-export default function InventoryTransactions({ transactions, auth, items, departments, locations }) {
+export default function InventoryTransactions({ transactions=[], auth, items, departments, locations }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { flash } = usePage().props;
@@ -801,7 +801,7 @@ const handleSubmit = useCallback(() => {
             <Grid size={{ xs:12, sm:6, md:6}}>
               <SummaryCard 
                 title="Total Transactions" 
-                value={totalTransactions} 
+                value={totalTransactions || ""} 
                 icon={<InventoryIcon />} 
                 color={theme.palette.primary.main} 
               />
@@ -809,7 +809,7 @@ const handleSubmit = useCallback(() => {
             <Grid size={{ xs:12, sm:6, md:6}}>
               <SummaryCard 
                 title="Total Value" 
-                value={`₵${totalValue?.toFixed(2)}`} 
+                value={`₵${totalValue?.toFixed(2)?? 0}`} 
                 icon={<TotalValueIcon />} 
                 color={theme.palette.success.main} 
               />
@@ -817,7 +817,7 @@ const handleSubmit = useCallback(() => {
             <Grid size={{ xs:12, sm:6, md:6}}>
               <SummaryCard 
                 title="Pending Transactions" 
-                value={pendingTransactions} 
+                value={pendingTransactions??0} 
                 icon={<PendingIcon />} 
                 color={theme.palette.warning.main} 
               />
@@ -825,7 +825,7 @@ const handleSubmit = useCallback(() => {
             <Grid size={{ xs:12, sm:6, md:6}}>
               <SummaryCard 
                 title="Last 7 Days" 
-                value={recentTransactions} 
+                value={recentTransactions??0} 
                 icon={<DateIcon />} 
                 color={theme.palette.info.main} 
               />
@@ -966,9 +966,10 @@ const handleSubmit = useCallback(() => {
             onClose={() => setOpenDialog(false)} 
             maxWidth="md" 
             fullWidth 
-            TransitionComponent={Slide}
+            // TransitionComponent={Slide}
             transitionDuration={300}
             fullScreen={isMobile}
+            disableRestoreFocus
           >
             <DialogTitle sx={{ 
               backgroundColor: 'primary.main', 
@@ -1005,7 +1006,7 @@ const handleSubmit = useCallback(() => {
                     <InputLabel>Transaction Type</InputLabel>
                     <Select 
                       name="transaction_type" 
-                      value={data.transaction_type} 
+                      value={data.transaction_type || ""} 
                       label="Transaction Type" 
                       onChange={handleInputChange}
                       startAdornment={
@@ -1031,11 +1032,11 @@ const handleSubmit = useCallback(() => {
                     <InputLabel>Status</InputLabel>
                     <Select 
                       name="status" 
-                      value={data.status} 
+                      value={data.status || ""} 
                       label="Status" 
                       onChange={handleInputChange}
                     >
-                      {transactionStatuses.map(status => (
+                      {transactionStatuses?.map(status => (
                         <MenuItem key={status.value} value={status.value}>
                           <Box display="flex" alignItems="center">
                             {status.icon}
@@ -1052,7 +1053,7 @@ const handleSubmit = useCallback(() => {
                     <InputLabel>Item</InputLabel>
                     <Select 
                       name="item_id" 
-                      value={data.item_id} 
+                      value={data.item_id || ""} 
                       label="Item" 
                       onChange={handleInputChange}
                     >
@@ -1073,7 +1074,7 @@ const handleSubmit = useCallback(() => {
                     <InputLabel>Department</InputLabel>
                     <Select 
                       name="department_id" 
-                      value={data.department_id} 
+                      value={data.department_id  || ""} 
                       label="Department" 
                       onChange={handleInputChange}
                     >
@@ -1095,7 +1096,7 @@ const handleSubmit = useCallback(() => {
                     label="Quantity" 
                     name="quantity" 
                     type="number" 
-                    value={data.quantity} 
+                    value={data.quantity || ""} 
                     onChange={handleInputChange} 
                     error={!!formErrors.quantity}
                     helperText={formErrors.quantity}
@@ -1109,7 +1110,7 @@ const handleSubmit = useCallback(() => {
                     label="Unit Cost" 
                     name="unit_cost" 
                     type="number" 
-                    value={data.unit_cost} 
+                    value={data.unit_cost || ""} 
                     onChange={handleInputChange} 
                     error={!!formErrors.unit_cost}
                     helperText={formErrors.unit_cost}
@@ -1130,7 +1131,7 @@ const handleSubmit = useCallback(() => {
                     label="Total Value" 
                     name="total_value" 
                     type="number" 
-                    value={data.total_value} 
+                    value={data.total_value || ""} 
                     InputProps={{ 
                       startAdornment: (
                         <InputAdornment position="start">
@@ -1148,7 +1149,7 @@ const handleSubmit = useCallback(() => {
                     label="Transaction Date & Time" 
                     name="transaction_date" 
                     type="datetime-local" 
-                    value={data.transaction_date} 
+                    value={data.transaction_date || ""} 
                     onChange={handleInputChange} 
                     error={!!formErrors.transaction_date}
                     helperText={formErrors.transaction_date}
@@ -1168,7 +1169,7 @@ const handleSubmit = useCallback(() => {
                     fullWidth 
                     label="Reference Number" 
                     name="reference_number" 
-                    value={data.reference_number} 
+                    value={data.reference_number || ""} 
                     onChange={handleInputChange}
                     InputProps={{
                       startAdornment: (
@@ -1185,7 +1186,7 @@ const handleSubmit = useCallback(() => {
                     fullWidth 
                     label="Batch Number" 
                     name="batch_number" 
-                    value={data.batch_number} 
+                    value={data.batch_number || ""} 
                     onChange={handleInputChange}
                     InputProps={{
                       startAdornment: (
@@ -1203,7 +1204,7 @@ const handleSubmit = useCallback(() => {
                     label="Expiry Date" 
                     name="expiry_date" 
                     type="date" 
-                    value={data.expiry_date} 
+                    value={data.expiry_date || ""} 
                     onChange={handleInputChange} 
                     InputLabelProps={{ shrink: true }}
                     InputProps={{
@@ -1220,7 +1221,7 @@ const handleSubmit = useCallback(() => {
                     <InputLabel>Source Location</InputLabel>
                     <Select 
                       name="source_location_id" 
-                      value={data.source_location_id} 
+                      value={data.source_location_id || ""} 
                       label="Source Location" 
                       onChange={handleInputChange}
                     >
@@ -1239,7 +1240,7 @@ const handleSubmit = useCallback(() => {
                     <InputLabel>Destination Location</InputLabel>
                     <Select 
                       name="destination_location_id" 
-                      value={data.destination_location_id} 
+                      value={data.destination_location_id ||""} 
                       label="Destination Location" 
                       onChange={handleInputChange}
                     >
@@ -1258,7 +1259,7 @@ const handleSubmit = useCallback(() => {
                     fullWidth 
                     label="Notes" 
                     name="notes" 
-                    value={data.notes} 
+                    value={data.notes || ""} 
                     onChange={handleInputChange}
                     multiline
                     rows={1}
@@ -1294,37 +1295,12 @@ const handleSubmit = useCallback(() => {
           </Dialog>
 
           {/* Delete Confirmation Dialog */}
-          {/* <Dialog 
-            open={openDeleteDialog} 
-            onClose={() => setOpenDeleteDialog(false)}
-            maxWidth="sm"
-            fullWidth
-          >
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogContent>
-              <Typography>
-                Are you sure you want to delete this transaction? 
-                This action cannot be undone.
-              </Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
-              <Button 
-                variant="contained" 
-                color="error" 
-                onClick={handleDeleteConfirm}
-                startIcon={<DeleteIcon />}
-              >
-                Delete Transaction
-              </Button>
-            </DialogActions>
-          </Dialog> */}
-          {/* Delete Confirmation Dialog */}
           <Dialog 
             open={openDeleteDialog} 
             onClose={() => setOpenDeleteDialog(false)}
             maxWidth="sm"
             fullWidth
+            disableRestoreFocus
           >
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogContent>

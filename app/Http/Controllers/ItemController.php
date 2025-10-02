@@ -49,25 +49,7 @@ class ItemController extends Controller
                 ->get()
         ),
     ]);
-
-            // $items = $this->itemRepository->getAll();
-            
-            // // Optimize categories and universities queries
-            // $categories = ItemCategory::select('category_id', 'name')
-            //     ->orderBy('name')
-            //     ->get();
-                
-            // $universities = University::select('university_id', 'name')
-            //     ->orderBy('name')
-            //     ->get();
-
-
-            // return Inertia::render('Items/Items', [
-            //     'items' => $items,
-            //     'categories' => $categories,
-            //     'universities' => $universities
-            // ]);
-
+    
         } catch (\Exception $e) {
             Log::error('Items index error:', ['error' => $e->getMessage()]);
             

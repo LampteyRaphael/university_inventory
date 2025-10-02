@@ -44,7 +44,7 @@ class ItemRepository
                     'handling_instructions' => $item->handling_instructions,
                     'specifications' => $item->specifications,
                     'shelf_life_days' => $item->shelf_life_days,
-                    'expiry_date' => $item->expiry_date,
+                    'expiry_date' => $item->expiry_date??'',
                     'barcode' => $item->barcode,
                     'qr_code' => $item->qr_code,
                     'rfid_tag' => $item->rfid_tag,

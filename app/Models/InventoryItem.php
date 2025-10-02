@@ -58,7 +58,7 @@ class InventoryItem extends Model
         'volume_cubic_m'       => 'decimal:4',
         'is_hazardous'         => 'boolean',
         'is_active'            => 'boolean',
-        'expiry_date'          => 'date',
+        'expiry_date'          => 'date:Y-m-d',
         'minimum_stock_level'  => 'integer',
         'maximum_stock_level'  => 'integer',
         'reorder_point'        => 'integer',
