@@ -191,7 +191,7 @@ const { data, setData, post, put, processing, errors, reset, clearErrors } = use
   // Process data on component mount
   useEffect(() => {
     setGridLoading(true);
-    console.log(transactions)
+    // console.log(transactions)
     // Simulate data processing
     const processData = setTimeout(() => {
       const formatted = transactions?.map((transaction, index) => ({
@@ -223,7 +223,7 @@ const { data, setData, post, put, processing, errors, reset, clearErrors } = use
 
   // Calculate total values for summary cards
   const { totalTransactions, totalValue, pendingTransactions, recentTransactions } = useMemo(() => {
-    const total = rows.length;
+    const total = rows.length || 0;
     const value = rows.reduce((sum, row) => sum + (row.total_value || 0), 0);
     const pending = rows.filter(row => row.status === 'pending').length;
     const recent = rows.filter(row => 
@@ -468,7 +468,7 @@ const columns = useMemo(() => [
       row.reference_number?.toLowerCase().includes(query) ||
       row.batch_number?.toLowerCase().includes(query) ||
       (items.find(i => i.item_id === row.item_id)?.name || "").toLowerCase().includes(query) ||
-      (departments.find(d => d.department_id === row.department_id)?.name || "").toLowerCase().includes(query)
+      (departments?.find(d => d.department_id === row.department_id)?.name || "").toLowerCase().includes(query)
     );
   }, [rows, searchText, items, departments]);
 
@@ -582,7 +582,7 @@ const handleDeleteConfirm = useCallback(() => {
       });
     },
     onError: (errors) => {
-      console.log(errors)
+      // console.log(errors)
       setOpenDeleteDialog(false);
       setAlert({ 
         open: true, 
@@ -935,7 +935,7 @@ const handleSubmit = useCallback(() => {
               />
 
 
-            {gridLoading && (
+            {/* {gridLoading && (
                 <Box
                 sx={{
                     position: 'absolute',
@@ -957,7 +957,7 @@ const handleSubmit = useCallback(() => {
                     </Typography>
                 </Box>
                 </Box>
-            )}
+            )} */}
           </Paper>
 
           {/* Create/Edit Dialog */}
@@ -1056,7 +1056,7 @@ const handleSubmit = useCallback(() => {
                       label="Item" 
                       onChange={handleInputChange}
                     >
-                      {items.map(item => (
+                      {items?.map(item => (
                         <MenuItem key={item.item_id} value={item.item_id}>
                           {item.name} ({item.item_code})
                         </MenuItem>
@@ -1077,7 +1077,7 @@ const handleSubmit = useCallback(() => {
                       label="Department" 
                       onChange={handleInputChange}
                     >
-                      {departments.map(dept => (
+                      {departments?.map(dept => (
                         <MenuItem key={dept.department_id} value={dept.department_id}>
                           {dept.name}
                         </MenuItem>

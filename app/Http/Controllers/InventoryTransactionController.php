@@ -27,31 +27,66 @@ class InventoryTransactionController extends Controller
     public function transactionIndex(Request $request)
     {
         try {
-            $transactions = $this->transactionRepository->getAllTransactions();
+            // $transactions = $this->transactionRepository->getAllTransactions();
             
-            // Get dropdown data
-            $items = InventoryItem::select('item_id', 'item_code', 'name')->orderBy('name')->get();
+            // // Get dropdown data
+            // $items = InventoryItem::select('item_id', 'item_code', 'name')->orderBy('name')->get();
                 
-            $departments = Department::select('department_id', 'name')->orderBy('name')->get();
+            // $departments = Department::select('department_id', 'name')->orderBy('name')->get();
 
-            $locations = Location::select('location_id', 'name')->orderBy('name')->get();
+            // $locations = Location::select('location_id', 'name')->orderBy('name')->get();
 
-            $transactionTypes = [
-                'purchase', 'sale', 'transfer', 'adjustment', 'return', 
-                'write_off', 'consumption', 'production', 'donation'
-            ];
+            // $transactionTypes = [
+            //     'purchase', 'sale', 'transfer', 'adjustment', 'return', 
+            //     'write_off', 'consumption', 'production', 'donation'
+            // ];
 
-            $statuses = ['pending', 'completed', 'cancelled', 'reversed'];
+            // $statuses = ['pending', 'completed', 'cancelled', 'reversed'];
 
-            // FIXED: Remove duplicate 'transactions' key
-            return Inertia::render('Inventories/Inventories', [
-                'transactions' => $transactions, // This is your paginated data
-                'items' => $items,
-                'locations'=>$locations,
-                'departments' => $departments,
-                'transactionTypes' => $transactionTypes,
-                'statuses' => $statuses,
+            // // FIXED: Remove duplicate 'transactions' key
+            // return Inertia::render('Inventories/Inventories', [
+            //     'transactions' => $transactions, // This is your paginated data
+            //     'items' => $items,
+            //     'locations'=>$locations,
+            //     'departments' => $departments,
+            //     'transactionTypes' => $transactionTypes,
+            //     'statuses' => $statuses,
+            // ]);
+            return Inertia::render('Inventories/Inventories')
+            ->with([
+                // Paginated transactions (deferred so it doesn't block the UI)
+                'transactions' => Inertia::defer(fn () =>
+                    $this->transactionRepository->getAllTransactions()
+                ),
+
+                // Dropdown data (still deferred to speed up first render)
+                'items' => Inertia::defer(fn () =>
+                    InventoryItem::select('item_id', 'item_code', 'name')
+                        ->orderBy('name')
+                        ->get()
+                ),
+
+                'departments' => Inertia::defer(fn () =>
+                    Department::select('department_id', 'name')
+                        ->orderBy('name')
+                        ->get()
+                ),
+
+                'locations' => Inertia::defer(fn () =>
+                    Location::select('location_id', 'name')
+                        ->orderBy('name')
+                        ->get()
+                ),
+
+                // Small static arrays → no need to defer
+                'transactionTypes' => [
+                    'purchase', 'sale', 'transfer', 'adjustment', 'return', 
+                    'write_off', 'consumption', 'production', 'donation',
+                ],
+
+                'statuses' => ['pending', 'completed', 'cancelled', 'reversed'],
             ]);
+
 
         } catch (\Exception $e) {
             Log::error('Transaction index error:', ['error' => $e->getMessage()]);

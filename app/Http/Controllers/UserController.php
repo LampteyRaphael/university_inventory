@@ -50,21 +50,67 @@ class UserController extends Controller
             });
 
            
+        return Inertia::render('Users/Index')
+            ->with([
+                // Users (best if paginated)
+                'users' => Inertia::defer(fn () =>
+                    $users
+                ),
 
-        return Inertia::render('Users/Index', [
-            'users' => $users,
-            'roles' => [
-                'super_admin',
-                'inventory_manager', 
-                'department_head',
-                'procurement_officer',
-                'faculty',
-                'staff',
-                'student'
-            ],
-            'universities' => University::all(),
-            'departments' => Department::all(),
-        ]);
+                // Static array – keep immediate
+                // 'roles' => [
+                //     'super_adminsss',
+                //     'inventory_manager', 
+                //     'department_head',
+                //     'procurement_officer',
+                //     'faculty',
+                //     'staff',
+                //     'student',
+                // ],
+
+                    'roles' => [
+                    'super_admin' => [
+                        'label' => 'Super Admin',
+                        'color' => 'error',
+                    ],
+                    'inventory_manager' => [
+                        'label' => 'Inventory Manager',
+                        'color' => 'warning',
+                    ],
+                    'department_head' => [
+                        'label' => 'Department Head',
+                        'color' => 'info',
+                    ],
+                    'procurement_officer' => [
+                        'label' => 'Procurement Officer',
+                        'color' => 'secondary',
+                    ],
+                    'faculty' => [
+                        'label' => 'Faculty',
+                        'color' => 'primary',
+                    ],
+                    'staff' => [
+                        'label' => 'Staff',
+                        'color' => 'default',
+                    ],
+                    'student' => [
+                        'label' => 'Student',
+                        'color' => 'success',
+                    ],
+                ],
+
+
+                // Medium datasets – defer so they don’t block
+                'universities' => Inertia::defer(fn () =>
+                    University::select('university_id', 'name')->get()
+                ),
+
+                'departments' => Inertia::defer(fn () =>
+                    Department::select('department_id', 'name')->get()
+                ),
+            ]);
+
+
     }
 
     public function create()

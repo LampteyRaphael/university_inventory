@@ -28,23 +28,45 @@ class ItemController extends Controller
     {
         try {
 
-            $items = $this->itemRepository->getAll();
+            return Inertia::render('Items/Items')
+    ->with([
+        // Large dataset (best if paginated in repository)
+        'items' => Inertia::defer(fn () =>
+            $this->itemRepository->getAll()
+        ),
+
+        // Medium dataset
+        'categories' => Inertia::defer(fn () =>
+            ItemCategory::select('category_id', 'name')
+                ->orderBy('name')
+                ->get()
+        ),
+
+        // Medium dataset
+        'universities' => Inertia::defer(fn () =>
+            University::select('university_id', 'name')
+                ->orderBy('name')
+                ->get()
+        ),
+    ]);
+
+            // $items = $this->itemRepository->getAll();
             
-            // Optimize categories and universities queries
-            $categories = ItemCategory::select('category_id', 'name')
-                ->orderBy('name')
-                ->get();
+            // // Optimize categories and universities queries
+            // $categories = ItemCategory::select('category_id', 'name')
+            //     ->orderBy('name')
+            //     ->get();
                 
-            $universities = University::select('university_id', 'name')
-                ->orderBy('name')
-                ->get();
+            // $universities = University::select('university_id', 'name')
+            //     ->orderBy('name')
+            //     ->get();
 
 
-            return Inertia::render('Items/Items', [
-                'items' => $items,
-                'categories' => $categories,
-                'universities' => $universities
-            ]);
+            // return Inertia::render('Items/Items', [
+            //     'items' => $items,
+            //     'categories' => $categories,
+            //     'universities' => $universities
+            // ]);
 
         } catch (\Exception $e) {
             Log::error('Items index error:', ['error' => $e->getMessage()]);

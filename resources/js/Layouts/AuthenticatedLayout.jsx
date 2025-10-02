@@ -176,7 +176,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
         { text: 'Item Categories', icon: <Category />, route: 'item-categories.index' },
         { text: 'Departments', icon: <Apartment />, route: 'department.index' },
         { text: 'Stock Levels', icon: <BarChartIcon />, route: 'stock-levels.index' },
-        { text: 'Locations', icon: <LocationIcon />, route: 'locations' }
+        { text: 'Locations', icon: <LocationIcon />, route: 'locations.index' }
       ]
     },
     {

@@ -57,17 +57,36 @@ class StockLevelsController extends Controller
 
                 ];
             });
-            $universities= University::select('university_id','name','code');
-            $items= InventoryItem::select('item_id','name')->get();
-            $departments=Department::select('department_id','name')->get();
-            $locations=Location::select('location_id','name')->get();
-            return Inertia::render('StockLevels/StockLevels', [
-                'locations'=>$locations,
-                'stockLevels'=>$stockLevels,
-                'universities'=>$universities,
-                'items'=>$items,
-                'departments'=>$departments
+            return Inertia::render('StockLevels/StockLevels')
+            ->with([
+                'stockLevels' => Inertia::defer(fn () =>
+                    $stockLevels // paginate if this is very large
+                ),
+                'universities' => Inertia::defer(fn () =>
+                    University::select('university_id','name','code')->get()
+                ),
+                'items' => Inertia::defer(fn () =>
+                    InventoryItem::select('item_id','name')->get()
+                ),
+                'departments' => Inertia::defer(fn () =>
+                    Department::select('department_id','name')->get()
+                ),
+                'locations' => Inertia::defer(fn () =>
+                    Location::select('location_id','name')->get()
+                ),
             ]);
+
+            // $universities= University::select('university_id','name','code');
+            // $items= InventoryItem::select('item_id','name')->get();
+            // $departments=Department::select('department_id','name')->get();
+            // $locations=Location::select('location_id','name')->get();
+            // return Inertia::render('StockLevels/StockLevels', [
+            //     'locations'=>$locations,
+            //     'stockLevels'=>$stockLevels,
+            //     'universities'=>$universities,
+            //     'items'=>$items,
+            //     'departments'=>$departments
+            // ]);
 
     }
 
@@ -225,7 +244,7 @@ class StockLevelsController extends Controller
             DB::commit();
 
             return Redirect::route('stock-levels.index')
-                ->with('success', 'Stock level deleted successfully.');
+                ->with('error', 'Stock level deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->withErrors([

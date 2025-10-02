@@ -28,6 +28,7 @@ import {
   useTheme,
   useMediaQuery,
   Grid,
+  CircularProgress,
 } from "@mui/material";
 import {
   DataGrid,
@@ -113,10 +114,8 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
     committed_quantity: 0,
     on_order_quantity: 0,
     average_cost: 0,
-    last_count_date: "",
-    // moment().format('YYYY-MM-DD'),
-    next_count_date: "",
-    // /moment().add(30, 'days').format('YYYY-MM-DD'),
+    last_count_date: moment().format('YYYY-MM-DD'),
+    next_count_date: moment().add(30, 'days').format('YYYY-MM-DD'),
     count_frequency: "monthly",
     reorder_level: 0,
     max_level: 0,
@@ -484,7 +483,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
     { 
       field: 'values', 
       headerName: 'Values', 
-      width: 130,
+      width: 200,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -522,7 +521,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
     { 
       field: 'supply_settings', 
       headerName: 'Supply Settings', 
-      width: 120,
+      width: 200,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -902,7 +901,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     <InputLabel>Item</InputLabel>
                     <Select
                       name="item_id"
-                      value={data.item_id}
+                      value={data.item_id||""}
                       onChange={handleInputChange}
                       label="Item"
                     >
@@ -946,7 +945,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     <InputLabel>Location</InputLabel>
                     <Select
                       name="location_id"
-                      value={data.location_id}
+                      value={data.location_id || ""}
                       onChange={handleInputChange}
                       label="Location"
                     >
@@ -969,7 +968,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="number"
                     label="Current Quantity"
                     name="current_quantity"
-                    value={data.current_quantity}
+                    value={data.current_quantity||""}
                     onChange={handleInputChange}
                     error={!!errors.current_quantity}
                     helperText={errors.current_quantity}
@@ -983,7 +982,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="number"
                     label="Committed Quantity"
                     name="committed_quantity"
-                    value={data.committed_quantity}
+                    value={data.committed_quantity||""}
                     onChange={handleInputChange}
                     error={!!errors.committed_quantity}
                     helperText={errors.committed_quantity}
@@ -997,7 +996,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="number"
                     label="On Order Quantity"
                     name="on_order_quantity"
-                    value={data.on_order_quantity}
+                    value={data.on_order_quantity||""}
                     onChange={handleInputChange}
                     error={!!errors.on_order_quantity}
                     helperText={errors.on_order_quantity}
@@ -1011,7 +1010,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="number"
                     label="Average Cost"
                     name="average_cost"
-                    value={data.average_cost}
+                    value={data.average_cost||""}
                     onChange={handleInputChange}
                     error={!!errors.average_cost}
                     helperText={errors.average_cost}
@@ -1028,7 +1027,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="number"
                     label="Reorder Level"
                     name="reorder_level"
-                    value={data.reorder_level}
+                    value={data.reorder_level||""}
                     onChange={handleInputChange}
                     error={!!errors.reorder_level}
                     helperText={errors.reorder_level}
@@ -1042,7 +1041,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="number"
                     label="Safety Stock"
                     name="safety_stock"
-                    value={data.safety_stock}
+                    value={data.safety_stock||""}
                     onChange={handleInputChange}
                     error={!!errors.safety_stock}
                     helperText={errors.safety_stock}
@@ -1056,7 +1055,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="number"
                     label="Max Level"
                     name="max_level"
-                    value={data.max_level}
+                    value={data.max_level||""}
                     onChange={handleInputChange}
                     error={!!errors.max_level}
                     helperText={errors.max_level}
@@ -1070,7 +1069,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="number"
                     label="Service Level (%)"
                     name="service_level"
-                    value={data.service_level}
+                    value={data.service_level||""}
                     onChange={handleInputChange}
                     error={!!errors.service_level}
                     helperText={errors.service_level}
@@ -1087,7 +1086,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="number"
                     label="Lead Time (Days)"
                     name="lead_time_days"
-                    value={data.lead_time_days}
+                    value={data.lead_time_days||""}
                     onChange={handleInputChange}
                     error={!!errors.lead_time_days}
                     helperText={errors.lead_time_days}
@@ -1103,7 +1102,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     <InputLabel>Count Frequency</InputLabel>
                     <Select
                       name="count_frequency"
-                      value={data.count_frequency}
+                      value={data.count_frequency||""}
                       onChange={handleInputChange}
                       label="Count Frequency"
                     >
@@ -1126,7 +1125,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="date"
                     label="Last Count Date"
                     name="last_count_date"
-                    value={data.last_count_date}
+                    value={data.last_count_date||""}
                     onChange={handleInputChange}
                     error={!!errors.last_count_date}
                     helperText={errors.last_count_date}
@@ -1141,7 +1140,7 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                     type="date"
                     label="Next Count Date"
                     name="next_count_date"
-                    value={data.next_count_date}
+                    value={data.next_count_date||""}
                     onChange={handleInputChange}
                     error={!!errors.next_count_date}
                     helperText={errors.next_count_date}
@@ -1159,8 +1158,12 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
                 startIcon={<SaveIcon />} 
                 variant="contained" 
                 disabled={processing}
-              >
-                {processing ? "Saving..." : "Save"}
+            >
+                {processing ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  data?.item_id ? "Update Stock" : "Save "
+                )}
               </Button>
             </DialogActions>
           </Dialog>

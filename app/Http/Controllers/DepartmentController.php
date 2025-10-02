@@ -22,21 +22,43 @@ class DepartmentController extends Controller
     public function index(Request $request)
     {
         try {
-            $departments = $this->departmentRepository->getAll();
+            // $departments = $this->departmentRepository->getAll();
 
-            $universities = University::select('university_id', 'name')
-                ->orderBy('name')
-                ->get();
+            // $universities = University::select('university_id', 'name')
+            //     ->orderBy('name')
+            //     ->get();
 
-            $users = User::select('user_id', 'name')
-                ->orderBy('name')
-                ->get();    
+            // $users = User::select('user_id', 'name')
+            //     ->orderBy('name')
+            //     ->get();    
 
-            return Inertia::render('Departments/Departments', [
-                'departments'=>$departments,
-                'universities' => $universities,
-                'users' => $users,
+            // return Inertia::render('Departments/Departments', [
+            //     'departments'=>$departments,
+            //     'universities' => $universities,
+            //     'users' => $users,
+            // ]);
+            return Inertia::render('Departments/Departments')
+            ->with([
+                // Large dataset (best if repository paginates)
+                'departments' => Inertia::defer(fn () =>
+                    $this->departmentRepository->getAll()
+                ),
+
+                // Medium dataset
+                'universities' => Inertia::defer(fn () =>
+                    University::select('university_id', 'name')
+                        ->orderBy('name')
+                        ->get()
+                ),
+
+                // Medium dataset
+                'users' => Inertia::defer(fn () =>
+                    User::select('user_id', 'name')
+                        ->orderBy('name')
+                        ->get()
+                ),
             ]);
+
 
         } catch (\Exception $e) {
             Log::error('Items index error:', ['error' => $e->getMessage()]);

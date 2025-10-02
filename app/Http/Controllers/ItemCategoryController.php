@@ -54,14 +54,29 @@ class ItemCategoryController extends Controller
                 ];
             });
 
-            $universities = University::select('university_id', 'name')
-                ->orderBy('name')
-                ->get();
+            // $universities = University::select('university_id', 'name')
+            //     ->orderBy('name')
+            //     ->get();
 
-            return Inertia::render('Items/ItemCategories', [
-                'categories'=>$categories,
-                'universities' => $universities
+            // return Inertia::render('Items/ItemCategories', [
+            //     'categories'=>$categories,
+            //     'universities' => $universities
+            // ]);
+            return Inertia::render('Items/ItemCategories')
+            ->with([
+                // Categories (likely not huge, but can still be deferred)
+                'categories' => Inertia::defer(fn () =>
+                    $categories
+                ),
+
+                // Universities (also deferred so UI loads instantly)
+                'universities' => Inertia::defer(fn () =>
+                    University::select('university_id', 'name')
+                        ->orderBy('name')
+                        ->get()
+                ),
             ]);
+
 
         } catch (\Exception $e) {
             Log::error('Items index error:', ['error' => $e->getMessage()]);

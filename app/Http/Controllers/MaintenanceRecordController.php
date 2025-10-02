@@ -28,21 +28,50 @@ class MaintenanceRecordController extends Controller
     public function index(Request $request)
     {
         try {
-            $maintenanceRecords = $this->maintenanceRecordRepository->getAll();
+            // $maintenanceRecords = $this->maintenanceRecordRepository->getAll();
             
-            $stats = $this->maintenanceRecordRepository->getMaintenanceStats(Auth::user()->university_id ?? null);
-            $items = InventoryItem::select('item_id','name')->get();
-            $items = InventoryItem::select('item_id','name')->get();
-            $departments = Department::select('department_id','name')->get();
-            $universities  = University::select('university_id','name')->get();
-            return Inertia::render('Maintenance/Maintenance', [
-                'records' => $maintenanceRecords,
-                'stats' => $stats,
-                'items'=>$items,
-                'departments'=>$departments,
-                'universities'=>$universities,
+            // $stats = $this->maintenanceRecordRepository->getMaintenanceStats(Auth::user()->university_id ?? null);
+            // $items = InventoryItem::select('item_id','name')->get();
+            // $items = InventoryItem::select('item_id','name')->get();
+            // $departments = Department::select('department_id','name')->get();
+            // $universities  = University::select('university_id','name')->get();
+            // return Inertia::render('Maintenance/Maintenance', [
+            //     'records' => $maintenanceRecords,
+            //     'stats' => $stats,
+            //     'items'=>$items,
+            //     'departments'=>$departments,
+            //     'universities'=>$universities,
+            //     'filters' => $request->only(['search', 'status', 'type', 'priority']),
+            // ]);
+            return Inertia::render('Maintenance/Maintenance')
+            ->with([
+                // Maintenance records (likely large, best if paginated)
+                'records' => Inertia::defer(fn () =>
+                    $this->maintenanceRecordRepository->getAll()
+                ),
+
+                // Statistics (lightweight → load immediately)
+                'stats' => $this->maintenanceRecordRepository->getMaintenanceStats(
+                    Auth::user()->university_id ?? null
+                ),
+
+                // Dropdown data (defer to speed up UI)
+                'items' => Inertia::defer(fn () =>
+                    InventoryItem::select('item_id', 'name')->get()
+                ),
+
+                'departments' => Inertia::defer(fn () =>
+                    Department::select('department_id', 'name')->get()
+                ),
+
+                'universities' => Inertia::defer(fn () =>
+                    University::select('university_id', 'name')->get()
+                ),
+
+                // Filters from request (tiny, no need to defer)
                 'filters' => $request->only(['search', 'status', 'type', 'priority']),
             ]);
+
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to load maintenance records: ' . $e->getMessage());
         }

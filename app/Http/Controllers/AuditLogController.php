@@ -25,20 +25,41 @@ class AuditLogController extends Controller
     public function index(Request $request)
     {
         try {
-            $auditLogs = $this->auditLogRepository->getAll();
+            // $auditLogs = $this->auditLogRepository->getAll();
 
             
 
-            $stats = $this->auditLogRepository->getAuditStats(Auth::user()->university_id ?? null);
+            // $stats = $this->auditLogRepository->getAuditStats(Auth::user()->university_id ?? null);
             
-            $popularTables =$this->auditLogRepository->getPopularTables(Auth::user()->university_id ?? null);
+            // $popularTables =$this->auditLogRepository->getPopularTables(Auth::user()->university_id ?? null);
 
-            return Inertia::render('AuditLog/AuditLog', [
-                'logs' =>$auditLogs,
-                'stats' =>$stats,
-                'popularTables' => $popularTables,
+            // return Inertia::render('AuditLog/AuditLog', [
+            //     'logs' =>$auditLogs,
+            //     'stats' =>$stats,
+            //     'popularTables' => $popularTables,
+            //     'filters' => $request->only(['search', 'action', 'table_name']),
+            // ]);
+            return Inertia::render('AuditLog/AuditLog')
+            ->with([
+                // Heavy logs (best if paginated)
+                'logs' => Inertia::defer(fn () =>
+                    $this->auditLogRepository->getAll()
+                ),
+
+                // Stats (lightweight → no defer)
+                'stats' => $this->auditLogRepository->getAuditStats(
+                    Auth::user()->university_id ?? null
+                ),
+
+                // Popular tables (small query → can keep immediate)
+                'popularTables' => $this->auditLogRepository->getPopularTables(
+                    Auth::user()->university_id ?? null
+                ),
+
+                // Filters from request
                 'filters' => $request->only(['search', 'action', 'table_name']),
             ]);
+
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to load audit logs: ' . $e->getMessage());
         }

@@ -7,6 +7,7 @@ use App\Http\Controllers\InventoryReportController;
 use App\Http\Controllers\InventoryTransactionController;
 use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MaintenanceRecordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RouteController;
@@ -112,10 +113,12 @@ Route::middleware('auth','verified')->group(function () {
         Route::post('/stock-levels/bulk-update', [StockLevelsController::class, 'bulkUpdate'])->name('stock-levels.bulk-update');
         
         //locations
-        Route::get('/locations', [RouteController::class, 'locations'])->name('locations');  
+        // Route::get('/locations', [RouteController::class, 'locations'])->name('locations');  
+        Route::resource('locations', LocationController::class); // This includes update -> PUT/PATCH locations/{location}
 
 
         //universities
+        
         Route::get('/universities', [RouteController::class, 'universities'])->name('universities');  
 
 

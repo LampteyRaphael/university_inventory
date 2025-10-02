@@ -959,6 +959,15 @@ class ReportService
             $oldArray = $oldValues ? json_decode($oldValues, true) : [];
             $newArray = $newValues ? json_decode($newValues, true) : [];
 
+            // $oldArray = is_string($oldValues)
+            //     ? json_decode($oldValues, true)
+            //     : (is_array($oldValues) ? $oldValues : []);
+
+            // $newArray = is_string($newValues)
+            //     ? json_decode($newValues, true)
+            //     : (is_array($newValues) ? $newValues : []);
+
+
             if (!is_array($oldArray) || !is_array($newArray)) {
                 return 0;
             }

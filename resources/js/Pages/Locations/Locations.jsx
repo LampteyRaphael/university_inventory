@@ -18,7 +18,6 @@ import {
   Alert,
   Card,
   CardContent,
-  Grid,
   Fade,
   Tooltip,
   Avatar,
@@ -29,6 +28,11 @@ import {
   useMediaQuery,
   Switch,
   FormControlLabel,
+  alpha,
+  LinearProgress,
+  IconButton,
+  Grid,
+  createTheme,
 } from "@mui/material";
 import {
   DataGrid,
@@ -36,6 +40,7 @@ import {
 } from "@mui/x-data-grid";
 import * as XLSX from "xlsx";
 import moment from "moment";
+import { router, useForm, usePage } from "@inertiajs/react";
 import {
   UploadFile as UploadFileIcon,
   Add as AddIcon,
@@ -62,36 +67,76 @@ import {
   Home as HomeIcon,
   TrendingUp as UtilizationIcon,
   Warehouse as CapacityIcon,
+  Download as DownloadIcon,
+  AddCircle as AddCircleIcon,
+  FilterList as FilterIcon,
 } from "@mui/icons-material";
+import { orange } from "@mui/material/colors";
+import Notification from "@/Components/Notification";
 
-// Custom components
-const SummaryCard = ({ title, value, icon, color, subtitle }) => (
-  <Card sx={{ 
-    borderRadius: 2, 
-    p: 2, 
-    boxShadow: 3, 
-    transition: 'transform 0.2s, box-shadow 0.2s',
-    '&:hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: 6,
-    }
-  }}>
-    <CardContent>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography variant="h4" fontWeight={700} color={color}>
+// Enhanced SummaryCard with modern design
+const SummaryCard = ({ title, value, icon, color, subtitle, trend, onClick }) => (
+  <Card 
+    sx={{ 
+      borderRadius: 3,
+      p: 2.5,
+      background: `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, ${alpha(color, 0.02)} 100%)`,
+      border: `1px solid ${alpha(color, 0.1)}`,
+      boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      cursor: onClick ? 'pointer' : 'default',
+      position: 'relative',
+      overflow: 'hidden',
+      '&:hover': {
+        transform: onClick ? 'translateY(-6px)' : 'none',
+        boxShadow: onClick ? `0 12px 40px ${alpha(color, 0.2)}` : '0 8px 32px rgba(0,0,0,0.12)',
+        borderColor: alpha(color, 0.3),
+      },
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 3,
+        background: `linear-gradient(90deg, ${color}, ${alpha(color, 0.7)})`,
+      }
+    }}
+    onClick={onClick}
+  >
+    <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h3" fontWeight={800} color={color} sx={{ mb: 0.5 }}>
             {value}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="h6" fontWeight={600} color="text.primary" sx={{ mb: 0.5 }}>
             {title}
           </Typography>
           {subtitle && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               {subtitle}
             </Typography>
           )}
+          {trend && (
+            <Chip 
+              label={trend.value} 
+              size="small" 
+              color={trend.positive ? 'success' : 'error'}
+              variant="filled"
+              sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+            />
+          )}
         </Box>
-        <Avatar sx={{ bgcolor: `${color}08`, color }}>
+        <Avatar 
+          sx={{ 
+            bgcolor: alpha(color, 0.1), 
+            color: color,
+            width: 56,
+            height: 56,
+            boxShadow: `0 4px 12px ${alpha(color, 0.2)}`,
+          }}
+        >
           {icon}
         </Avatar>
       </Stack>
@@ -99,40 +144,46 @@ const SummaryCard = ({ title, value, icon, color, subtitle }) => (
   </Card>
 );
 
+// Utilization Progress Component
+const UtilizationProgress = ({ value, color = 'primary' }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+    <LinearProgress 
+      value={Math.min(value, 100)} 
+      variant="determinate" 
+      color={color}
+      sx={{ 
+        flex: 1, 
+        height: 8, 
+        borderRadius: 4,
+        backgroundColor: alpha(theme.palette[color].main, 0.1),
+        '& .MuiLinearProgress-bar': {
+          borderRadius: 4,
+        }
+      }}
+    />
+    <Typography variant="body2" fontWeight={600} color="text.primary" sx={{ minWidth: 45 }}>
+      {value.toFixed(1)}%
+    </Typography>
+  </Box>
+);
+
+// Create a theme instance
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: orange[500],
+    },
+  },
+});
+
 export default function Locations({ locations, auth, universities, departments }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const { flash, errors } = usePage().props;
   
-  // State management
-  const [rows, setRows] = useState([]);
-  const [searchText, setSearchText] = useState("");
-  const [openDialog, setOpenDialog] = useState(false);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [gridLoading, setGridLoading] = useState(true);
-  const [alert, setAlert] = useState({ open: false, message: "", severity: "success" });
-  const [formErrors, setFormErrors] = useState({});
-  const fileInputRef = useRef(null);
-
-  // Location types with icons
-  const locationTypes = [
-    { value: 'storage', label: 'Storage', icon: <StorageIcon />, color: 'primary' },
-    { value: 'office', label: 'Office', icon: <OfficeIcon />, color: 'info' },
-    { value: 'lab', label: 'Laboratory', icon: <LabIcon />, color: 'success' },
-    { value: 'classroom', label: 'Classroom', icon: <ClassroomIcon />, color: 'warning' },
-    { value: 'workshop', label: 'Workshop', icon: <WorkshopIcon />, color: 'error' },
-    { value: 'outdoor', label: 'Outdoor', icon: <OutdoorIcon />, color: 'default' },
-  ];
-
-  // Status indicators
-  const statusTypes = [
-    { value: true, label: 'Active', color: 'success', icon: <ActiveIcon /> },
-    { value: false, label: 'Inactive', color: 'error', icon: <InactiveIcon /> },
-  ];
-
-  // Form structure
-  const emptyForm = {
+  // Inertia useForm for form handling
+  const { data, setData, post, put, delete: destroy, processing, reset } = useForm({
     location_id: "",
     university_id: auth.user?.university_id || "",
     department_id: "",
@@ -155,9 +206,45 @@ export default function Locations({ locations, auth, universities, departments }
     humidity_max: null,
     is_active: true,
     managed_by: "",
-  };
+  });
 
-  const [formData, setFormData] = useState(emptyForm);
+  // State management
+  const [rows, setRows] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const [openDialog, setOpenDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [gridLoading, setGridLoading] = useState(true);
+  const [alert, setAlert] = useState({ open: false, message: "", severity: "success" });
+  const [filters, setFilters] = useState({
+    status: 'all',
+    type: 'all',
+    utilization: 'all'
+  });
+
+  // Enhanced location types with better visuals
+  const locationTypes = [
+    { value: 'storage', label: 'Storage', icon: <StorageIcon />, color: 'primary', description: 'General storage areas' },
+    { value: 'office', label: 'Office', icon: <OfficeIcon />, color: 'info', description: 'Administrative workspaces' },
+    { value: 'lab', label: 'Laboratory', icon: <LabIcon />, color: 'success', description: 'Research and testing labs' },
+    { value: 'classroom', label: 'Classroom', icon: <ClassroomIcon />, color: 'warning', description: 'Teaching spaces' },
+    { value: 'workshop', label: 'Workshop', icon: <WorkshopIcon />, color: 'error', description: 'Technical workspaces' },
+    { value: 'outdoor', label: 'Outdoor', icon: <OutdoorIcon />, color: 'default', description: 'External storage areas' },
+  ];
+
+  // Enhanced status indicators
+  const statusTypes = [
+    { value: true, label: 'Active', color: 'success', icon: <ActiveIcon /> },
+    { value: false, label: 'Inactive', color: 'error', icon: <InactiveIcon /> },
+  ];
+
+  // Enhanced alert system
+  const showAlert = useCallback((message, severity = "success") => {
+    setAlert({ open: true, message, severity });
+    setTimeout(() => {
+      setAlert(prev => ({ ...prev, open: false }));
+    }, 6000);
+  }, []);
 
   // Process data on component mount
   useEffect(() => {
@@ -169,8 +256,14 @@ export default function Locations({ locations, auth, universities, departments }
           (location.current_utilization / location.capacity) * 100 : 0;
         
         let utilizationStatus = 'low';
-        if (utilizationRate >= 90) utilizationStatus = 'high';
-        else if (utilizationRate >= 70) utilizationStatus = 'medium';
+        let utilizationColor = 'success';
+        if (utilizationRate >= 90) {
+          utilizationStatus = 'high';
+          utilizationColor = 'error';
+        } else if (utilizationRate >= 70) {
+          utilizationStatus = 'medium';
+          utilizationColor = 'warning';
+        }
         
         return {
           id: location?.location_id ?? index + 1,
@@ -179,174 +272,155 @@ export default function Locations({ locations, auth, universities, departments }
           current_utilization: Number(location?.current_utilization ?? 0),
           utilization_rate: utilizationRate,
           utilization_status: utilizationStatus,
+          utilization_color: utilizationColor,
           temperature_min: location?.temperature_min ? Number(location.temperature_min) : null,
           temperature_max: location?.temperature_max ? Number(location.temperature_max) : null,
           humidity_min: location?.humidity_min ? Number(location.humidity_min) : null,
           humidity_max: location?.humidity_max ? Number(location.humidity_max) : null,
           created_at: location?.created_at ? 
-            moment(location.created_at).format("MMM Do YYYY, h:mm a") : "",
+            moment(location.created_at).format("MMM Do YYYY") : "",
           updated_at: location?.updated_at ? 
-            moment(location.updated_at).format("MMM Do YYYY, h:mm a") : "",
+            moment(location.updated_at).format("MMM Do YYYY") : "",
         };
       });
       
       setRows(formatted);
       setGridLoading(false);
-    }, 800);
+    }, 500);
 
     return () => clearTimeout(processData);
   }, [locations]);
 
-  // Calculate summary statistics
-  const { totalLocations, activeLocations, totalCapacity, avgUtilization } = useMemo(() => {
+  // Enhanced summary statistics with trends
+  const { totalLocations, activeLocations, totalCapacity, avgUtilization, highUtilizationCount } = useMemo(() => {
     const total = rows.length;
     const active = rows.filter(row => row.is_active).length;
     const capacity = rows.reduce((sum, row) => sum + (row.capacity || 0), 0);
     const utilization = rows.length > 0 ? 
       rows.reduce((sum, row) => sum + row.utilization_rate, 0) / rows.length : 0;
+    const highUtilization = rows.filter(row => row.utilization_rate >= 90).length;
     
     return {
       totalLocations: total,
       activeLocations: active,
       totalCapacity: capacity,
       avgUtilization: utilization,
+      highUtilizationCount: highUtilization,
     };
   }, [rows]);
 
-  // Column definitions
+  // Enhanced column definitions
   const columns = useMemo(() => [
-    { field: 'id', headerName: 'ID', width: 70 },
     { 
       field: 'location_code', 
-      headerName: 'Location Code', 
-      width: 130,
+      headerName: 'CODE', 
+      width: 120,
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="600" fontFamily="monospace">
+          {params.value}
+        </Typography>
+      )
     },
     { 
       field: 'name', 
-      headerName: 'Name', 
+      headerName: 'LOCATION NAME', 
       width: 180,
+      renderCell: (params) => (
+        <Box>
+          <Typography variant="body2" fontWeight="600" noWrap>
+            {params.row.name||""}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {params.row.building} {params.row.room_number && `• ${params.row.room_number}`}
+          </Typography>
+        </Box>
+      )
     },
     { 
-      field: 'university_id', 
-      headerName: 'University', 
+      field: 'department', 
+      headerName: 'DEPARTMENT', 
       width: 150,
       renderCell: (params) => {
-        const university = universities?.find(u => u.university_id === params.value);
-        return university ? university.name : params.value;
+        return (
+
+        <Box>
+          <Typography variant="body2" fontWeight="600" noWrap>
+            {params.row.department_name|| ""}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {params.row.university_name || ""}
+          </Typography>
+        </Box>
+        );
       }
-    },
-    { 
-      field: 'department_id', 
-      headerName: 'Department', 
-      width: 150,
-      renderCell: (params) => {
-        const department = departments?.find(d => d.department_id === params.value);
-        return department ? department.name : params.value;
-      }
-    },
-    { 
-      field: 'building', 
-      headerName: 'Building', 
-      width: 120,
-    },
-    { 
-      field: 'floor', 
-      headerName: 'Floor', 
-      width: 80,
-      renderCell: (params) => params.value || '-'
-    },
-    { 
-      field: 'room_number', 
-      headerName: 'Room', 
-      width: 80,
-      renderCell: (params) => params.value || '-'
     },
     { 
       field: 'capacity', 
-      headerName: 'Capacity', 
-      width: 100, 
-      type: 'number',
-      renderCell: (params) => params.value ? params.value.toLocaleString() : '-'
-    },
-    { 
-      field: 'current_utilization', 
-      headerName: 'Utilization', 
-      width: 100, 
-      type: 'number',
-      renderCell: (params) => params.value ? params.value.toLocaleString() : '0'
-    },
-    { 
-      field: 'utilization_rate', 
-      headerName: 'Utilization %', 
+      headerName: 'CAPACITY', 
       width: 120, 
       type: 'number',
-      renderCell: (params) => {
-        const rate = params.value || 0;
-        let color = 'success';
-        if (rate >= 90) color = 'error';
-        else if (rate >= 70) color = 'warning';
-        
-        return (
-          <Chip 
-            label={`${rate.toFixed(1)}%`} 
-            size="small" 
-            color={color}
-            variant="filled"
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="500">
+          {params.value ? params.value.toLocaleString() : '0'}
+        </Typography>
+      )
+    },
+    { 
+      field: 'utilization', 
+      headerName: 'UTILIZATION', 
+      width: 140,
+      renderCell: (params) => (
+        <Box sx={{ width: '100%' }}>
+          <UtilizationProgress 
+            value={params.row.utilization_rate} 
+            color={params.row.utilization_color}
           />
-        );
-      }
+        </Box>
+      )
     },
     { 
       field: 'location_type', 
-      headerName: 'Type', 
-      width: 120,
+      headerName: 'TYPE', 
+      width: 130,
       renderCell: (params) => {
         const type = locationTypes.find(t => t.value === params.value);
         return (
-          <Chip 
-            icon={type?.icon} 
-            label={type?.label || params.value} 
-            size="small" 
-            color={type?.color || 'default'}
-            variant="outlined"
-          />
+          <Tooltip title={type?.description}>
+            <Chip 
+              icon={type?.icon} 
+              label={type?.label} 
+              size="small" 
+              color={type?.color}
+              variant="filled"
+              sx={{ fontWeight: 600 }}
+            />
+          </Tooltip>
         );
       }
     },
     { 
-      field: 'is_secured', 
-      headerName: 'Secured', 
-      width: 100,
+      field: 'security', 
+      headerName: 'SECURITY', 
+      width: 110,
       renderCell: (params) => (
-        <Chip 
-          icon={params.value ? <SecureIcon /> : <CloseIcon />} 
-          label={params.value ? 'Yes' : 'No'} 
-          size="small" 
-          color={params.value ? 'success' : 'default'}
-          variant="outlined"
-        />
+        <Tooltip title={params.row.is_secured ? 'Secured Location' : 'Unsecured Location'}>
+          <Avatar sx={{ 
+            width: 32, 
+            height: 32, 
+            bgcolor: params.row.is_secured ? 'success.main' : 'grey.400',
+            boxShadow: 1
+          }}>
+            {params.row.is_secured ? <SecureIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
+          </Avatar>
+        </Tooltip>
       )
     },
     { 
-      field: 'is_climate_controlled', 
-      headerName: 'Climate Ctrl', 
-      width: 120,
-      renderCell: (params) => (
-        <Chip 
-          icon={params.value ? <ClimateIcon /> : <CloseIcon />} 
-          label={params.value ? 'Yes' : 'No'} 
-          size="small" 
-          color={params.value ? 'info' : 'default'}
-          variant="outlined"
-        />
-      )
-    },
-    { 
-      field: 'is_active', 
-      headerName: 'Status', 
+      field: 'status', 
+      headerName: 'STATUS', 
       width: 100, 
       renderCell: (params) => {
-        const status = statusTypes.find(s => s.value === params.value);
+        const status = statusTypes.find(s => s.value === params.row.is_active);
         return (
           <Chip 
             icon={status?.icon} 
@@ -354,53 +428,85 @@ export default function Locations({ locations, auth, universities, departments }
             size="small" 
             color={status?.color}
             variant="filled"
+            sx={{ fontWeight: 600 }}
           />
         );
       } 
     },
-    { 
-      field: 'created_at', 
-      headerName: 'Created', 
-      width: 150,
-    },
     {
       field: 'actions',
-      headerName: 'Actions',
+      headerName: 'ACTIONS',
       width: 120,
       sortable: false,
       filterable: false,
       type: 'actions',
       getActions: (params) => [
         <GridActionsCellItem
-          icon={<Tooltip title="Edit"><EditIcon fontSize="small" /></Tooltip>}
+          icon={
+            <Tooltip title="Edit Location">
+              <IconButton size="small" sx={{ color: 'primary.main' }}>
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+          }
           label="Edit"
           onClick={() => handleEdit(params.row)}
         />,
         <GridActionsCellItem
-          icon={<Tooltip title="Delete"><DeleteIcon fontSize="small" /></Tooltip>}
+          icon={
+            <Tooltip title="Delete Location">
+              <IconButton size="small" sx={{ color: 'error.main' }}>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          }
           label="Delete"
           onClick={() => handleDeleteClick(params.row)}
-          color="error"
+          showInMenu
         />,
       ],
     },
-  ], [universities, departments, locationTypes, statusTypes]);
+  ], [departments, locationTypes, statusTypes]);
 
-  // Filter rows based on search text
+  // Enhanced filtering with multiple criteria
   const filteredRows = useMemo(() => {
-    if (!searchText) return rows;
+    let filtered = rows;
     
-    const query = searchText.toLowerCase();
-    return rows.filter(row => 
-      row.name.toLowerCase().includes(query) ||
-      row.location_code.toLowerCase().includes(query) ||
-      row.building.toLowerCase().includes(query) ||
-      (row.room_number && row.room_number.toLowerCase().includes(query)) ||
-      locationTypes.find(t => t.value === row.location_type)?.label.toLowerCase().includes(query)
-    );
-  }, [rows, searchText, locationTypes]);
+    if (searchText) {
+      const query = searchText.toLowerCase();
+      filtered = filtered.filter(row => 
+        row.name.toLowerCase().includes(query) ||
+        row.location_code.toLowerCase().includes(query) ||
+        row.building.toLowerCase().includes(query) ||
+        (row.room_number && row.room_number.toLowerCase().includes(query))
+      );
+    }
+    
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(row => 
+        filters.status === 'active' ? row.is_active : !row.is_active
+      );
+    }
+    
+    if (filters.type !== 'all') {
+      filtered = filtered.filter(row => row.location_type === filters.type);
+    }
+    
+    if (filters.utilization !== 'all') {
+      filtered = filtered.filter(row => {
+        switch (filters.utilization) {
+          case 'high': return row.utilization_rate >= 90;
+          case 'medium': return row.utilization_rate >= 70 && row.utilization_rate < 90;
+          case 'low': return row.utilization_rate < 70;
+          default: return true;
+        }
+      });
+    }
+    
+    return filtered;
+  }, [rows, searchText, filters]);
 
-  // Event handlers
+  // Enhanced event handlers with Inertia.js
   const handleExport = useCallback(() => {
     const worksheet = XLSX.utils.json_to_sheet(
       filteredRows.map(row => ({
@@ -411,19 +517,12 @@ export default function Locations({ locations, auth, universities, departments }
         'Building': row.building,
         'Floor': row.floor || '-',
         'Room Number': row.room_number || '-',
-        'Aisle': row.aisle || '-',
-        'Shelf': row.shelf || '-',
-        'Bin': row.bin || '-',
         'Capacity': row.capacity || '-',
         'Current Utilization': row.current_utilization || '0',
         'Utilization Rate': `${(row.utilization_rate || 0).toFixed(1)}%`,
         'Location Type': locationTypes.find(t => t.value === row.location_type)?.label || row.location_type,
         'Secured': row.is_secured ? 'Yes' : 'No',
         'Climate Controlled': row.is_climate_controlled ? 'Yes' : 'No',
-        'Temperature Range': row.temperature_min && row.temperature_max ? 
-          `${row.temperature_min}°C - ${row.temperature_max}°C` : '-',
-        'Humidity Range': row.humidity_min && row.humidity_max ? 
-          `${row.humidity_min}% - ${row.humidity_max}%` : '-',
         'Status': row.is_active ? 'Active' : 'Inactive',
         'Created': row.created_at,
       }))
@@ -431,10 +530,10 @@ export default function Locations({ locations, auth, universities, departments }
     
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Locations');
-    XLSX.writeFile(workbook, `locations_export_${moment().format('YYYY-MM-DD_HH-mm')}.xlsx`);
+    XLSX.writeFile(workbook, `locations_export_${moment().format('YYYY-MM-DD_HH-mm-ss')}.xlsx`);
     
-    setAlert({ open: true, message: 'Location data exported successfully', severity: 'success' });
-  }, [filteredRows, universities, departments, locationTypes]);
+    showAlert('Location data exported successfully', 'success');
+  }, [filteredRows, universities, departments, locationTypes, showAlert]);
 
   const handleUpload = useCallback((event) => {
     const file = event.target.files?.[0];
@@ -450,144 +549,149 @@ export default function Locations({ locations, auth, universities, departments }
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const uploadedData = XLSX.utils.sheet_to_json(worksheet);
         
-        const mappedData = uploadedData.map((item, index) => ({
-          id: `uploaded_${Date.now()}_${index}`,
-          location_id: `uploaded_${Date.now()}_${index}`,
-          ...item,
-          capacity: Number(item.capacity) || 0,
-          current_utilization: Number(item.current_utilization) || 0,
-          temperature_min: item.temperature_min ? Number(item.temperature_min) : null,
-          temperature_max: item.temperature_max ? Number(item.temperature_max) : null,
-          humidity_min: item.humidity_min ? Number(item.humidity_min) : null,
-          humidity_max: item.humidity_max ? Number(item.humidity_max) : null,
-          is_secured: Boolean(item.is_secured),
-          is_climate_controlled: Boolean(item.is_climate_controlled),
-          is_active: Boolean(item.is_active),
-          created_at: moment().format("MMM Do YYYY, h:mm a"),
-        }));
-        
-        setRows(prev => [...mappedData, ...prev]);
-        setAlert({ open: true, message: `${mappedData.length} locations imported successfully`, severity: 'success' });
+        router.post(route('locations.import'), {
+          data: uploadedData
+        }, {
+          onSuccess: () => {
+            showAlert(`${uploadedData.length} locations imported successfully`, 'success');
+            setGridLoading(false);
+          },
+          onError: () => {
+            showAlert('Error importing locations', 'error');
+            setGridLoading(false);
+          }
+        });
       } catch (error) {
-        setAlert({ open: true, message: 'Error processing file: ' + error.message, severity: 'error' });
-      } finally {
+        showAlert('Error processing file: ' + error.message, 'error');
         setGridLoading(false);
       }
     };
     
     reader.onerror = () => {
-      setAlert({ open: true, message: 'Error reading file', severity: 'error' });
+      showAlert('Error reading file', 'error');
       setGridLoading(false);
     };
     
     reader.readAsArrayBuffer(file);
-  }, []);
+  }, [showAlert]);
 
   const handleCreate = useCallback(() => {
     setSelectedLocation(null);
-    setFormData({ 
-      ...emptyForm, 
-      university_id: auth.user?.university_id || "",
-    });
-    setFormErrors({});
+    reset();
     setOpenDialog(true);
-  }, [auth, emptyForm]);
+  }, [reset]);
 
   const handleEdit = useCallback((row) => {
     setSelectedLocation(row);
-    setFormData({ 
-      ...emptyForm, 
-      ...row,
+    setData({
+      location_id: row.location_id,
+      university_id: row.university_id,
+      department_id: row.department_id,
+      location_code: row.location_code,
+      name: row.name,
+      building: row.building,
+      floor: row.floor,
+      room_number: row.room_number,
+      aisle: row.aisle,
+      shelf: row.shelf,
+      bin: row.bin,
+      capacity: row.capacity,
+      current_utilization: row.current_utilization,
+      location_type: row.location_type,
+      is_secured: row.is_secured,
+      is_climate_controlled: row.is_climate_controlled,
+      temperature_min: row.temperature_min,
+      temperature_max: row.temperature_max,
+      humidity_min: row.humidity_min,
+      humidity_max: row.humidity_max,
+      is_active: row.is_active,
+      managed_by: row.managed_by,
     });
-    setFormErrors({});
     setOpenDialog(true);
-  }, [emptyForm]);
+  }, [setData]);
 
   const handleDeleteClick = useCallback((row) => {
     setSelectedLocation(row);
     setOpenDeleteDialog(true);
   }, []);
 
+  const handleSubmit = useCallback(() => {
+    if (selectedLocation) {
+      put(route('locations.update', selectedLocation.location_id), {
+        preserveScroll: true,
+        onSuccess: () => {
+          setOpenDialog(false);
+          setSelectedLocation(null);
+          reset();
+          showAlert('Location updated successfully', 'success');
+        },
+        onError: () => {
+          showAlert('Error updating location', 'error');
+        },
+      });
+    } else {
+      post(route('locations.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+          setOpenDialog(false);
+          reset();
+          showAlert('Location created successfully', 'success');
+        },
+        onError: () => {
+          showAlert('Error creating location', 'error');
+        },
+      });
+    }
+  }, [selectedLocation, post, put, reset, showAlert]);
+
   const handleDeleteConfirm = useCallback(() => {
-    setGridLoading(true);
-    setTimeout(() => {
-      setRows(prev => prev.filter(r => r.id !== selectedLocation.id));
-      setOpenDeleteDialog(false);
-      setAlert({ open: true, message: 'Location deleted successfully', severity: 'success' });
-      setGridLoading(false);
-    }, 300);
-  }, [selectedLocation]);
+    if (selectedLocation) {
+      destroy(route('locations.destroy', selectedLocation.location_id), {
+        preserveScroll: true,
+        onSuccess: () => {
+          setOpenDeleteDialog(false);
+          setSelectedLocation(null);
+          showAlert('Location deleted successfully', 'success');
+        },
+        onError: () => {
+          showAlert('Error deleting location', 'error');
+        },
+      });
+    }
+  }, [selectedLocation, destroy, showAlert]);
 
   const handleInputChange = useCallback((event) => {
     const { name, value, type, checked } = event.target;
     const newValue = type === 'checkbox' ? checked : value;
-    
-    setFormData(prev => ({ ...prev, [name]: newValue }));
-    
-    if (formErrors[name]) {
-      setFormErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  }, [formErrors]);
-
-  const validateForm = useCallback(() => {
-    const errors = {};
-    
-    if (!formData.location_code) errors.location_code = 'Location code is required';
-    if (!formData.name) errors.name = 'Name is required';
-    if (!formData.university_id) errors.university_id = 'University is required';
-    if (!formData.department_id) errors.department_id = 'Department is required';
-    if (!formData.building) errors.building = 'Building is required';
-    if (!formData.location_type) errors.location_type = 'Location type is required';
-    if (formData.capacity < 0) errors.capacity = 'Capacity cannot be negative';
-    if (formData.current_utilization < 0) errors.current_utilization = 'Utilization cannot be negative';
-    if (formData.current_utilization > formData.capacity) errors.current_utilization = 'Utilization cannot exceed capacity';
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  }, [formData]);
-
-  const handleSubmit = useCallback(() => {
-    if (!validateForm()) return;
-    
-    setLoading(true);
-    
-    setTimeout(() => {
-      const payload = {
-        ...formData,
-        id: selectedLocation ? selectedLocation.id : `location_${Date.now()}`,
-        location_id: selectedLocation ? selectedLocation.location_id : `location_${Date.now()}`,
-        created_at: selectedLocation ? selectedLocation.created_at : moment().format('MMM Do YYYY, h:mm a'),
-        updated_at: moment().format('MMM Do YYYY, h:mm a'),
-        utilization_rate: formData.capacity > 0 ? 
-          (formData.current_utilization / formData.capacity) * 100 : 0,
-      };
-
-      if (selectedLocation) {
-        setRows(prev => prev.map(r => r.id === selectedLocation.id ? { ...r, ...payload } : r));
-        setAlert({ open: true, message: 'Location updated successfully', severity: 'success' });
-      } else {
-        setRows(prev => [payload, ...prev]);
-        setAlert({ open: true, message: 'Location created successfully', severity: 'success' });
-      }
-
-      setLoading(false);
-      setOpenDialog(false);
-      setSelectedLocation(null);
-    }, 500);
-  }, [formData, selectedLocation, validateForm]);
+    setData(name, newValue);
+  }, [setData]);
 
   const handleRefresh = useCallback(() => {
-    setGridLoading(true);
-    setTimeout(() => {
-      setGridLoading(false);
-      setAlert({ open: true, message: 'Data refreshed', severity: 'info' });
-    }, 800);
+    router.reload({ only: ['locations'] });
   }, []);
+
+  const handleFilterChange = useCallback((filterType, value) => {
+    setFilters(prev => ({ ...prev, [filterType]: value }));
+  }, []);
+
+  // Enhanced alert handling
+  useEffect(() => {
+    if (flash.success) {
+      showAlert(flash.success, "success");
+    }
+    if (flash.error) {
+      showAlert(flash.error, "error");
+    }
+  }, [flash, showAlert]);
+
+    const handleCloseAlert = () => {
+    setAlert((prev) => ({ ...prev, open: false }));
+  };
 
   return (
     <AuthenticatedLayout
       auth={auth}
-      title="Locations"
+      title="Locations Management"
       breadcrumbs={[
         { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon sx={{ mr: 0.5, fontSize: 18 }} /> }, 
         { label: 'Locations' }
@@ -595,466 +699,599 @@ export default function Locations({ locations, auth, universities, departments }
     >
       <Fade in timeout={500}>
         <Box>
-          {alert.open && (
-            <Alert 
-              severity={alert.severity} 
-              onClose={() => setAlert(prev => ({...prev, open: false}))} 
-              sx={{ mb: 2 }}
-            >
-              {alert.message}
-            </Alert>
-          )}
+          {/* Enhanced Alert System */}
+          <Notification 
+            open={alert.open} 
+            severity={alert.severity} 
+            message={alert.message}
+            onClose={handleCloseAlert}
+          />
 
-          {/* Summary Cards */}
+          {/* Enhanced Summary Cards */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Total Locations" 
                 value={totalLocations} 
                 icon={<LocationIcon />} 
-                color={theme.palette.primary.main} 
+                color={theme.palette.primary.main}
+                subtitle="All registered locations"
+                trend={{ value: '+12%', positive: true }}
+                onClick={() => handleFilterChange('status', 'all')}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Active Locations" 
                 value={activeLocations} 
                 icon={<ActiveIcon />} 
-                color={theme.palette.success.main} 
+                color={theme.palette.success.main}
+                subtitle={`${((activeLocations / totalLocations) * 100).toFixed(1)}% of total`}
+                onClick={() => handleFilterChange('status', 'active')}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Total Capacity" 
                 value={totalCapacity.toLocaleString()} 
                 icon={<CapacityIcon />} 
-                color={theme.palette.info.main} 
+                color={theme.palette.info.main}
+                subtitle="Available storage units"
+                trend={{ value: '+5%', positive: true }}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
-                title="Avg Utilization" 
-                value={`${avgUtilization.toFixed(1)}%`} 
+                title="High Utilization" 
+                value={highUtilizationCount} 
                 icon={<UtilizationIcon />} 
-                color={theme.palette.warning.main} 
+                color={theme.palette.warning.main}
+                subtitle="Locations above 90% capacity"
+                onClick={() => handleFilterChange('utilization', 'high')}
               />
             </Grid>
           </Grid>
 
-          {/* Data Grid Section */}
+          {/* Enhanced Data Grid Section */}
           <Paper
             sx={{
-              height: "100%",
-              width: "100%",
-              borderRadius: 2,
+              borderRadius: 3,
               overflow: 'hidden',
-              boxShadow: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
             }}
           >
+            {/* Enhanced Responsive Header */}
             <Box sx={{ 
-              display: 'flex', 
-              flexDirection: isMobile ? 'column' : 'row',
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              p: 2, 
-              borderBottom: '1px solid', 
-              borderColor: 'divider',
-              gap: 2
+              p: 3,
+              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              backgroundColor: 'background.paper',
             }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <LocationIcon color="primary" />
-                <Typography variant="h6" fontWeight={700}>
-                  Locations
-                </Typography>
-                {searchText && (
-                  <Chip 
-                    label={`${filteredRows.length} of ${rows.length} locations`} 
-                    size="small" 
-                    variant="outlined" 
-                  />
-                )}
-              </Stack>
+              <Grid container spacing={2} alignItems="center" justifyContent="space-between">
+                {/* Left Section */}
+                <Grid size={{ xs: 12, md: 'auto' }}>
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Avatar sx={{ 
+                      bgcolor: 'primary.main', 
+                      width: 48, 
+                      height: 48,
+                      boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+                    }}>
+                      <LocationIcon />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h5" fontWeight={700}>
+                        Locations Management
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Manage and monitor all storage locations
+                      </Typography>
+                    </Box>
+                    {searchText && (
+                      <Chip 
+                        label={`${filteredRows.length} results`} 
+                        size="small" 
+                        color="primary"
+                        variant="filled"
+                        sx={{ fontWeight: 600 }}
+                      />
+                    )}
+                  </Stack>
+                </Grid>
 
-              <Stack 
-                direction={isMobile ? 'column' : 'row'} 
-                spacing={1} 
-                alignItems="center"
-                width={isMobile ? '100%' : 'auto'}
-              >
-                <TextField
-                  size="small"
-                  placeholder="Search locations..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  InputProps={{ 
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                    sx: { width: isMobile ? '100%' : 250 }
-                  }}
-                />
-                <Button 
-                  variant="outlined" 
-                  onClick={handleRefresh} 
-                  startIcon={<RefreshIcon />}
-                >
-                  Refresh
-                </Button>
-                <Button 
-                  variant="contained" 
-                  startIcon={<AddIcon />} 
-                  onClick={handleCreate}
-                >
-                  New Location
-                </Button>
-              </Stack>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ p: 1, flexWrap: 'wrap' }}>
-                <Button size="small" startIcon={<UploadFileIcon />} component="label" variant="outlined">
-                    Import
-                    <input hidden accept=".xlsx,.xls,.csv" type="file" onChange={handleUpload} />
-                </Button>
-                <Button size="small" startIcon={<SaveIcon />} onClick={handleExport} variant="outlined">
-                    Export
-                </Button>
-              </Stack>
+                {/* Right Section - Responsive Actions */}
+                <Grid size={{ xs: 12, md: 'auto' }}>
+                  <Stack 
+                    direction={{ xs: 'column', sm: 'row' }} 
+                    spacing={1} 
+                    alignItems={{ xs: 'stretch', sm: 'center' }}
+                  >
+                    {/* Search */}
+                    <TextField
+                      size="small"
+                      placeholder="Search locations..."
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon color="action" />
+                          </InputAdornment>
+                        ),
+                        sx: { 
+                          minWidth: { xs: '100%', sm: 280 },
+                          borderRadius: 2,
+                        }
+                      }}
+                    />
+
+                    {/* Action Buttons */}
+                    <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+                      <Tooltip title="Refresh Data">
+                        <IconButton onClick={handleRefresh} color="primary">
+                          <RefreshIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Button 
+                        variant="contained" 
+                        startIcon={<AddCircleIcon />} 
+                        onClick={handleCreate}
+                        sx={{ 
+                          borderRadius: 2,
+                          px: 3,
+                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+                        }}
+                      >
+                        New Location
+                      </Button>
+                    </Stack>
+                  </Stack>
+
+                  {/* Quick Filters */}
+                  <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', gap: 1 }}>
+                    <Chip
+                      icon={<FilterIcon />}
+                      label="All"
+                      variant={filters.status === 'all' ? 'filled' : 'outlined'}
+                      onClick={() => handleFilterChange('status', 'all')}
+                      color="primary"
+                    />
+                    <Chip
+                      label="Active"
+                      variant={filters.status === 'active' ? 'filled' : 'outlined'}
+                      onClick={() => handleFilterChange('status', 'active')}
+                      color="success"
+                    />
+                    <Chip
+                      label="High Usage"
+                      variant={filters.utilization === 'high' ? 'filled' : 'outlined'}
+                      onClick={() => handleFilterChange('utilization', 'high')}
+                      color="warning"
+                    />
+                    <Button
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={handleExport}
+                      variant="outlined"
+                      sx={{ borderRadius: 2 }}
+                    >
+                      Export
+                    </Button>
+                    <Button
+                      size="small"
+                      startIcon={<UploadFileIcon />}
+                      component="label"
+                      variant="outlined"
+                      sx={{ borderRadius: 2 }}
+                    >
+                      Import
+                      <input hidden accept=".xlsx,.xls,.csv" type="file" onChange={handleUpload} />
+                    </Button>
+                  </Stack>
+                </Grid>
+              </Grid>
             </Box>
 
-            <DataGrid
-              autoHeight
-              rows={filteredRows}
-              columns={columns}
-              pageSizeOptions={[5, 10, 20, 50, 100]}
-              initialState={{
-                pagination: {
-                  paginationModel: { page: 0, pageSize: 10 },
-                },
-              }}
-              sx={{
-                border: 'none',
-                '& .MuiDataGrid-cell': {
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                },
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: 'grey.50',
-                  borderBottom: '2px solid',
-                  borderColor: 'divider',
-                },
-              }}
-              loading={gridLoading}
-              disableRowSelectionOnClick
-            />
+            {/* Data Grid */}
+            <Box sx={{ height: 600 }}>
+              <DataGrid
+                rows={filteredRows}
+                columns={columns}
+                pageSizeOptions={[10, 25, 50, 100]}
+                initialState={{
+                  pagination: {
+                    paginationModel: { page: 0, pageSize: 25 },
+                  },
+                }}
+                sx={{
+                  border: 'none',
+                  '& .MuiDataGrid-cell': {
+                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  },
+                  '& .MuiDataGrid-columnHeaders': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                    borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                  },
+                  '& .MuiDataGrid-row:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                  },
+                }}
+                loading={gridLoading}
+                disableRowSelectionOnClick
+              />
+            </Box>
           </Paper>
 
-          {/* Create/Edit Dialog */}
+          {/* Enhanced Create/Edit Dialog */}
           <Dialog 
             open={openDialog} 
             onClose={() => setOpenDialog(false)} 
             maxWidth="md" 
             fullWidth
             scroll="paper"
+            PaperProps={{
+              sx: {
+                borderRadius: 3,
+                boxShadow: '0 24px 48px rgba(0,0,0,0.15)',
+              }
+            }}
           >
             <DialogTitle sx={{ 
-              backgroundColor: 'primary.main', 
-              color: 'white', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              py: 2
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+              color: 'white',
+              py: 3,
+              px: 4,
             }}>
-              {selectedLocation ? "Edit Location" : "New Location"}
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Avatar sx={{ bgcolor: 'white', color: 'primary.main' }}>
+                  {selectedLocation ? <EditIcon /> : <AddIcon />}
+                </Avatar>
+                <Box>
+                  <Typography variant="h5" fontWeight={700}>
+                    {selectedLocation ? "Edit Location" : "Create New Location"}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    {selectedLocation ? "Update location details" : "Add a new storage location to the system"}
+                  </Typography>
+                </Box>
+              </Stack>
             </DialogTitle>
-            <DialogContent dividers>
-              <Grid container spacing={2} sx={{ mt: 1 }}>
-                {/* Location Code */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Location Code"
-                    name="location_code"
-                    value={formData.location_code}
-                    onChange={handleInputChange}
-                    error={!!formErrors.location_code}
-                    helperText={formErrors.location_code}
-                    required
-                  />
-                </Grid>
-
-                {/* Name */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Location Name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    error={!!formErrors.name}
-                    helperText={formErrors.name}
-                    required
-                  />
-                </Grid>
-
-                {/* University */}
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth error={!!formErrors.university_id}>
-                    <InputLabel>University</InputLabel>
-                    <Select
-                      name="university_id"
-                      value={formData.university_id}
+            
+            <DialogContent dividers sx={{ p: 0 }}>
+              <Box sx={{ p: 4 }}>
+                <Grid container spacing={3}>
+                  {/* Basic Information */}
+                  <Grid size={{ xs: 12 }}>
+                    <Typography variant="h6" fontWeight={600} color="primary" sx={{ mb: 2 }}>
+                      Basic Information
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Location Code *"
+                      name="location_code"
+                      value={data.location_code}
                       onChange={handleInputChange}
-                      label="University"
-                    >
-                      {universities?.map(university => (
-                        <MenuItem key={university.university_id} value={university.university_id}>
-                          {university.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {formErrors.university_id && (
-                      <FormHelperText>{formErrors.university_id}</FormHelperText>
-                    )}
-                  </FormControl>
-                </Grid>
+                      error={!!errors.location_code}
+                      helperText={errors.location_code}
+                      required
+                    />
+                  </Grid>
 
-                {/* Department */}
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth error={!!formErrors.department_id}>
-                    <InputLabel>Department</InputLabel>
-                    <Select
-                      name="department_id"
-                      value={formData.department_id}
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Location Name *"
+                      name="name"
+                      value={data.name}
                       onChange={handleInputChange}
-                      label="Department"
-                    >
-                      {departments?.map(department => (
-                        <MenuItem key={department.department_id} value={department.department_id}>
-                          {department.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {formErrors.department_id && (
-                      <FormHelperText>{formErrors.department_id}</FormHelperText>
-                    )}
-                  </FormControl>
-                </Grid>
+                      error={!!errors.name}
+                      helperText={errors.name}
+                      required
+                    />
+                  </Grid>
 
-                {/* Building */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Building"
-                    name="building"
-                    value={formData.building}
-                    onChange={handleInputChange}
-                    error={!!formErrors.building}
-                    helperText={formErrors.building}
-                    required
-                  />
-                </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControl fullWidth error={!!errors.university_id}>
+                      <InputLabel>University *</InputLabel>
+                      <Select
+                        name="university_id"
+                        value={data.university_id}
+                        onChange={handleInputChange}
+                        label="University *"
+                      >
+                        {universities?.map(university => (
+                          <MenuItem key={university.university_id} value={university.university_id}>
+                            {university.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.university_id && (
+                        <FormHelperText>{errors.university_id}</FormHelperText>
+                      )}
+                    </FormControl>
+                  </Grid>
 
-                {/* Floor */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Floor"
-                    name="floor"
-                    value={formData.floor}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControl fullWidth error={!!errors.department_id}>
+                      <InputLabel>Department *</InputLabel>
+                      <Select
+                        name="department_id"
+                        value={data.department_id}
+                        onChange={handleInputChange}
+                        label="Department *"
+                      >
+                        {departments?.map(department => (
+                          <MenuItem key={department.department_id} value={department.department_id}>
+                            {department.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.department_id && (
+                        <FormHelperText>{errors.department_id}</FormHelperText>
+                      )}
+                    </FormControl>
+                  </Grid>
 
-                {/* Room Number */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Room Number"
-                    name="room_number"
-                    value={formData.room_number}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
+                  {/* Location Details */}
+                  <Grid size={{ xs: 12 }}>
+                    <Typography variant="h6" fontWeight={600} color="primary" sx={{ mb: 2, mt: 2 }}>
+                      Location Details
+                    </Typography>
+                  </Grid>
 
-                {/* Location Type */}
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth error={!!formErrors.location_type}>
-                    <InputLabel>Location Type</InputLabel>
-                    <Select
-                      name="location_type"
-                      value={formData.location_type}
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Building *"
+                      name="building"
+                      value={data.building}
                       onChange={handleInputChange}
-                      label="Location Type"
-                    >
-                      {locationTypes.map(type => (
-                        <MenuItem key={type.value} value={type.value}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {type.icon}
-                            <Typography sx={{ ml: 1 }}>{type.label}</Typography>
-                          </Box>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {formErrors.location_type && (
-                      <FormHelperText>{formErrors.location_type}</FormHelperText>
-                    )}
-                  </FormControl>
+                      error={!!errors.building}
+                      helperText={errors.building}
+                      required
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControl fullWidth error={!!errors.location_type}>
+                      <InputLabel>Location Type *</InputLabel>
+                      <Select
+                        name="location_type"
+                        value={data.location_type}
+                        onChange={handleInputChange}
+                        label="Location Type *"
+                      >
+                        {locationTypes.map(type => (
+                          <MenuItem key={type.value} value={type.value}>
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                              <Box sx={{ color: `${type.color}.main` }}>
+                                {type.icon}
+                              </Box>
+                              <Box>
+                                <Typography>{type.label}</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {type.description}
+                                </Typography>
+                              </Box>
+                            </Stack>
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.location_type && (
+                        <FormHelperText>{errors.location_type}</FormHelperText>
+                      )}
+                    </FormControl>
+                  </Grid>
+
+                  {/* Capacity Information */}
+                  <Grid size={{ xs: 12 }}>
+                    <Typography variant="h6" fontWeight={600} color="primary" sx={{ mb: 2, mt: 2 }}>
+                      Capacity & Settings
+                    </Typography>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Capacity"
+                      name="capacity"
+                      value={data.capacity}
+                      onChange={handleInputChange}
+                      error={!!errors.capacity}
+                      helperText={errors.capacity}
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Current Utilization"
+                      name="current_utilization"
+                      value={data.current_utilization}
+                      onChange={handleInputChange}
+                      error={!!errors.current_utilization}
+                      helperText={errors.current_utilization}
+                    />
+                  </Grid>
+
+                  {/* Features */}
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          name="is_secured"
+                          checked={data.is_secured}
+                          onChange={handleInputChange}
+                          color="success"
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography>Secured Location</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Requires special access
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          name="is_climate_controlled"
+                          checked={data.is_climate_controlled}
+                          onChange={handleInputChange}
+                          color="info"
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography>Climate Controlled</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Temperature and humidity regulated
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </Grid>
+
+                  {/* Status */}
+                  <Grid size={{ xs: 12 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          name="is_active"
+                          checked={data.is_active}
+                          onChange={handleInputChange}
+                          color="success"
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography>Active Location</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Available for use in the system
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </Grid>
                 </Grid>
-
-                {/* Capacity */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Capacity"
-                    name="capacity"
-                    value={formData.capacity}
-                    onChange={handleInputChange}
-                    error={!!formErrors.capacity}
-                    helperText={formErrors.capacity}
-                  />
-                </Grid>
-
-                {/* Current Utilization */}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Current Utilization"
-                    name="current_utilization"
-                    value={formData.current_utilization}
-                    onChange={handleInputChange}
-                    error={!!formErrors.current_utilization}
-                    helperText={formErrors.current_utilization}
-                  />
-                </Grid>
-
-                {/* Security and Climate Controls */}
-                <Grid item xs={12} sm={6}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        name="is_secured"
-                        checked={formData.is_secured}
-                        onChange={handleInputChange}
-                        color="success"
-                      />
-                    }
-                    label="Secured Location"
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        name="is_climate_controlled"
-                        checked={formData.is_climate_controlled}
-                        onChange={handleInputChange}
-                        color="info"
-                      />
-                    }
-                    label="Climate Controlled"
-                  />
-                </Grid>
-
-                {/* Temperature Range */}
-                {formData.is_climate_controlled && (
-                  <>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="Min Temperature (°C)"
-                        name="temperature_min"
-                        value={formData.temperature_min || ''}
-                        onChange={handleInputChange}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="Max Temperature (°C)"
-                        name="temperature_max"
-                        value={formData.temperature_max || ''}
-                        onChange={handleInputChange}
-                      />
-                    </Grid>
-                  </>
-                )}
-
-                {/* Humidity Range */}
-                {formData.is_climate_controlled && (
-                  <>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="Min Humidity (%)"
-                        name="humidity_min"
-                        value={formData.humidity_min || ''}
-                        onChange={handleInputChange}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="Max Humidity (%)"
-                        name="humidity_max"
-                        value={formData.humidity_max || ''}
-                        onChange={handleInputChange}
-                      />
-                    </Grid>
-                  </>
-                )}
-
-                {/* Status */}
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        name="is_active"
-                        checked={formData.is_active}
-                        onChange={handleInputChange}
-                        color="success"
-                      />
-                    }
-                    label="Active Location"
-                  />
-                </Grid>
-              </Grid>
+              </Box>
             </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setOpenDialog(false)} startIcon={<CloseIcon />}>
+            
+            <DialogActions sx={{ p: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+              <Button 
+                onClick={() => setOpenDialog(false)} 
+                startIcon={<CloseIcon />}
+                sx={{ borderRadius: 2, px: 3 }}
+              >
                 Cancel
               </Button>
               <Button 
                 onClick={handleSubmit} 
                 startIcon={<SaveIcon />} 
                 variant="contained" 
-                disabled={loading}
+                disabled={processing}
+                sx={{ 
+                  borderRadius: 2, 
+                  px: 3,
+                  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+                }}
               >
-                {loading ? "Saving..." : "Save"}
+                {processing ? "Saving..." : (selectedLocation ? "Update Location" : "Create Location")}
               </Button>
             </DialogActions>
           </Dialog>
 
-          {/* Delete Confirmation Dialog */}
+          {/* Enhanced Delete Confirmation Dialog */}
           <Dialog
             open={openDeleteDialog}
             onClose={() => setOpenDeleteDialog(false)}
+            PaperProps={{
+              sx: {
+                borderRadius: 3,
+                boxShadow: '0 24px 48px rgba(0,0,0,0.15)',
+              }
+            }}
           >
-            <DialogTitle>Delete Location</DialogTitle>
-            <DialogContent dividers>
-              <Typography>
-                Are you sure you want to delete the location "{selectedLocation?.name}"?
-                This action cannot be undone.
-              </Typography>
+            <DialogTitle sx={{ 
+              backgroundColor: 'error.main', 
+              color: 'white',
+              py: 3,
+            }}>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Avatar sx={{ bgcolor: 'white', color: 'error.main' }}>
+                  <DeleteIcon />
+                </Avatar>
+                <Typography variant="h5" fontWeight={700}>
+                  Delete Location
+                </Typography>
+              </Stack>
+            </DialogTitle>
+            <DialogContent dividers sx={{ p: 4 }}>
+              <Stack spacing={3}>
+                <Typography variant="body1" fontWeight={500}>
+                  Are you sure you want to delete the following location? This action cannot be undone.
+                </Typography>
+                
+                {selectedLocation && (
+                  <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
+                    <Stack spacing={2}>
+                      <Typography variant="h6" fontWeight={600}>
+                        {selectedLocation.name}
+                      </Typography>
+                      <Stack direction="row" spacing={3} flexWrap="wrap">
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Location Code
+                          </Typography>
+                          <Typography variant="body2" fontWeight={500}>
+                            {selectedLocation.location_code}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Building
+                          </Typography>
+                          <Typography variant="body2" fontWeight={500}>
+                            {selectedLocation.building}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Type
+                          </Typography>
+                          <Typography variant="body2" fontWeight={500}>
+                            {locationTypes.find(t => t.value === selectedLocation.location_type)?.label}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </Stack>
+                  </Paper>
+                )}
+                
+                <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                  <Typography variant="body2" fontWeight={500}>
+                    This will permanently remove the location and all associated data from the system.
+                  </Typography>
+                </Alert>
+              </Stack>
             </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setOpenDeleteDialog(false)}>
+            <DialogActions sx={{ p: 3 }}>
+              <Button 
+                onClick={() => setOpenDeleteDialog(false)}
+                sx={{ borderRadius: 2, px: 3 }}
+              >
                 Cancel
               </Button>
               <Button 
@@ -1062,8 +1299,14 @@ export default function Locations({ locations, auth, universities, departments }
                 color="error" 
                 startIcon={<DeleteIcon />}
                 variant="contained"
+                disabled={processing}
+                sx={{ 
+                  borderRadius: 2, 
+                  px: 3,
+                  boxShadow: `0 4px 12px ${alpha(theme.palette.error.main, 0.3)}`,
+                }}
               >
-                Delete
+                {processing ? "Deleting..." : "Delete Location"}
               </Button>
             </DialogActions>
           </Dialog>

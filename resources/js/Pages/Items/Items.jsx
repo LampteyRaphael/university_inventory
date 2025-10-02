@@ -104,11 +104,11 @@ const useInventoryManager = (initialItems, auth) => {
   }, [rows, searchText]);
 
   const statistics = useMemo(() => {
-    const totalItems = rows.length;
-    const activeItems = rows.filter(r => r.is_active).length;
-    const hazardousItems = rows.filter(r => r.is_hazardous).length;
-    const lowStockItems = rows.filter(r => r.minimum_stock_level && r.current_value <= r.minimum_stock_level).length;
-    const totalValue = rows.reduce((sum, item) => sum + (item.current_value || 0), 0);
+    const totalItems = rows?.length || "";
+    const activeItems = rows?.filter(r => r.is_active).length;
+    const hazardousItems = rows?.filter(r => r.is_hazardous).length;
+    const lowStockItems = rows?.filter(r => r.minimum_stock_level && r.current_value <= r.minimum_stock_level).length;
+    const totalValue = rows?.reduce((sum, item) => sum + (item.current_value || 0), 0);
 
     return { totalItems, activeItems, hazardousItems, lowStockItems, totalValue };
   }, [rows]);
@@ -1203,7 +1203,7 @@ export default function InventoryItems({ items, auth, categories, universities }
             <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard
                 title="Total Items"
-                value={statistics.totalItems}
+                value={statistics.totalItems??0}
                 icon={<StockIcon />}
                 color={theme.palette.primary.main}
                 subtitle="All inventory items"
@@ -1212,7 +1212,7 @@ export default function InventoryItems({ items, auth, categories, universities }
             <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard
                 title="Total Value"
-                value={`₵${statistics.totalValue.toLocaleString()}`}
+                value={`₵${statistics?.totalValue?.toLocaleString()?? 0 }`}
                 icon={<AmountIcon />}
                 color={theme.palette.success.main}
                 subtitle="Current inventory value"
@@ -1221,7 +1221,7 @@ export default function InventoryItems({ items, auth, categories, universities }
             <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard
                 title="Active Items"
-                value={statistics.activeItems}
+                value={statistics?.activeItems??0}
                 icon={<QrCodeIcon />}
                 color={theme.palette.info.main}
                 subtitle="Currently active"
@@ -1230,7 +1230,7 @@ export default function InventoryItems({ items, auth, categories, universities }
             <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard
                 title="Low Stock"
-                value={statistics.lowStockItems}
+                value={statistics?.lowStockItems??0}
                 icon={<WarningIcon />}
                 color={theme.palette.warning.main}
                 subtitle="Need reordering"

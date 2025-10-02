@@ -161,16 +161,8 @@ export default function UserManagement({ users, auth, roles, universities, depar
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm(emptyForm);
 
   // Role display configuration
-  const roleConfig = {
-    super_admin: { label: 'Super Admin', color: 'error' },
-    inventory_manager: { label: 'Inventory Manager', color: 'warning' },
-    department_head: { label: 'Department Head', color: 'info' },
-    procurement_officer: { label: 'Procurement Officer', color: 'secondary' },
-    faculty: { label: 'Faculty', color: 'primary' },
-    staff: { label: 'Staff', color: 'default' },
-    student: { label: 'Student', color: 'success' },
-  };
-
+  const roleConfig = roles;
+  
   // Process data on component mount
   useEffect(() => {
     setGridLoading(true);
