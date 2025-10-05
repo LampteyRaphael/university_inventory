@@ -148,10 +148,30 @@ class InventoryTransaction extends Model
      *
      * @return string
      */
+    // public function getTransactionTypeLabelAttribute(): string
+    // {
+    //     return self::getTransactionTypes()[$this->transaction_type] ?? $this->transaction_type;
+    // }
+
+    // In your InventoryTransaction model
+    
     public function getTransactionTypeLabelAttribute(): string
     {
-        return self::getTransactionTypes()[$this->transaction_type] ?? $this->transaction_type;
+        // Ensure you return a string in every possible case
+        return match($this->transaction_type) {
+            'purchase' => 'Purchase',
+            'sale' => 'Sale',
+            'transfer' => 'Transfer',
+            'adjustment' => 'Adjustment',
+            'consumption' => 'Consumption',
+            'return' => 'Return',
+            'write_off' => 'Write Off',
+            'production' => 'Production',
+            'donation' => 'Donation',
+            default => 'Unknown Type', // This catches null and unexpected types
+        };
     }
+
 
     /**
      * Get the label for the status

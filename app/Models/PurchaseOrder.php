@@ -33,7 +33,7 @@ class PurchaseOrder extends Model
      * @var bool
      */
     public $incrementing = false;
-
+    protected $table = "purchase_orders";
     /**
      * The attributes that are mass assignable.
      *
@@ -98,7 +98,7 @@ class PurchaseOrder extends Model
         'shipping_amount' => 0,
         'discount_amount' => 0,
         'total_amount' => 0,
-        'currency' => 'USD',
+        'currency' => 'GHS',
         'exchange_rate' => 1,
         'status' => 'draft',
         'payment_status' => 'pending',
@@ -142,6 +142,7 @@ class PurchaseOrder extends Model
     const CURRENCY_JPY = 'JPY';
     const CURRENCY_CAD = 'CAD';
     const CURRENCY_AUD = 'AUD';
+    const CURRENCY_GHS = 'GHS';
 
     /**
      * Get the order types with labels
@@ -207,6 +208,7 @@ class PurchaseOrder extends Model
             self::CURRENCY_JPY => 'Japanese Yen (JPY)',
             self::CURRENCY_CAD => 'Canadian Dollar (CAD)',
             self::CURRENCY_AUD => 'Australian Dollar (AUD)',
+            self::CURRENCY_GHS => 'Ghanaian Cedis GHS (₵)',
         ];
     }
 

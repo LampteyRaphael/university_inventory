@@ -194,8 +194,8 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
       title: 'Transactions',
       icon: <ShoppingCartIcon />,
       items: [
-        { text: 'Orders', icon: <OrdersIcon />, badge: 5, route: 'orders_purchase' },
-        { text: 'Purchases', icon: <ShoppingCartIcon />, route: 'purchase_order_items' }
+        { text: 'Orders', icon: <OrdersIcon />, badge: 5, route: 'purchase-orders.index' },
+        { text: 'Purchases', icon: <ShoppingCartIcon />, route: 'purchase-order-items.index' }
       ]
     },
     {

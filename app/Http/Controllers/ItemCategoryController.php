@@ -54,14 +54,6 @@ class ItemCategoryController extends Controller
                 ];
             });
 
-            // $universities = University::select('university_id', 'name')
-            //     ->orderBy('name')
-            //     ->get();
-
-            // return Inertia::render('Items/ItemCategories', [
-            //     'categories'=>$categories,
-            //     'universities' => $universities
-            // ]);
             return Inertia::render('Items/ItemCategories')
             ->with([
                 // Categories (likely not huge, but can still be deferred)

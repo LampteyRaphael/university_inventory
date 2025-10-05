@@ -44,13 +44,13 @@ class ReportService
         $stockMovements = $query
             ->with(['item', 'item.category'])
             ->select(
-                'item_id',
+                'inventory_transactions.item_id',
                 DB::raw('SUM(CASE WHEN transaction_type IN ("purchase", "return", "production") THEN quantity ELSE 0 END) as incoming'),
                 DB::raw('SUM(CASE WHEN transaction_type IN ("sale", "consumption", "write_off") THEN quantity ELSE 0 END) as outgoing'),
                 DB::raw('SUM(CASE WHEN transaction_type IN ("purchase", "return", "production") THEN total_value ELSE 0 END) as incoming_value'),
                 DB::raw('SUM(CASE WHEN transaction_type IN ("sale", "consumption", "write_off") THEN total_value ELSE 0 END) as outgoing_value')
             )
-            ->groupBy('item_id')
+            ->groupBy('inventory_transactions.item_id')
             ->get()
             ->map(function ($item) {
                 $netQuantity = $item->incoming - $item->outgoing;
@@ -113,8 +113,8 @@ class ReportService
             ->with(['item', 'item.category', 'department']);
 
         // For depreciation, we focus on high-value items and their aging
-        $highValueItems = $query->where('total_value', '>', 500)
-            ->orderBy('total_value', 'desc')
+        $highValueItems = $query->where('inventory_transactions.total_value', '>', 500)
+            ->orderBy('inventory_transactions.total_value', 'desc')
             ->get();
 
         return [
@@ -158,11 +158,11 @@ class ReportService
         // Date range filter
         if (!empty($params['date_range']) || !empty($params['custom_start_date'])) {
             $dateRange = $this->getDateRange($params);
-            $query->whereBetween('transaction_date', [$dateRange['start'], $dateRange['end']]);
+            $query->whereBetween('inventory_transactions.transaction_date', [$dateRange['start'], $dateRange['end']]);
         }
 
         // Category filter
-        if (!empty($params['categories'])) {
+        if (!empty($params['item_categories'])) {
             $query->whereHas('item.category', function ($q) use ($params) {
                 $q->whereIn('category_id', $params['categories']);
             });
@@ -171,14 +171,14 @@ class ReportService
         // Location filter
         if (!empty($params['locations'])) {
             $query->where(function ($q) use ($params) {
-                $q->whereIn('source_location_id', $params['locations'])
-                  ->orWhereIn('destination_location_id', $params['locations']);
+                $q->whereIn('inventory_transactions.source_location_id', $params['locations'])
+                  ->orWhereIn('inventory_transactions.destination_location_id', $params['locations']);
             });
         }
 
         // University scope
         if (Auth::check() && Auth::user()->university_id) {
-            $query->where('university_id', Auth::user()->university_id);
+            $query->where('inventory_transactions.university_id', Auth::user()->university_id);
         }
 
         return $query;
@@ -250,23 +250,23 @@ class ReportService
         $baseQuery = clone $query;
         
         $totalTransactions = $baseQuery->count();
-        $totalValue = $baseQuery->sum('total_value');
+        $totalValue = $baseQuery->sum('inventory_transactions.total_value');
         
         // Stock movements
         $incomingStock = $baseQuery->clone()
-            ->whereIn('transaction_type', [
+            ->whereIn('inventory_transactions.transaction_type', [
                 InventoryTransaction::TYPE_PURCHASE,
                 InventoryTransaction::TYPE_RETURN,
                 InventoryTransaction::TYPE_PRODUCTION,
                 InventoryTransaction::TYPE_DONATION
-            ])->sum('quantity');
+            ])->sum('inventory_transactions.quantity');
             
         $outgoingStock = $baseQuery->clone()
-            ->whereIn('transaction_type', [
+            ->whereIn('inventory_transactions.transaction_type', [
                 InventoryTransaction::TYPE_SALE,
                 InventoryTransaction::TYPE_CONSUMPTION,
                 InventoryTransaction::TYPE_WRITE_OFF
-            ])->sum('quantity');
+            ])->sum('inventory_transactions.quantity');
 
         // Transaction type counts
         $purchaseCount = $baseQuery->clone()->ofType(InventoryTransaction::TYPE_PURCHASE)->count();
@@ -295,17 +295,19 @@ class ReportService
     {
         $trendQuery = clone $query;
         
-        // Monthly trends
+        // Monthly trends - FIXED: Use the actual expression in GROUP BY
         $monthlyTrends = $trendQuery
             ->select(
-                DB::raw('DATE_FORMAT(transaction_date, "%Y-%m") as month'),
+                DB::raw('DATE_FORMAT(inventory_transactions.transaction_date, "%Y-%m") as month'),
                 DB::raw('COUNT(*) as transaction_count'),
-                DB::raw('SUM(quantity) as total_quantity'),
-                DB::raw('SUM(total_value) as total_value'),
-                DB::raw('AVG(unit_cost) as avg_unit_cost')
+                DB::raw('SUM(inventory_transactions.quantity) as total_quantity'),
+                DB::raw('SUM(inventory_transactions.total_value) as total_value'),
+                DB::raw('AVG(inventory_transactions.unit_cost) as avg_unit_cost')
             )
-            ->groupBy('month')
-            ->orderBy('month')
+            // ->groupBy(DB::raw('DATE_FORMAT(inventory_transactions.transaction_date, "%Y-%m")'))
+                ->groupBy(DB::raw('DATE_FORMAT(inventory_transactions.transaction_date, "%Y-%m")'))
+                ->orderBy(DB::raw('DATE_FORMAT(inventory_transactions.transaction_date, "%Y-%m")'))
+            // ->orderBy('month')
             ->limit(12)
             ->get()
             ->map(function ($item) {
@@ -318,17 +320,17 @@ class ReportService
                 ];
             });
 
-        // Category distribution
+        // Category distribution - FIXED: Removed invalid 'month' from GROUP BY
         $categoryDistribution = $trendQuery->clone()
             ->join('inventory_items', 'inventory_transactions.item_id', '=', 'inventory_items.item_id')
-            ->join('categories', 'inventory_items.category_id', '=', 'categories.category_id')
+            ->join('item_categories', 'inventory_items.category_id', '=', 'item_categories.category_id')
             ->select(
-                'categories.name as category_name',
+                'item_categories.name as category_name',
                 DB::raw('COUNT(*) as transaction_count'),
-                DB::raw('SUM(total_value) as total_value'),
-                DB::raw('SUM(quantity) as total_quantity')
+                DB::raw('SUM(inventory_transactions.total_value) as total_value'),
+                DB::raw('SUM(inventory_transactions.quantity) as total_quantity')
             )
-            ->groupBy('categories.category_id', 'categories.name')
+            ->groupBy('item_categories.category_id', 'item_categories.name')
             ->orderBy('total_value', 'desc')
             ->get()
             ->map(function ($item) {
@@ -343,11 +345,11 @@ class ReportService
         // Transaction type distribution
         $transactionTypeDistribution = $trendQuery->clone()
             ->select(
-                'transaction_type',
+                'inventory_transactions.transaction_type',
                 DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(total_value) as total_value')
+                DB::raw('SUM(inventory_transactions.total_value) as total_value')
             )
-            ->groupBy('transaction_type')
+            ->groupBy('inventory_transactions.transaction_type')
             ->get()
             ->map(function ($item) {
                 $transaction = new InventoryTransaction();
@@ -372,17 +374,17 @@ class ReportService
     private function getCriticalItems(array $params): array
     {
         $query = InventoryTransaction::with(['item', 'department', 'item.category'])
-            ->where('total_value', '>', 1000)
-            ->orderBy('total_value', 'desc')
+            ->where('inventory_transactions.total_value', '>', 1000)
+            ->orderBy('inventory_transactions.total_value', 'desc')
             ->limit(10);
 
         if (!empty($params['date_range']) || !empty($params['custom_start_date'])) {
             $dateRange = $this->getDateRange($params);
-            $query->whereBetween('transaction_date', [$dateRange['start'], $dateRange['end']]);
+            $query->whereBetween('inventory_transactions.transaction_date', [$dateRange['start'], $dateRange['end']]);
         }
 
         if (Auth::check() && Auth::user()->university_id) {
-            $query->where('university_id', Auth::user()->university_id);
+            $query->where('inventory_transactions.university_id', Auth::user()->university_id);
         }
 
         return $query->get()
@@ -412,7 +414,7 @@ class ReportService
         
         return $activities
             ->with(['performedBy', 'item'])
-            ->orderBy('transaction_date', 'desc')
+            ->orderBy('inventory_transactions.transaction_date', 'desc')
             ->limit(20)
             ->get()
             ->map(function ($transaction) {
@@ -457,15 +459,15 @@ class ReportService
         
         return $breakdown
             ->join('inventory_items', 'inventory_transactions.item_id', '=', 'inventory_items.item_id')
-            ->join('categories', 'inventory_items.category_id', '=', 'categories.category_id')
+            ->join('item_categories', 'inventory_items.category_id', '=', 'item_categories.category_id')
             ->select(
-                'categories.name as category_name',
+                'item_categories.name as category_name',
                 DB::raw('COUNT(*) as transaction_count'),
-                DB::raw('SUM(quantity) as total_quantity'),
-                DB::raw('SUM(total_value) as total_value'),
-                DB::raw('AVG(unit_cost) as avg_unit_cost')
+                DB::raw('SUM(inventory_transactions.quantity) as total_quantity'),
+                DB::raw('SUM(inventory_transactions.total_value) as total_value'),
+                DB::raw('AVG(inventory_transactions.unit_cost) as avg_unit_cost')
             )
-            ->groupBy('categories.category_id', 'categories.name')
+            ->groupBy('item_categories.category_id', 'item_categories.name')
             ->orderBy('total_value', 'desc')
             ->get()
             ->map(function ($item) {
@@ -491,9 +493,9 @@ class ReportService
             ->select(
                 'departments.name as department_name',
                 DB::raw('COUNT(*) as transaction_count'),
-                DB::raw('SUM(total_value) as total_value'),
-                DB::raw('SUM(quantity) as total_quantity'),
-                DB::raw('AVG(total_value) as avg_transaction_value')
+                DB::raw('SUM(inventory_transactions.total_value) as total_value'),
+                DB::raw('SUM(inventory_transactions.quantity) as total_quantity'),
+                DB::raw('AVG(inventory_transactions.total_value) as avg_transaction_value')
             )
             ->groupBy('departments.department_id', 'departments.name')
             ->orderBy('total_value', 'desc')
@@ -518,14 +520,14 @@ class ReportService
         
         return $analysis
             ->select(
-                'transaction_type',
+                'inventory_transactions.transaction_type',
                 DB::raw('COUNT(*) as count'),
-                DB::raw('SUM(quantity) as total_quantity'),
-                DB::raw('SUM(total_value) as total_value'),
-                DB::raw('AVG(unit_cost) as avg_unit_cost'),
-                DB::raw('AVG(total_value) as avg_transaction_value')
+                DB::raw('SUM(inventory_transactions.quantity) as total_quantity'),
+                DB::raw('SUM(inventory_transactions.total_value) as total_value'),
+                DB::raw('AVG(inventory_transactions.unit_cost) as avg_unit_cost'),
+                DB::raw('AVG(inventory_transactions.total_value) as avg_transaction_value')
             )
-            ->groupBy('transaction_type')
+            ->groupBy('inventory_transactions.transaction_type')
             ->get()
             ->map(function ($item) {
                 $transaction = new InventoryTransaction();
@@ -603,14 +605,15 @@ class ReportService
     {
         $monthlyTrends = $query->clone()
             ->select(
-                DB::raw('DATE_FORMAT(transaction_date, "%Y-%m") as month'),
+                DB::raw('DATE_FORMAT(inventory_transactions.transaction_date, "%Y-%m") as month'),
                 DB::raw('COUNT(*) as acquisition_count'),
-                DB::raw('SUM(quantity) as total_quantity'),
-                DB::raw('SUM(total_value) as total_value'),
-                DB::raw('AVG(unit_cost) as avg_unit_cost')
+                DB::raw('SUM(inventory_transactions.quantity) as total_quantity'),
+                DB::raw('SUM(inventory_transactions.total_value) as total_value'),
+                DB::raw('AVG(inventory_transactions.unit_cost) as avg_unit_cost')
             )
-            ->groupBy('month')
-            ->orderBy('month')
+            // ->groupBy(DB::raw('DATE_FORMAT(inventory_transactions.transaction_date, "%Y-%m")'))
+                ->groupBy(DB::raw('DATE_FORMAT(inventory_transactions.transaction_date, "%Y-%m")'))
+             ->orderBy(DB::raw('DATE_FORMAT(inventory_transactions.transaction_date, "%Y-%m")')) 
             ->limit(12)
             ->get();
 
@@ -628,10 +631,10 @@ class ReportService
     {
         return $query->clone()
             ->select(
-                DB::raw('YEAR(transaction_date) as year'),
-                DB::raw('QUARTER(transaction_date) as quarter'),
+                DB::raw('YEAR(inventory_transactions.transaction_date) as year'),
+                DB::raw('QUARTER(inventory_transactions.transaction_date) as quarter'),
                 DB::raw('COUNT(*) as acquisition_count'),
-                DB::raw('SUM(total_value) as total_value')
+                DB::raw('SUM(inventory_transactions.total_value) as total_value')
             )
             ->groupBy('year', 'quarter')
             ->orderBy('year', 'desc')
@@ -648,10 +651,10 @@ class ReportService
     {
         return $query->clone()
             ->select(
-                DB::raw('YEAR(transaction_date) as year'),
+                DB::raw('YEAR(inventory_transactions.transaction_date) as year'),
                 DB::raw('COUNT(*) as acquisition_count'),
-                DB::raw('SUM(total_value) as total_value'),
-                DB::raw('SUM(quantity) as total_quantity')
+                DB::raw('SUM(inventory_transactions.total_value) as total_value'),
+                DB::raw('SUM(inventory_transactions.quantity) as total_quantity')
             )
             ->groupBy('year')
             ->orderBy('year', 'desc')
@@ -667,14 +670,14 @@ class ReportService
     {
         return $query->clone()
             ->select(
-                'reference_number',
+                'inventory_transactions.reference_number',
                 DB::raw('COUNT(*) as transaction_count'),
-                DB::raw('SUM(quantity) as total_quantity'),
-                DB::raw('SUM(total_value) as total_value'),
-                DB::raw('AVG(unit_cost) as avg_unit_cost')
+                DB::raw('SUM(inventory_transactions.quantity) as total_quantity'),
+                DB::raw('SUM(inventory_transactions.total_value) as total_value'),
+                DB::raw('AVG(inventory_transactions.unit_cost) as avg_unit_cost')
             )
-            ->whereNotNull('reference_number')
-            ->groupBy('reference_number')
+            ->whereNotNull('inventory_transactions.reference_number')
+            ->groupBy('inventory_transactions.reference_number')
             ->orderBy('total_value', 'desc')
             ->limit(10)
             ->get()
@@ -724,7 +727,6 @@ class ReportService
         $averageAge = $highValueItems->avg(function ($item) {
             return $item->transaction_date->diffInDays(now());
         });
-
         return [
             'total_high_value_items' => $highValueItems->count(),
             'total_asset_value' => (float) $totalValue,
@@ -956,17 +958,11 @@ class ReportService
     private function calculateChangesCount($oldValues, $newValues): int
     {
         try {
-            $oldArray = $oldValues ? json_decode($oldValues, true) : [];
-            $newArray = $newValues ? json_decode($newValues, true) : [];
+            // $oldArray = $oldValues ? json_decode($oldValues, true) : [];
+            // $newArray = $newValues ? json_decode($newValues, true) : [];
 
-            // $oldArray = is_string($oldValues)
-            //     ? json_decode($oldValues, true)
-            //     : (is_array($oldValues) ? $oldValues : []);
-
-            // $newArray = is_string($newValues)
-            //     ? json_decode($newValues, true)
-            //     : (is_array($newValues) ? $newValues : []);
-
+            $oldArray = is_array($oldValues) ? $oldValues : ($oldValues ? json_decode($oldValues, true) : []);
+            $newArray = is_array($newValues) ? $newValues : ($newValues ? json_decode($newValues, true) : []);
 
             if (!is_array($oldArray) || !is_array($newArray)) {
                 return 0;

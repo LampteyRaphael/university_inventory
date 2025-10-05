@@ -22,8 +22,8 @@ class InventoryReportController extends Controller
     {
         // Get initial data for filters
         $categories = ItemCategory::
-        // where('university_id', Auth::user()->university_id)
-            select('category_id as id', 'name')
+        where('university_id', Auth::user()->university_id)
+            ->select('category_id as id', 'name')
             ->get();
             
         $locations = Location::where('university_id', Auth::user()->university_id)
@@ -81,7 +81,7 @@ class InventoryReportController extends Controller
             $request->session()->put('report_generated_at', now()->toISOString());
 
             // Redirect back to the index page with success message
-            return redirect()->route('reports.index')->with([
+            return redirect()->route('inventory-report.index')->with([
                 'success' => 'Report generated successfully!',
                 'generated_at' => now()->toISOString(),
             ]);

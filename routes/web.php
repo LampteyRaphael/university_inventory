@@ -10,6 +10,8 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MaintenanceRecordController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\PurchaseOrderItemController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\StockLevelsController;
 use App\Http\Controllers\UserController;
@@ -99,12 +101,23 @@ Route::middleware('auth','verified')->group(function () {
 
 
         //PurchaseOrders
-        Route::get('/purchase_orders', [RouteController::class, 'purchase_orders'])->name('orders_purchase');  
+        // Route::get('/purchase_orders', [RouteController::class, 'purchase_orders'])->name('orders_purchase');  
 
+        Route::resource('purchase-orders', PurchaseOrderController::class);
+
+        // Additional custom routes
+        // Route::post('/purchase-orders/{id}/approve', [PurchaseOrderController::class, 'approve'])
+        //     ->name('purchase-orders.approve');
+        // Route::post('/purchase-orders/{id}/receive', [PurchaseOrderController::class, 'markAsReceived'])
+        //     ->name('purchase-orders.receive');
+        // Route::get('/api/purchase-orders/status/{status}', [PurchaseOrderController::class, 'getByStatus'])
+        //     ->name('purchase-orders.by-status');
+            
 
         //PurchaseOrders
         Route::get('/purchase_order_items', [RouteController::class, 'purchase_order_items'])->name('purchase_order_items');  
-  
+        Route::resource('purchase-order-items', PurchaseOrderItemController::class);
+
         //stock_levels
         // Route::get('/stock_levels', [RouteController::class, 'stock_levels'])->name('stock_levels');  
         

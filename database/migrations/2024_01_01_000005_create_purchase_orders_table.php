@@ -21,10 +21,10 @@ return new class extends Migration
             $table->date('actual_delivery_date')->nullable();
             $table->decimal('subtotal_amount', 12, 2)->default(0);
             $table->decimal('tax_amount', 12, 2)->default(0);
-            $table->decimal('shipping_amount', 12, 2)->default(0);
+            $table->decimal('shipping_amount', 12, 2)->default(0);  
             $table->decimal('discount_amount', 12, 2)->default(0);
             $table->decimal('total_amount', 12, 2)->default(0);
-            $table->enum('currency', ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'])->default('USD');
+            $table->enum('currency', ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD','GHS'])->default('GHS');
             $table->decimal('exchange_rate', 10, 4)->default(1);
             $table->enum('status', ['draft', 'submitted', 'approved', 'ordered', 'partially_received', 'received', 'cancelled', 'closed'])->default('draft');
             $table->enum('payment_status', ['pending', 'partial', 'paid', 'overdue'])->default('pending');
