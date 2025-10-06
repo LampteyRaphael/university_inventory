@@ -306,7 +306,7 @@ class PurchaseOrderController extends Controller
         try {
             $purchaseOrder->update([
                 'status' => 'approved',
-                'approved_by' => Auth::id(),
+                'approved_by' => Auth::user_id(),
                 'approved_at' => now(),
             ]);
             
@@ -353,9 +353,7 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    /**
-     * Get purchase orders by status (API endpoint)
-     */
+
     public function getByStatus($status)
     {
         $purchaseOrders = PurchaseOrder::with(['university', 'supplier', 'department'])

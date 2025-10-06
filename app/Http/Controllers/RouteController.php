@@ -110,6 +110,19 @@ class RouteController extends Controller
                 ]);
     }
 
+
+
+    public function management(){
+
+       return Inertia::render('Management/Management',[
+        'user'=>User::all(),
+        'departments'=>Department::all(),
+        'universities'=>University::all(),
+        'role_id'=> ['name'=>'User','name'=>'System'],
+        
+       ]);
+    }
+
     /*********************************
      * 
      * Saving of Department Data

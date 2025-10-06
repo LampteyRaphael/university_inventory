@@ -145,7 +145,7 @@ Route::middleware('auth','verified')->group(function () {
 
 
 
-        // Audit Logs Routes
+    // Audit Logs Routes
     // Route::get('/audit-logs/create', [AuditLogController::class, 'create'])->name('audit-logs.create');
     // Route::get('/audit-logs/{id}', [AuditLogController::class, 'show'])->name('audit-logs.show');
     // Route::get('/audit-logs/{id}/edit', [AuditLogController::class, 'edit'])->name('audit-logs.edit');
@@ -173,6 +173,11 @@ Route::middleware('auth','verified')->group(function () {
     Route::get('/inventory-report',[InventoryReportController::class,'index'])->name('inventory-report.index');
     Route::post('/reports/generate', [InventoryReportController::class, 'generate'])->name('reports.generate');
     // Route::post('/reports/generate', [InventoryReportController::class, 'export'])->name('reports.export');
+
+
+
+    // User Management
+    Route::get('/user-management', [RouteController::class, 'management'])->name('user.management');  
 
 });
 

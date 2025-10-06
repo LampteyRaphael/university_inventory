@@ -1,0 +1,37 @@
+<!-- 
+// use App\Http\Controllers\Admin\UserManagementController;
+// use App\Http\Controllers\Admin\RoleManagementController;
+// use Illuminate\Support\Facades\Route;
+
+// Route::middleware(['auth', 'super_admin'])->prefix('admin')->name('admin.')->group(function () {
+    
+//     // User Management
+//     Route::prefix('users')->name('users.')->group(function () {
+//         Route::get('/', [UserManagementController::class, 'index'])->name('index');
+//         Route::post('/', [UserManagementController::class, 'store'])->name('store');
+//         Route::get('/{user}', [UserManagementController::class, 'show'])->name('show');
+//         Route::put('/{user}', [UserManagementController::class, 'update'])->name('update');
+//         Route::delete('/{user}', [UserManagementController::class, 'destroy'])->name('destroy');
+//         Route::post('/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('toggle-status');
+//         Route::post('/{user}/change-role', [UserManagementController::class, 'changeRole'])->name('change-role');
+//         Route::post('/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('reset-password');
+//     });
+
+//     // Role Management
+//     Route::prefix('roles')->name('roles.')->group(function () {
+//         Route::get('/', [RoleManagementController::class, 'index'])->name('index');
+//         Route::post('/', [RoleManagementController::class, 'store'])->name('store');
+//         Route::get('/{role}', [RoleManagementController::class, 'show'])->name('show');
+//         Route::put('/{role}', [RoleManagementController::class, 'update'])->name('update');
+//         Route::delete('/{role}', [RoleManagementController::class, 'destroy'])->name('destroy');
+//         Route::get('/{role}/permissions', [RoleManagementController::class, 'getPermissions'])->name('permissions');
+//     });
+
+//     // System Settings
+//     Route::prefix('settings')->name('settings.')->group(function () {
+//         Route::get('/', [SystemSettingsController::class, 'index'])->name('index');
+//         Route::put('/', [SystemSettingsController::class, 'update'])->name('update');
+//         Route::post('/backup', [SystemSettingsController::class, 'createBackup'])->name('backup');
+//         Route::get('/audit-logs', [SystemSettingsController::class, 'auditLogs'])->name('audit-logs');
+//     });
+// }); -->

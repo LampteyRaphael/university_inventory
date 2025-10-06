@@ -99,6 +99,7 @@ class InventoryTransaction extends Model
     const TYPE_CONSUMPTION = 'consumption';
     const TYPE_PRODUCTION = 'production';
     const TYPE_DONATION = 'donation';
+    const TYPE_Completed = 'completed';
 
     /**
      * Status constants
@@ -125,6 +126,7 @@ class InventoryTransaction extends Model
             self::TYPE_CONSUMPTION => 'Consumption',
             self::TYPE_PRODUCTION => 'Production',
             self::TYPE_DONATION => 'Donation',
+            self::TYPE_Completed => 'completed',
         ];
     }
 
@@ -168,6 +170,7 @@ class InventoryTransaction extends Model
             'write_off' => 'Write Off',
             'production' => 'Production',
             'donation' => 'Donation',
+            'completed'=>'Completed',
             default => 'Unknown Type', // This catches null and unexpected types
         };
     }

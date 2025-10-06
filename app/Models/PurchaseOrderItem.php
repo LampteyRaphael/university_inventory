@@ -415,6 +415,7 @@ class PurchaseOrderItem extends Model
         return $this->belongsTo(PurchaseOrder::class, 'order_id', 'order_id');
     }
 
+    
     /**
      * Get the inventory item that owns the order item.
      */

@@ -371,6 +371,7 @@ class PurchaseOrder extends Model
         return $this->total_amount * $this->exchange_rate;
     }
 
+
     /**
      * Approve the purchase order
      *

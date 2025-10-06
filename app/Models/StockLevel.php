@@ -123,6 +123,20 @@ class StockLevel extends Model
         });
     }
 
+    protected static function booted()
+    {
+        static::creating(function ($stock) {
+            $stock->last_count_date = $stock->last_count_date ?? now()->toDateString();
+            $stock->last_updated = now();
+        });
+
+        static::updating(function ($stock) {
+            $stock->last_updated = now();
+        });
+    }
+
+
+
     /**
      * Get the university that owns the stock level.
      */

@@ -27,34 +27,9 @@ class InventoryTransactionController extends Controller
     public function transactionIndex(Request $request)
     {
         try {
-            // $transactions = $this->transactionRepository->getAllTransactions();
-            
-            // // Get dropdown data
-            // $items = InventoryItem::select('item_id', 'item_code', 'name')->orderBy('name')->get();
-                
-            // $departments = Department::select('department_id', 'name')->orderBy('name')->get();
 
-            // $locations = Location::select('location_id', 'name')->orderBy('name')->get();
-
-            // $transactionTypes = [
-            //     'purchase', 'sale', 'transfer', 'adjustment', 'return', 
-            //     'write_off', 'consumption', 'production', 'donation'
-            // ];
-
-            // $statuses = ['pending', 'completed', 'cancelled', 'reversed'];
-
-            // // FIXED: Remove duplicate 'transactions' key
-            // return Inertia::render('Inventories/Inventories', [
-            //     'transactions' => $transactions, // This is your paginated data
-            //     'items' => $items,
-            //     'locations'=>$locations,
-            //     'departments' => $departments,
-            //     'transactionTypes' => $transactionTypes,
-            //     'statuses' => $statuses,
-            // ]);
             return Inertia::render('Inventories/Inventories')
             ->with([
-                // Paginated transactions (deferred so it doesn't block the UI)
                 'transactions' => Inertia::defer(fn () =>
                     $this->transactionRepository->getAllTransactions()
                 ),
@@ -399,11 +374,11 @@ class InventoryTransactionController extends Controller
 
             DB::commit();
             
-            return redirect()->route('inventory-transactions.index')->with('success', 'Inventory transaction deleted successfully');
+            return redirect()->back()->with('success', 'Inventory transaction deleted successfully');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('inventory-transactions.index')->with('error', 'Failed to delete inventory transaction');
+            return redirect()->back()->with('error', 'Failed to delete inventory transaction');
         }
     }
 
@@ -415,17 +390,11 @@ class InventoryTransactionController extends Controller
         $transaction = InventoryTransaction::find($id);
 
         if (!$transaction) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Inventory transaction not found'
-            ], 404);
+            return redirect()->route('inventory-transactions.index')->with('success','Inventory transaction not found');
         }
 
         if ($transaction->isReversed()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction is already reversed'
-            ], 422);
+            return redirect()->route('inventory-transactions.index')->with('success', 'Transaction is already reversed');
         }
 
         try {
@@ -452,319 +421,211 @@ class InventoryTransactionController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Transaction reversed successfully',
+            return redirect()->back()->with([
+                'success' => 'Transaction reversed successfully',
                 'data' => $reversal->load(['item', 'department', 'performedBy'])
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to reverse transaction',
-                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
+            return redirect()->back()->with('success','Failed to reverse transaction');
         }
     }
 
     /**
      * Update inventory stock based on transaction
      */
-    
-    // private function updateInventoryStock(InventoryTransaction $transaction)
-    // {
-    // if (!$transaction->item || !$transaction->isCompleted()) {
-    //     return;
-    // }
+    private function updateInventoryStock(InventoryTransaction $transaction)
+    {
+        if (!$transaction->item || !$transaction->isCompleted()) {
+            return;
+        }
 
-    // Update or create stock level record
-    // $stockLevel = StockLevel::firstOrCreate(
-    //     [
-    //         'item_id' => $transaction->item_id,
-    //         'department_id' => $transaction->department_id,
-    //         'location_id' => $transaction->destination_location_id ?: $transaction->source_location_id,
-    //         'university_id' => $transaction->university_id
-    //     ],
-    //     [
-    //         'stock_id' => (string) \Illuminate\Support\Str::uuid(),
-    //         'current_quantity' => 0,
-    //         'committed_quantity' => 0,
-    //         'available_quantity' => 0,
-    //         'on_order_quantity' => 0,
-    //         'average_cost' => 0,
-    //         'total_value' => 0,
-    //         'reorder_level' => 0,
-    //         'safety_stock' => 0,
-    //         'lead_time_days' => 0,
-    //         'service_level' => 95,
-    //         'last_updated' => now()
-    //     ]
-    // );
+        try {
+            // Get the location ID (prefer destination over source)
+            $locationId = $transaction->destination_location_id ?: $transaction->source_location_id;
 
-    // if ($transaction->isInventoryIncrement()) {
-    //     $stockLevel->increment('current_quantity', $transaction->quantity);
-    //     $stockLevel->increment('available_quantity', $transaction->quantity);
-    // } elseif ($transaction->isInventoryDecrement()) {
-    //     $stockLevel->decrement('current_quantity', $transaction->quantity);
-    //     $stockLevel->decrement('available_quantity', $transaction->quantity);
-    // }
+            // Update or create stock level record
+            $stockLevel = StockLevel::firstOrCreate(
+                [
+                    'item_id' => $transaction->item_id,
+                    'department_id' => $transaction->department_id,
+                    'location_id' => $locationId,
+                    'university_id' => $transaction->university_id
+                ],
+                [
+                'stock_id' => (string) \Illuminate\Support\Str::uuid(),
+                'current_quantity' => 0,
+                'committed_quantity' => 0,
+                'available_quantity' => 0,
+                'on_order_quantity' => 0,
+                'average_cost' => $transaction->unit_cost,
+                'total_value' => 0,
+                // Set from transaction or use defaults
+                'reorder_level' => $transaction->reorder_level ?? 0,
+                'safety_stock' => $transaction->safety_stock ?? 0,
+                'max_level' => $transaction->max_level ?? null,
+                'lead_time_days' => $transaction->lead_time_days ?? 0,
+                'service_level' => $transaction->service_level ?? 95,
+                'last_updated' => now()
+            ]
+            );
 
-    // // Recalculate average cost and total value
-    //     $this->recalculateStockLevelValues($stockLevel);
-    // }
-
-    // private function recalculateStockLevelValues(StockLevel $stockLevel)
-    // {
-    //     // Implement your average cost calculation logic here
-    //     // This is a simplified version - you might want weighted average
-    //     $stockLevel->total_value = $stockLevel->current_quantity * $stockLevel->average_cost;
-    //     $stockLevel->last_updated = now();
-    //     $stockLevel->save();
-    // }
-
-    /**
- * Update inventory stock based on transaction
- */
-private function updateInventoryStock(InventoryTransaction $transaction)
-{
-    if (!$transaction->item || !$transaction->isCompleted()) {
-        return;
-    }
-
-    try {
-        // Get the location ID (prefer destination over source)
-        $locationId = $transaction->destination_location_id ?: $transaction->source_location_id;
-
-        // Update or create stock level record
-        $stockLevel = StockLevel::firstOrCreate(
-            [
-                'item_id' => $transaction->item_id,
-                'department_id' => $transaction->department_id,
-                'location_id' => $locationId,
-                'university_id' => $transaction->university_id
-            ],
-            [
-            'stock_id' => (string) \Illuminate\Support\Str::uuid(),
-            'current_quantity' => 0,
-            'committed_quantity' => 0,
-            'available_quantity' => 0,
-            'on_order_quantity' => 0,
-            'average_cost' => $transaction->unit_cost,
-            'total_value' => 0,
-            // Set from transaction or use defaults
-            'reorder_level' => $transaction->reorder_level ?? 0,
-            'safety_stock' => $transaction->safety_stock ?? 0,
-            'max_level' => $transaction->max_level ?? null,
-            'lead_time_days' => $transaction->lead_time_days ?? 0,
-            'service_level' => $transaction->service_level ?? 95,
-            'last_updated' => now()
-        ]
-        );
-
-        // Store old values for average cost calculation
-        $oldQuantity = $stockLevel->current_quantity;
-        $oldAverageCost = $stockLevel->average_cost;
-        
-        if ($transaction->isInventoryIncrement()) {
-            // For incoming stock, update current quantity
-            $stockLevel->increment('current_quantity', $transaction->quantity);
-            $stockLevel->increment('available_quantity', $transaction->quantity);
+            // Store old values for average cost calculation
+            $oldQuantity = $stockLevel->current_quantity;
+            $oldAverageCost = $stockLevel->average_cost;
             
-            // Recalculate weighted average cost
-            $this->recalculateAverageCost($stockLevel, $oldQuantity, $oldAverageCost, $transaction);
-            
-        } elseif ($transaction->isInventoryDecrement()) {
-            // For outgoing stock, check if enough stock is available
-            if ($stockLevel->available_quantity < $transaction->quantity) {
-                throw new \Exception("Insufficient stock available. Available: {$stockLevel->available_quantity}, Requested: {$transaction->quantity}");
+            if ($transaction->isInventoryIncrement()) {
+                // For incoming stock, update current quantity
+                $stockLevel->increment('current_quantity', $transaction->quantity);
+                $stockLevel->increment('available_quantity', $transaction->quantity);
+                
+                // Recalculate weighted average cost
+                $this->recalculateAverageCost($stockLevel, $oldQuantity, $oldAverageCost, $transaction);
+                
+            } elseif ($transaction->isInventoryDecrement()) {
+                // For outgoing stock, check if enough stock is available
+                if ($stockLevel->available_quantity < $transaction->quantity) {
+                    throw new \Exception("Insufficient stock available. Available: {$stockLevel->available_quantity}, Requested: {$transaction->quantity}");
+                }
+                
+                $stockLevel->decrement('current_quantity', $transaction->quantity);
+                $stockLevel->decrement('available_quantity', $transaction->quantity);
+                
+                // For decrements, average cost remains the same (FIFO assumption)
             }
-            
-            $stockLevel->decrement('current_quantity', $transaction->quantity);
-            $stockLevel->decrement('available_quantity', $transaction->quantity);
-            
-            // For decrements, average cost remains the same (FIFO assumption)
-        }
 
-        // Recalculate total value
-        $this->recalculateStockLevelValues($stockLevel);
+            // Recalculate total value
+            $this->recalculateStockLevelValues($stockLevel);
 
-    } catch (\Exception $e) {
-        Log::error('Failed to update inventory stock: ' . $e->getMessage());
-        throw $e;
-    }
-}
-
-
-/**
- * Adjust inventory stock when transaction is updated
- */
-private function adjustInventoryStock(InventoryTransaction $transaction, $oldQuantity, $oldTransactionType)
-{
-    if (!$transaction->item || !$transaction->isCompleted()) {
-        return;
-    }
-
-    try {
-        // Reverse old impact first
-        $this->reverseTransactionImpact($transaction, $oldQuantity, $oldTransactionType);
-        
-        // Apply new impact
-        $this->updateInventoryStock($transaction);
-
-    } catch (\Exception $e) {
-        Log::error('Failed to adjust inventory stock: ' . $e->getMessage());
-        throw $e;
-    }
-}
-
-
-/**
- * Reverse inventory impact before deletion
- */
-private function reverseInventoryImpact(InventoryTransaction $transaction)
-{
-    if (!$transaction->item || !$transaction->isCompleted()) {
-        return;
-    }
-
-    $locationId = $transaction->destination_location_id ?: $transaction->source_location_id;
-    
-    $stockLevel = StockLevel::where([
-        'item_id' => $transaction->item_id,
-        'department_id' => $transaction->department_id,
-        'location_id' => $locationId,
-        'university_id' => $transaction->university_id
-    ])->first();
-
-    if (!$stockLevel) {
-        return;
-    }
-
-    if ($transaction->isInventoryIncrement()) {
-        $stockLevel->decrement('current_quantity', $transaction->quantity);
-        $stockLevel->decrement('available_quantity', $transaction->quantity);
-    } elseif ($transaction->isInventoryDecrement()) {
-        $stockLevel->increment('current_quantity', $transaction->quantity);
-        $stockLevel->increment('available_quantity', $transaction->quantity);
-    }
-
-    $this->recalculateStockLevelValues($stockLevel);
-}
-/**
- * Reverse the impact of a previous transaction
- */
-private function reverseTransactionImpact(InventoryTransaction $transaction, $oldQuantity, $oldTransactionType)
-{
-    $locationId = $transaction->destination_location_id ?: $transaction->source_location_id;
-    
-    $stockLevel = StockLevel::where([
-        'item_id' => $transaction->item_id,
-        'department_id' => $transaction->department_id,
-        'location_id' => $locationId,
-        'university_id' => $transaction->university_id
-    ])->first();
-
-    if (!$stockLevel) {
-        return; // No stock level record found to reverse
-    }
-
-    // Reverse the old transaction impact
-    if (in_array($oldTransactionType, ['purchase', 'return', 'production', 'donation', 'adjustment'])) {
-        // Reverse increment
-        $stockLevel->decrement('current_quantity', $oldQuantity);
-        $stockLevel->decrement('available_quantity', $oldQuantity);
-    } elseif (in_array($oldTransactionType, ['sale', 'transfer', 'write_off', 'consumption'])) {
-        // Reverse decrement
-        $stockLevel->increment('current_quantity', $oldQuantity);
-        $stockLevel->increment('available_quantity', $oldQuantity);
-    }
-
-    $this->recalculateStockLevelValues($stockLevel);
-}
-
-/**
- * Recalculate weighted average cost for stock level
- */
-private function recalculateAverageCost(StockLevel $stockLevel, $oldQuantity, $oldAverageCost, InventoryTransaction $transaction)
-{
-    if ($transaction->isInventoryIncrement()) {
-        // Weighted average cost calculation
-        $oldTotalValue = $oldQuantity * $oldAverageCost;
-        $newTotalValue = $transaction->quantity * $transaction->unit_cost;
-        $totalQuantity = $oldQuantity + $transaction->quantity;
-        
-        if ($totalQuantity > 0) {
-            $stockLevel->average_cost = ($oldTotalValue + $newTotalValue) / $totalQuantity;
+        } catch (\Exception $e) {
+            Log::error('Failed to update inventory stock: ' . $e->getMessage());
+            throw $e;
         }
     }
-    // For decrements, average cost doesn't change (FIFO)
-}
 
-/**
- * Recalculate stock level values
- */
-private function recalculateStockLevelValues(StockLevel $stockLevel)
-{
-    // Ensure available quantity doesn't exceed current quantity
-    $stockLevel->available_quantity = max(0, min(
-        $stockLevel->current_quantity - $stockLevel->committed_quantity,
-        $stockLevel->current_quantity
-    ));
-    
-    // Calculate total value
-    $stockLevel->total_value = $stockLevel->current_quantity * $stockLevel->average_cost;
-    $stockLevel->last_updated = now();
-    $stockLevel->save();
-}
     /**
      * Adjust inventory stock when transaction is updated
      */
-    // private function adjustInventoryStock(InventoryTransaction $transaction, $oldQuantity, $oldTransactionType)
-    // {
-    //     if (!$transaction->item || !$transaction->isCompleted()) {
-    //         return;
-    //     }
+    private function adjustInventoryStock(InventoryTransaction $transaction, $oldQuantity, $oldTransactionType)
+    {
+        if (!$transaction->item || !$transaction->isCompleted()) {
+            return;
+        }
 
-    //     $item = $transaction->item;
+        try {
+            // Reverse old impact first
+            $this->reverseTransactionImpact($transaction, $oldQuantity, $oldTransactionType);
+            
+            // Apply new impact
+            $this->updateInventoryStock($transaction);
 
-    //     // Reverse old impact
-    //     if (in_array($oldTransactionType, array_keys(InventoryTransaction::getTransactionTypes()))) {
-    //         $oldTransaction = new InventoryTransaction();
-    //         $oldTransaction->transaction_type = $oldTransactionType;
-    //         $oldTransaction->quantity = $oldQuantity;
-
-    //         if ($oldTransaction->isInventoryIncrement()) {
-    //             $item->decrement('current_stock', $oldQuantity);
-    //         } elseif ($oldTransaction->isInventoryDecrement()) {
-    //             $item->increment('current_stock', $oldQuantity);
-    //         }
-    //     }
-
-    //     // Apply new impact
-    //     $this->updateInventoryStock($transaction);
-    // }
+        } catch (\Exception $e) {
+            Log::error('Failed to adjust inventory stock: ' . $e->getMessage());
+            throw $e;
+        }
+    }
 
     /**
      * Reverse inventory impact before deletion
      */
-    // private function reverseInventoryImpact(InventoryTransaction $transaction)
-    // {
-    //     if (!$transaction->item || !$transaction->isCompleted()) {
-    //         return;
-    //     }
+    private function reverseInventoryImpact(InventoryTransaction $transaction)
+    {
+        if (!$transaction->item || !$transaction->isCompleted()) {
+            return;
+        }
 
-    //     $item = $transaction->item;
+        $locationId = $transaction->destination_location_id ?: $transaction->source_location_id;
+        
+        $stockLevel = StockLevel::where([
+            'item_id' => $transaction->item_id,
+            'department_id' => $transaction->department_id,
+            'location_id' => $locationId,
+            'university_id' => $transaction->university_id
+        ])->first();
 
-    //     if ($transaction->isInventoryIncrement()) {
-    //         $item->decrement('current_stock', $transaction->quantity);
-    //     } elseif ($transaction->isInventoryDecrement()) {
-    //         $item->increment('current_stock', $transaction->quantity);
-    //     }
+        if (!$stockLevel) {
+            return;
+        }
 
-    //     $item->recalculateTotalValue();
-    // }
+        if ($transaction->isInventoryIncrement()) {
+            $stockLevel->decrement('current_quantity', $transaction->quantity);
+            $stockLevel->decrement('available_quantity', $transaction->quantity);
+        } elseif ($transaction->isInventoryDecrement()) {
+            $stockLevel->increment('current_quantity', $transaction->quantity);
+            $stockLevel->increment('available_quantity', $transaction->quantity);
+        }
+
+        $this->recalculateStockLevelValues($stockLevel);
+    }
+    /**
+     * Reverse the impact of a previous transaction
+     */
+    private function reverseTransactionImpact(InventoryTransaction $transaction, $oldQuantity, $oldTransactionType)
+    {
+        $locationId = $transaction->destination_location_id ?: $transaction->source_location_id;
+        
+        $stockLevel = StockLevel::where([
+            'item_id' => $transaction->item_id,
+            'department_id' => $transaction->department_id,
+            'location_id' => $locationId,
+            'university_id' => $transaction->university_id
+        ])->first();
+
+        if (!$stockLevel) {
+            return; // No stock level record found to reverse
+        }
+
+        // Reverse the old transaction impact
+        if (in_array($oldTransactionType, ['purchase', 'return', 'production', 'donation', 'adjustment'])) {
+            // Reverse increment
+            $stockLevel->decrement('current_quantity', $oldQuantity);
+            $stockLevel->decrement('available_quantity', $oldQuantity);
+        } elseif (in_array($oldTransactionType, ['sale', 'transfer', 'write_off', 'consumption'])) {
+            // Reverse decrement
+            $stockLevel->increment('current_quantity', $oldQuantity);
+            $stockLevel->increment('available_quantity', $oldQuantity);
+        }
+
+        $this->recalculateStockLevelValues($stockLevel);
+    }
+
+    /**
+     * Recalculate weighted average cost for stock level
+     */
+    private function recalculateAverageCost(StockLevel $stockLevel, $oldQuantity, $oldAverageCost, InventoryTransaction $transaction)
+    {
+        if ($transaction->isInventoryIncrement()) {
+            // Weighted average cost calculation
+            $oldTotalValue = $oldQuantity * $oldAverageCost;
+            $newTotalValue = $transaction->quantity * $transaction->unit_cost;
+            $totalQuantity = $oldQuantity + $transaction->quantity;
+            
+            if ($totalQuantity > 0) {
+                $stockLevel->average_cost = ($oldTotalValue + $newTotalValue) / $totalQuantity;
+            }
+        }
+        // For decrements, average cost doesn't change (FIFO)
+    }
+
+    /**
+     * Recalculate stock level values
+     */
+    private function recalculateStockLevelValues(StockLevel $stockLevel)
+    {
+        // Ensure available quantity doesn't exceed current quantity
+        $stockLevel->available_quantity = max(0, min(
+            $stockLevel->current_quantity - $stockLevel->committed_quantity,
+            $stockLevel->current_quantity
+        ));
+        
+        // Calculate total value
+        $stockLevel->total_value = $stockLevel->current_quantity * $stockLevel->average_cost;
+        $stockLevel->last_updated = now();
+        $stockLevel->save();
+    }
+
 
     /**
      * Get transaction statistics

@@ -722,7 +722,7 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
 
           {/* Enhanced Summary Cards */}
           <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 4 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard 
                 title="Total Items" 
                 value={totalItems.toLocaleString()} 
@@ -732,7 +732,7 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
                 trend="+12% this month"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard 
                 title="Total Value" 
                 value={`₵${totalValue.toLocaleString()}`} 
@@ -742,7 +742,7 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
                 trend="+8.5% growth"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard 
                 title="Pending Receipt" 
                 value={pendingReceipt.toString()} 
@@ -751,7 +751,7 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
                 subtitle="Awaiting delivery"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard 
                 title="Overdue Items" 
                 value={overdueItems.toString()} 
