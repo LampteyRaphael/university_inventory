@@ -181,14 +181,14 @@ export default function UserManagement({ auth, users, roles, universities, depar
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar sx={{ bgcolor: 'primary.main' }}>
-            {params.row.first_name?.charAt(0)}{params.row.last_name?.charAt(0)}
+            {params.row?.first_name?.charAt(0)}{params.row.last_name?.charAt(0)}
           </Avatar>
           <Box>
             <Typography variant="body2" fontWeight={600}>
-              {params.row.full_name}
+              {params.row?.full_name}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {params.row.email}
+              {params.row?.email}
             </Typography>
           </Box>
         </Box>
@@ -199,7 +199,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
       headerName: 'Role', 
       width: 150,
       renderCell: (params) => {
-        const role = roles?.find(r => r.role_id === params.row.role_id);
+        const role = roles?.find(r => r.role_id === params.row?.role_id);
         const getRoleIcon = (roleName) => {
           switch(roleName) {
             case 'super_admin': return <SuperAdminIcon />;
@@ -227,7 +227,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
       headerName: 'Department', 
       width: 150,
       renderCell: (params) => {
-        const department = departments?.find(d => d.department_id === params.row.department_id);
+        const department = departments?.find(d => d.department_id === params.row?.department_id);
         return department?.name || '—';
       }
     },

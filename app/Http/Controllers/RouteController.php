@@ -115,10 +115,25 @@ class RouteController extends Controller
     public function management(){
 
        return Inertia::render('Management/Management',[
-        'user'=>User::all(),
+        'users'=>User::all(),
         'departments'=>Department::all(),
         'universities'=>University::all(),
-        'role_id'=> ['name'=>'User','name'=>'System'],
+        'roles' => [
+            // ['name' => 'super_admin', 'role_id' => 'super_admin'],
+            // ['name' => 'inventory_manager','role_id' => 'inventory_manager'],
+            // ['name' => 'department_head','role_id' => 'department_head'],
+            // ['name' => 'procurement_officer','role_id' => 'procurement_officer'],
+            // ['name' => 'faculty','role_id' => 'faculty'],
+            // ['name' => 'staff','role_id' => 'staff'],
+            // ['name' => 'student','role_id' => 'student'],
+            ['name' => 'super_admin', 'role_id' => 1],
+            ['name' => 'inventory_manager','role_id' => 2],
+            ['name' => 'department_head','role_id' => 3],
+            ['name' => 'procurement_officer','role_id' => 4],
+            ['name' => 'faculty','role_id' => 5],
+            ['name' => 'staff','role_id' => 6],
+            ['name' => 'student','role_id' => 7],
+        ],
         
        ]);
     }

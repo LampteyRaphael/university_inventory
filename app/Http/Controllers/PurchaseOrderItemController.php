@@ -48,13 +48,13 @@ class PurchaseOrderItemController extends Controller
                 });
 
             return Inertia::render('PurchaseOrders/PurchaseOrdersItems', [
-                'orderItems' => $purchaseOrderItems,
-                'purchaseOrders' => PurchaseOrder::select('order_id', 'po_number')
+                'orderItems' => Inertia::defer(fn () => $purchaseOrderItems),
+                'purchaseOrders' => Inertia::defer(fn () => PurchaseOrder::select('order_id', 'po_number')
                     ->orderBy('po_number')
-                    ->get(),
-                'inventoryItems' => InventoryItem::select('item_id', 'name', 'item_code')
+                    ->get()),
+                'inventoryItems' => Inertia::defer(fn () =>  InventoryItem::select('item_id', 'name', 'item_code')
                     ->orderBy('name')
-                    ->get(),
+                    ->get()),
                 'filters' => $request->only(['search', 'status', 'order_id']),
             ]);
 
@@ -127,8 +127,8 @@ class PurchaseOrderItemController extends Controller
             'order_id' => 'required|exists:purchase_orders,order_id',
             'item_id' => 'required|exists:inventory_items,item_id',
             'quantity_ordered' => 'required|integer|min:1',
-            'quantity_received' => 'integer|min:0',
-            'quantity_cancelled' => 'integer|min:0',
+            'quantity_received' => 'required|integer|min:0',
+            'quantity_cancelled' => 'required|integer|min:0',
             'unit_price' => 'required|numeric|min:0',
             'tax_rate' => 'numeric|min:0|max:100',
             'discount_rate' => 'numeric|min:0|max:100',
@@ -139,31 +139,54 @@ class PurchaseOrderItemController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        // Validate quantities don't exceed ordered quantity
+        $totalProcessed = $validated['quantity_received'] + $validated['quantity_cancelled'];
+        if ($totalProcessed > $validated['quantity_ordered']) {
+            return back()->with('error', 'Total received and cancelled quantities cannot exceed ordered quantity')->withInput();
+        }
+
         DB::beginTransaction();
         
         try {
-            // Update the purchase order item first
+            // Log::info('Starting purchase order item update', [
+            //     'order_item_id' => $id,
+            //     'original_received' => $originalQuantityReceived,
+            //     'new_received' => $validated['quantity_received'],
+            //     'original_cancelled' => $originalQuantityCancelled,
+            //     'new_cancelled' => $validated['quantity_cancelled'],
+            //     'original_status' => $originalStatus,
+            //     'new_status' => $validated['status']
+            // ]);
+
+            // Update the purchase order item WITHOUT triggering model events
             $purchaseOrderItem->update($validated);
-            
-            // Call status-specific handlers
-            $this->handleStatusUpdate($purchaseOrderItem, $originalStatus, $validated['status']);
-            
-            // Handle quantity changes
+
+            // Handle quantity changes FIRST
             $this->handleQuantityChanges($purchaseOrderItem, $originalQuantityReceived, $originalQuantityCancelled);
+            
+            // Then handle status changes
+            $this->handleStatusUpdate($purchaseOrderItem, $originalStatus, $validated['status']);
             
             DB::commit();
             
+            // Log::info('Purchase order item updated successfully', [
+            //     'order_item_id' => $id,
+            //     'final_received' => $purchaseOrderItem->quantity_received,
+            //     'final_cancelled' => $purchaseOrderItem->quantity_cancelled,
+            //     'final_status' => $purchaseOrderItem->status
+            // ]);
+
             return redirect()->route('purchase-order-items.index')
                 ->with('success', 'Purchase order item updated successfully!');
                 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error updating purchase order item:', [
-                'error' => $e->getMessage(), 
-                'item_id' => $id,
-                'original_status' => $originalStatus,
-                'new_status' => $validated['status'] ?? 'unknown'
-            ]);
+            // Log::error('Error updating purchase order item:', [
+            //     'error' => $e->getMessage(), 
+            //     'item_id' => $id,
+            //     'original_status' => $originalStatus,
+            //     'new_status' => $validated['status'] ?? 'unknown'
+            // ]);
             
             return back()->with('error', 'Failed to update purchase order item: ' . $e->getMessage())->withInput();
         }
@@ -176,8 +199,18 @@ class PurchaseOrderItemController extends Controller
     {
         // Only proceed if status actually changed
         if ($originalStatus === $newStatus) {
+            Log::info('Status unchanged, skipping status update', [
+                'order_item_id' => $orderItem->order_item_id,
+                'status' => $newStatus
+            ]);
             return;
         }
+
+        Log::info('Processing status change', [
+            'order_item_id' => $orderItem->order_item_id,
+            'from_status' => $originalStatus,
+            'to_status' => $newStatus
+        ]);
 
         switch ($newStatus) {
             case 'received':
@@ -212,12 +245,25 @@ class PurchaseOrderItemController extends Controller
         $qtyReceivedChanged = $orderItem->quantity_received !== $originalQtyReceived;
         $qtyCancelledChanged = $orderItem->quantity_cancelled !== $originalQtyCancelled;
 
+        // Log::info('Checking quantity changes', [
+        //     'order_item_id' => $orderItem->order_item_id,
+        //     'qty_received_changed' => $qtyReceivedChanged,
+        //     'qty_cancelled_changed' => $qtyCancelledChanged,
+        //     'old_received' => $originalQtyReceived,
+        //     'new_received' => $orderItem->quantity_received,
+        //     'old_cancelled' => $originalQtyCancelled,
+        //     'new_cancelled' => $orderItem->quantity_cancelled
+        // ]);
+
         if ($qtyReceivedChanged) {
-            $this->handleReceivedQuantityChange($orderItem, $originalQtyReceived);
+            $difference = $orderItem->quantity_received;
+            //  - $originalQtyReceived;
+            $this->handleReceivedQuantityChange($orderItem, $difference);
         }
 
         if ($qtyCancelledChanged) {
-            $this->handleCancelledQuantityChange($orderItem, $originalQtyCancelled);
+            $difference = $orderItem->quantity_cancelled - $originalQtyCancelled;
+            $this->handleCancelledQuantityChange($orderItem, $difference);
         }
     }
 
@@ -226,21 +272,40 @@ class PurchaseOrderItemController extends Controller
      */
     private function handleReceivedStatus(PurchaseOrderItem $orderItem, string $originalStatus)
     {
+        // Log::info('Handling received status', [
+        //     'order_item_id' => $orderItem->order_item_id,
+        //     'original_status' => $originalStatus,
+        //     'current_received' => $orderItem->quantity_received,
+        //     'current_ordered' => $orderItem->quantity_ordered
+        // ]);
+
+        // Only auto-receive if coming from ordered or partially_received
         if (in_array($originalStatus, ['ordered', 'partially_received'])) {
-            $pendingQuantity = $orderItem->quantity_ordered - $orderItem->quantity_received;
+            $pendingQuantity = $orderItem->quantity_ordered - $orderItem->quantity_received - $orderItem->quantity_cancelled;
             
+            // Log::info('Auto-receiving pending quantity', [
+            //     'order_item_id' => $orderItem->order_item_id,
+            //     'pending_quantity' => $pendingQuantity
+            // ]);
+
             if ($pendingQuantity > 0) {
-                // Auto-receive all pending quantities
+                // Update the received quantity to include pending items
+                $newReceivedQuantity = $orderItem->quantity_received + $pendingQuantity;
+                
+                // Update inventory for the pending quantities only
+                $this->updateInventoryFromReceipt($orderItem, $pendingQuantity);
+                
+                // Update the purchase order item
                 $orderItem->update([
-                    'quantity_received' => $orderItem->quantity_ordered,
+                    'quantity_received' => $newReceivedQuantity,
                     'actual_delivery_date' => $orderItem->actual_delivery_date ?? now(),
                 ]);
-                
-                // Update inventory for the auto-received quantity
-                $this->updateInventoryFromReceipt($orderItem, $pendingQuantity);
-            } else {
-                // Ensure inventory is updated for already received quantities
-                $this->updateInventoryFromReceipt($orderItem, $orderItem->quantity_received);
+
+                // Log::info('Auto-received pending quantities', [
+                //     'order_item_id' => $orderItem->order_item_id,
+                //     'pending_received' => $pendingQuantity,
+                //     'new_total_received' => $newReceivedQuantity
+                // ]);
             }
         }
     }
@@ -250,14 +315,24 @@ class PurchaseOrderItemController extends Controller
      */
     private function handlePartiallyReceivedStatus(PurchaseOrderItem $orderItem, string $originalStatus)
     {
-        // If coming from ordered, update inventory for received quantities
-        if ($originalStatus === 'ordered' && $orderItem->quantity_received > 0) {
-            $this->updateInventoryFromReceipt($orderItem, $orderItem->quantity_received);
-        }
-        
+        // Log::info('Handling partially received status', [
+        //     'order_item_id' => $orderItem->order_item_id,
+        //     'original_status' => $originalStatus,
+        //     'current_received' => $orderItem->quantity_received
+        // ]);
+
         // Ensure we have some received quantity
         if ($orderItem->quantity_received === 0) {
             throw new \Exception('Partially received status requires at least some quantity received');
+        }
+
+        // If coming from ordered and we have received quantity, ensure inventory is updated
+        if ($originalStatus === 'ordered' && $orderItem->quantity_received > 0) {
+            // Log::info('Updating inventory for initial receipt in partially received', [
+            //     'order_item_id' => $orderItem->order_item_id,
+            //     'quantity_received' => $orderItem->quantity_received
+            // ]);
+            // Note: The actual inventory update should be handled by quantity change logic
         }
     }
 
@@ -266,14 +341,29 @@ class PurchaseOrderItemController extends Controller
      */
     private function handleCancelledStatus(PurchaseOrderItem $orderItem, string $originalStatus)
     {
+        // Log::info('Handling cancelled status', [
+        //     'order_item_id' => $orderItem->order_item_id,
+        //     'original_status' => $originalStatus,
+        //     'current_received' => $orderItem->quantity_received,
+        //     'current_cancelled' => $orderItem->quantity_cancelled
+        // ]);
+
         // If we have received quantities that are now being cancelled, we need to reverse them
         if ($orderItem->quantity_received > 0) {
+            // Log::info('Reversing received inventory due to cancellation', [
+            //     'order_item_id' => $orderItem->order_item_id,
+            //     'quantity_to_reverse' => $orderItem->quantity_received
+            // ]);
             $this->reverseReceivedInventory($orderItem, $orderItem->quantity_received);
         }
         
         // Cancel all pending quantities
         $pendingQuantity = $orderItem->quantity_ordered - $orderItem->quantity_received - $orderItem->quantity_cancelled;
         if ($pendingQuantity > 0) {
+            // Log::info('Cancelling pending quantities', [
+            //     'order_item_id' => $orderItem->order_item_id,
+            //     'pending_quantity' => $pendingQuantity
+            // ]);
             $orderItem->increment('quantity_cancelled', $pendingQuantity);
         }
     }
@@ -283,8 +373,18 @@ class PurchaseOrderItemController extends Controller
      */
     private function handleOrderedStatus(PurchaseOrderItem $orderItem, string $originalStatus)
     {
+        // Log::info('Handling ordered status', [
+        //     'order_item_id' => $orderItem->order_item_id,
+        //     'original_status' => $originalStatus,
+        //     'current_received' => $orderItem->quantity_received
+        // ]);
+
         // If coming from received/partially_received, reverse inventory transactions
         if (in_array($originalStatus, ['received', 'partially_received']) && $orderItem->quantity_received > 0) {
+            // Log::info('Reversing inventory due to status change back to ordered', [
+            //     'order_item_id' => $orderItem->order_item_id,
+            //     'quantity_to_reverse' => $orderItem->quantity_received
+            // ]);
             $this->reverseReceivedInventory($orderItem, $orderItem->quantity_received);
             
             // Reset received quantities
@@ -298,15 +398,26 @@ class PurchaseOrderItemController extends Controller
     /**
      * Handle changes in received quantity
      */
-    private function handleReceivedQuantityChange(PurchaseOrderItem $orderItem, int $originalQtyReceived)
+    private function handleReceivedQuantityChange(PurchaseOrderItem $orderItem, int $difference)
     {
-        $difference = $orderItem->quantity_received - $originalQtyReceived;
-        
+        // Log::info('Handling received quantity change', [
+        //     'order_item_id' => $orderItem->order_item_id,
+        //     'difference' => $difference
+        // ]);
+
         if ($difference > 0) {
             // Received more items - add to inventory
+            // Log::info('Adding received items to inventory', [
+            //     'order_item_id' => $orderItem->order_item_id,
+            //     'quantity' => $difference
+            // ]);
             $this->updateInventoryFromReceipt($orderItem, $difference);
         } elseif ($difference < 0) {
             // Received less items - reverse from inventory
+            // Log::info('Reversing received items from inventory', [
+            //     'order_item_id' => $orderItem->order_item_id,
+            //     'quantity' => abs($difference)
+            // ]);
             $this->reverseReceivedInventory($orderItem, abs($difference));
         }
     }
@@ -314,14 +425,21 @@ class PurchaseOrderItemController extends Controller
     /**
      * Handle changes in cancelled quantity
      */
-    private function handleCancelledQuantityChange(PurchaseOrderItem $orderItem, int $originalQtyCancelled)
+    private function handleCancelledQuantityChange(PurchaseOrderItem $orderItem, int $difference)
     {
-        $difference = $orderItem->quantity_cancelled - $originalQtyCancelled;
-        
+        // Log::info('Handling cancelled quantity change', [
+        //     'order_item_id' => $orderItem->order_item_id,
+        //     'difference' => $difference
+        // ]);
+
         if ($difference > 0) {
             // If we're cancelling items that were previously received, reverse them from inventory
             $receivedToReverse = min($difference, $orderItem->quantity_received);
             if ($receivedToReverse > 0) {
+                // Log::info('Reversing received items due to cancellation', [
+                //     'order_item_id' => $orderItem->order_item_id,
+                //     'quantity' => $receivedToReverse
+                // ]);
                 $this->reverseReceivedInventory($orderItem, $receivedToReverse);
             }
         }
@@ -332,7 +450,19 @@ class PurchaseOrderItemController extends Controller
      */
     private function updateInventoryFromReceipt(PurchaseOrderItem $orderItem, int $quantityReceived)
     {
-        if ($quantityReceived <= 0) return;
+        if ($quantityReceived <= 0) {
+            // Log::warning('Attempted to update inventory with zero or negative quantity', [
+            //     'order_item_id' => $orderItem->order_item_id,
+            //     'quantity' => $quantityReceived
+            // ]);
+            return;
+        }
+
+        // Log::info('Updating inventory from receipt', [
+        //     'order_item_id' => $orderItem->order_item_id,
+        //     'item_id' => $orderItem->item_id,
+        //     'quantity' => $quantityReceived
+        // ]);
 
         // Load relationships if not already loaded
         if (!$orderItem->relationLoaded('purchaseOrder')) {
@@ -359,24 +489,43 @@ class PurchaseOrderItemController extends Controller
                 'next_count_date' => now()->addMonths(3)->toDateString(),
                 'current_quantity' => $quantityReceived,
                 'available_quantity' => $quantityReceived,
-                'on_order_quantity' => max(0, $orderItem->quantity_ordered - $quantityReceived),
+                'on_order_quantity' => max(0, $orderItem->quantity_ordered - $orderItem->quantity_received),
                 'average_cost' => $orderItem->unit_price,
                 
                 'last_updated' => now(),
             ]);
             $stockLevel->calculateTotalValue();
             $stockLevel->save();
+
+            // Log::info('Created new stock level', [
+            //     'stock_id' => $stockLevel->stock_id,
+            //     'item_id' => $orderItem->item_id,
+            //     'initial_quantity' => $quantityReceived
+            // ]);
         } else {
             // Update existing stock level
+            $previousQuantity = $stockLevel->current_quantity;
             $stockLevel->current_quantity += $quantityReceived;
             $stockLevel->available_quantity += $quantityReceived;
-            $stockLevel->on_order_quantity = max(0, $stockLevel->on_order_quantity - $quantityReceived);
+            
+            // Calculate on_order_quantity based on purchase order item
+            $remainingOnOrder = max(0, $orderItem->quantity_ordered - $orderItem->quantity_received);
+            $stockLevel->on_order_quantity = max(0, $remainingOnOrder);
             
             // Update average cost (weighted average)
             $this->updateAverageCost($stockLevel, $quantityReceived, $orderItem->unit_price);
             
             $stockLevel->calculateTotalValue();
             $stockLevel->save();
+
+            // Log::info('Updated existing stock level', [
+            //     'stock_id' => $stockLevel->stock_id,
+            //     'item_id' => $orderItem->item_id,
+            //     'previous_quantity' => $previousQuantity,
+            //     'added_quantity' => $quantityReceived,
+            //     'new_quantity' => $stockLevel->current_quantity,
+            //     'new_on_order_quantity' => $stockLevel->on_order_quantity
+            // ]);
         }
         
         // Calculate total value for the transaction
@@ -402,12 +551,12 @@ class PurchaseOrderItemController extends Controller
             'performed_by' => Auth::id() ?? $orderItem->purchaseOrder->created_by,
         ]);
         
-        Log::info('Inventory updated from receipt', [
-            'item_id' => $orderItem->item_id,
-            'quantity' => $quantityReceived,
-            'purchase_order_item_id' => $orderItem->order_item_id,
-            'stock_level_id' => $stockLevel->stock_id
-        ]);
+        // Log::info('Inventory updated from receipt', [
+        //     'item_id' => $orderItem->item_id,
+        //     'quantity' => $quantityReceived,
+        //     'purchase_order_item_id' => $orderItem->order_item_id,
+        //     'stock_level_id' => $stockLevel->stock_id
+        // ]);
     }
 
     /**
@@ -415,11 +564,35 @@ class PurchaseOrderItemController extends Controller
      */
     private function reverseReceivedInventory(PurchaseOrderItem $orderItem, int $quantityToReverse)
     {
-        if ($quantityToReverse <= 0) return;
+        if ($quantityToReverse <= 0) {
+            // Log::warning('Attempted to reverse inventory with zero or negative quantity', [
+            //     'order_item_id' => $orderItem->order_item_id,
+            //     'quantity' => $quantityToReverse
+            // ]);
+            return;
+        }
+
+        // Log::info('Reversing received inventory', [
+        //     'order_item_id' => $orderItem->order_item_id,
+        //     'item_id' => $orderItem->item_id,
+        //     'quantity' => $quantityToReverse
+        // ]);
 
         $stockLevel = StockLevel::where('item_id', $orderItem->item_id)->first();
         
-        if (!$stockLevel || $stockLevel->current_quantity < $quantityToReverse) {
+        if (!$stockLevel) {
+            // Log::error('No stock level found for item when trying to reverse', [
+            //     'item_id' => $orderItem->item_id
+            // ]);
+            throw new \Exception('No stock level found for this item');
+        }
+
+        if ($stockLevel->current_quantity < $quantityToReverse) {
+            // Log::error('Insufficient stock to reverse', [
+            //     'item_id' => $orderItem->item_id,
+            //     'current_stock' => $stockLevel->current_quantity,
+            //     'quantity_to_reverse' => $quantityToReverse
+            // ]);
             throw new \Exception('Insufficient stock to reverse');
         }
 
@@ -429,11 +602,23 @@ class PurchaseOrderItemController extends Controller
         }
 
         // Update stock level
+        $previousQuantity = $stockLevel->current_quantity;
         $stockLevel->current_quantity -= $quantityToReverse;
         $stockLevel->available_quantity -= $quantityToReverse;
-        $stockLevel->on_order_quantity += $quantityToReverse; // Put it back on order
+        
+        // Update on_order_quantity - put it back on order
+        $stockLevel->on_order_quantity += $quantityToReverse;
+        
         $stockLevel->calculateTotalValue();
         $stockLevel->save();
+
+        // Log::info('Stock level updated for reversal', [
+        //     'stock_id' => $stockLevel->stock_id,
+        //     'previous_quantity' => $previousQuantity,
+        //     'reversed_quantity' => $quantityToReverse,
+        //     'new_quantity' => $stockLevel->current_quantity,
+        //     'new_on_order_quantity' => $stockLevel->on_order_quantity
+        // ]);
         
         // Create reverse transaction with all required fields
         InventoryTransaction::create([
@@ -453,11 +638,11 @@ class PurchaseOrderItemController extends Controller
             'performed_by' => Auth::id() ?? $orderItem->purchaseOrder->created_by,
         ]);
         
-        Log::info('Inventory reversed from cancellation', [
-            'item_id' => $orderItem->item_id,
-            'quantity' => $quantityToReverse,
-            'purchase_order_item_id' => $orderItem->order_item_id
-        ]);
+        // Log::info('Inventory reversed from cancellation', [
+        //     'item_id' => $orderItem->item_id,
+        //     'quantity' => $quantityToReverse,
+        //     'purchase_order_item_id' => $orderItem->order_item_id
+        // ]);
     }
 
     /**

@@ -14,6 +14,7 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseOrderItemController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\StockLevelsController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Models\Department;
 use App\Models\InventoryItem;
@@ -97,12 +98,17 @@ Route::middleware('auth','verified')->group(function () {
 
      
         //Suppliers
-        Route::get('/suppliers', [RouteController::class, 'suppliers'])->name('suppliers');  
+        // Route::get('/suppliers', [RouteController::class, 'suppliers'])->name('suppliers');  
+         Route::resource('suppliers', SupplierController::class);
 
+         // Additional supplier routes
+        // Route::post('/suppliers/bulk-action', [SupplierController::class, 'bulkAction'])->name('suppliers.bulk-action');
+        // Route::get('/suppliers/export/data', [SupplierController::class, 'export'])->name('suppliers.export');
+        // Route::post('/suppliers/import', [SupplierController::class, 'import'])->name('suppliers.import');
+        // Route::get('/suppliers/statistics', [SupplierController::class, 'getStatistics'])->name('suppliers.statistics');
+        // Route::post('/suppliers/{supplierId}/quick-approve', [SupplierController::class, 'quickApprove'])->name('suppliers.quick-approve');
 
         //PurchaseOrders
-        // Route::get('/purchase_orders', [RouteController::class, 'purchase_orders'])->name('orders_purchase');  
-
         Route::resource('purchase-orders', PurchaseOrderController::class);
 
         // Additional custom routes

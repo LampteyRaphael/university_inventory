@@ -182,7 +182,7 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
     order_item_id: "",
     order_id: "",
     item_id: "",
-    quantity_ordered: 1,
+    quantity_ordered: 0,
     quantity_received: 0,
     quantity_cancelled: 0,
     unit_price: 0,
@@ -996,7 +996,7 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
                     label="Quantity Ordered" 
                     name="quantity_ordered" 
                     type="number" 
-                    value={data.quantity_ordered || ""} 
+                    value={data.quantity_ordered || 0} 
                     onChange={handleInputChange} 
                     error={!!errors.quantity_ordered}
                     helperText={errors.quantity_ordered}
@@ -1011,7 +1011,7 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
                     label="Quantity Received" 
                     name="quantity_received" 
                     type="number" 
-                    value={data.quantity_received || ""} 
+                    value={data.quantity_received || 0} 
                     onChange={handleInputChange} 
                     inputProps={{ min: 0 }}
                     disabled={processing}
@@ -1024,7 +1024,7 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
                     label="Quantity Cancelled" 
                     name="quantity_cancelled" 
                     type="number" 
-                    value={data.quantity_cancelled || ""} 
+                    value={data.quantity_cancelled || 0} 
                     onChange={handleInputChange} 
                     inputProps={{ min: 0 }}
                     disabled={processing}
@@ -1037,7 +1037,7 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
                     label="Unit Price" 
                     name="unit_price" 
                     type="number" 
-                    value={data.unit_price || ""} 
+                    value={data.unit_price || 0} 
                     onChange={handleInputChange} 
                     error={!!errors.unit_price}
                     helperText={errors.unit_price}

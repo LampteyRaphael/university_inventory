@@ -184,7 +184,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
       title: 'Parties',
       icon: <PeopleIcon />,
       items: [
-        { text: 'Suppliers', icon: <SuppliersIcon />, route: 'suppliers' },
+        { text: 'Suppliers', icon: <SuppliersIcon />, route: 'suppliers.index' },
         { text: 'Customers', icon: <CustomersIcon />, route: 'users.index' },
         { text: 'Universities', icon: <UniversityIcon />, route: 'universities' }
       ]
