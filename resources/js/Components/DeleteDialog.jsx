@@ -8,7 +8,7 @@ import {
   Button,
   Alert,
 } from '@mui/material';
-import { Delete as DeleteIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Warning } from '@mui/icons-material';
 
 const DeleteDialog = ({
   open,
@@ -18,7 +18,16 @@ const DeleteDialog = ({
 }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Confirm Delete</DialogTitle>
+    <DialogTitle sx={{ 
+      backgroundColor: 'error.main', 
+      color: 'white',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 1
+    }}>
+      <Warning />
+      Confirm Deletion
+    </DialogTitle>
       <DialogContent>
         <Typography>
           Are you sure you want to delete the category "{selectedItem?.name}"? This action cannot be undone.

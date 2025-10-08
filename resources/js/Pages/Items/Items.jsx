@@ -64,8 +64,11 @@ import {
   Download,
   Inventory2,
   SearchOff,
+  AccountTree,
 } from "@mui/icons-material";
 import { useForm, usePage, router } from "@inertiajs/react";
+import PageHeader from "@/Components/PageHeader";
+import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 
 // Custom Hooks
 const useInventoryManager = (initialItems, auth) => {
@@ -129,45 +132,6 @@ const useInventoryManager = (initialItems, auth) => {
   };
 };
 
-// Components
-// const SummaryCard = ({ title, value, icon, color, subtitle }) => {
-//   const theme = useTheme();
-//   return (
-//     <Card sx={{
-//       borderRadius: 3,
-//       p: 2,
-//       background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-//       boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-//       border: '1px solid rgba(0,0,0,0.04)',
-//       transition: 'all 0.3s ease',
-//       '&:hover': {
-//         transform: 'translateY(-2px)',
-//         boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-//       },
-//     }}>
-//       <CardContent sx={{ p: '0 !important' }}>
-//         <Stack direction="row" justifyContent="space-between" alignItems="center">
-//           <Box>
-//             <Typography variant="h4" fontWeight={700} color={color}>
-//               {value}
-//             </Typography>
-//             <Typography variant="body2" color="text.secondary" fontWeight={500}>
-//               {title}
-//             </Typography>
-//             {subtitle && (
-//               <Typography variant="caption" color="text.secondary">
-//                 {subtitle}
-//               </Typography>
-//             )}
-//           </Box>
-//           <Avatar sx={{ bgcolor: `${color}08`, color, width: 48, height: 48 }}>
-//             {icon}
-//           </Avatar>
-//         </Stack>
-//       </CardContent>
-//     </Card>
-//   );
-// };
 const SummaryCard = ({ title, value, icon, color = '#667eea', subtitle, trend, percentage, onClick }) => {
   const theme = useTheme();
   
@@ -968,6 +932,7 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
 
   const {
     rows,
+    rows:filteredRows,
     loading,
     searchText,
     setSearchText,
@@ -1578,6 +1543,97 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
         ),
       },
     ];
+
+      // Create action buttons for header
+      const actionButtons = [
+        <Button
+          key="new-item"
+          variant="contained"
+          startIcon={<AddCircleOutline />}
+          onClick={handleCreate}
+          size="medium"
+          sx={{
+            borderRadius: 2.5,
+            textTransform: "none",
+            fontWeight: 700,
+            px: 3,
+            py: 1,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+            '&:hover': {
+              boxShadow: '0 8px 30px rgba(102, 126, 234, 0.4)',
+              transform: 'translateY(-1px)',
+            },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          New Item
+        </Button>,
+        <Button
+          key="import"
+          size="medium"
+          startIcon={<CloudUpload />}
+          component="label"
+          variant="outlined"
+          sx={{
+            borderRadius: 2.5,
+            textTransform: "none",
+            fontWeight: 600,
+            px: 2.5,
+            py: 1,
+            border: '2px solid',
+            borderColor: 'grey.200',
+            color: 'text.primary',
+            '&:hover': {
+              borderColor: 'primary.main',
+              backgroundColor: 'rgba(102, 126, 234, 0.04)',
+              color: 'primary.main',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          Import
+          <input
+            hidden
+            accept=".xlsx,.xls,.csv"
+            type="file"
+            onChange={handleImport}
+          />
+        </Button>,
+        <Button
+          key="export"
+          size="medium"
+          startIcon={<Download />}
+          onClick={handleExport}
+          variant="outlined"
+          sx={{
+            borderRadius: 2.5,
+            textTransform: "none",
+            fontWeight: 600,
+            px: 2.5,
+            py: 1,
+            border: '2px solid',
+            borderColor: 'grey.200',
+            color: 'text.primary',
+            '&:hover': {
+              borderColor: 'success.main',
+              backgroundColor: 'rgba(16, 185, 129, 0.04)',
+              color: 'success.main',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          Export
+        </Button>
+      ];
+  
+    const handleRefresh = () => {
+      router.reload({ preserveScroll: true });
+    };
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -1596,91 +1652,18 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
             onClose={handleCloseAlert}
           />
           
-          <Box
-            sx={{
-              mb: 3,
-              p: 2,
-              borderRadius: 2,
-              backgroundColor: "background.paper",
-              boxShadow: 1,
-            }}
-          >
-            <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-                  <Inventory color="primary" fontSize="large" />
-                  <Box>
-                    <Typography variant="h5" fontWeight={700} color="text.primary">
-                      Inventory Items
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      Manage your inventory items, track stock levels, and monitor item performance
-                    </Typography>
-                  </Box>
-                  {searchText && (
-                    <Chip
-                      label={`${rows.length} items filtered`}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ fontWeight: 500 }}
-                    />
-                  )}
-                </Box>
-              </Grid>
-
-              <Grid size={{ xs: 12, md: "auto" }}>
-                <Grid
-                  container
-                  spacing={1.5}
-                  alignItems="center"
-                  justifyContent={{ xs: "flex-start", md: "flex-end" }}
-                  wrap="wrap"
-                >
-                  <Grid>
-                    <Button
-                      variant="contained"
-                      startIcon={<AddCircleOutline />}
-                      onClick={handleCreate}
-                      size="small"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      New Item
-                    </Button>
-                  </Grid>
-                  <Grid>
-                    <Button
-                      size="small"
-                      startIcon={<CloudUpload />}
-                      component="label"
-                      variant="outlined"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      Import
-                      <input
-                        hidden
-                        accept=".xlsx,.xls,.csv"
-                        type="file"
-                        onChange={handleImport}
-                      />
-                    </Button>
-                  </Grid>
-                  <Grid>
-                    <Button
-                      size="small"
-                      startIcon={<Download />}
-                      onClick={handleExport}
-                      variant="outlined"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      Export
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Box>
-
+          {/* Header Section */}
+          <PageHeader
+            title="Inventory Items "
+            subtitle="Manage your inventory items, track stock levels, and monitor item performance"
+            icon={<Inventory sx={{ fontSize: 28 }} />}
+            actionButtons={actionButtons}
+            searchText={searchText}
+            onSearchClear={() => setSearchText('')}
+            filteredCount={filteredRows.length}
+            totalCount={rows.length}
+          />
+       
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard
@@ -1721,266 +1704,29 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
             </Grid>
           </Grid>
 
-          {/* <Paper sx={{
-            height: "100%",
-            width: "100%",
-            borderRadius: 2,
-            overflow: 'hidden',
-            boxShadow: 3,
-          }}>
-            <CustomToolbar
-              searchText={searchText}
-              onSearchChange={setSearchText}
-              loading={loading}
-              filteredRows={rows}
-              rows={rows}
-            />
-            <DataGrid
-              rows={rows}
-              columns={columns}
-              loading={loading}
-              pageSizeOptions={[10, 25, 50, 100]}
-              initialState={{
-                pagination: { paginationModel: { pageSize: 25 } },
-                sorting: { sortModel: [{ field: 'updated_at', sort: 'desc' }] },
-              }}
-              sx={{
-                border: 'none',
-                '& .MuiDataGrid-cell': {
-                  borderBottom: `1px solid ${theme.palette.divider}`,
-                },
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: theme.palette.grey[50],
-                  borderBottom: `2px solid ${theme.palette.divider}`,
-                },
-                '& .MuiDataGrid-virtualScroller': {
-                  backgroundColor: theme.palette.background.paper,
-                },
-              }}
-            />
-            
-            {loading && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  zIndex: 1,
-                }}
-              >
-                <Stack spacing={2} alignItems="center">
-                  <CircularProgress size={40} />
-                  <Typography variant="body2" color="text.secondary">
-                    Loading inventory items...
-                  </Typography>
-                </Stack>
-              </Box>
-            )}
-          </Paper> */}
-          <Paper sx={{
-            height: "100%",
-            width: "100%",
-            borderRadius: 3,
-            overflow: 'hidden',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
-            border: '1px solid rgba(255,255,255,0.8)',
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8faff 100%)',
-            backdropFilter: 'blur(10px)',
-            position: 'relative',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '4px',
-              background: 'linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-              zIndex: 2
-            }
-          }}>
-            {/* Custom Toolbar */}
-            <CustomToolbar
-              searchText={searchText}
-              onSearchChange={setSearchText}
-              loading={loading}
-              filteredRows={rows}
-              rows={rows}
-            />
-            
-            {/* DataGrid */}
-            <Box sx={{ position: 'relative', height: 'calc(100% - 80px)' }}>
-              <DataGrid
-                rows={rows}
-                columns={columns}
-                loading={false} // We handle loading state manually
-                pageSizeOptions={[10, 25, 50, 100]}
-                initialState={{
-                  pagination: { paginationModel: { pageSize: 25 } },
-                  sorting: { sortModel: [{ field: 'updated_at', sort: 'desc' }] },
-                }}
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-main': {
-                    backgroundColor: 'transparent',
-                  },
-                  '& .MuiDataGrid-cell': {
-                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-                    py: 1.5,
-                    fontSize: '0.875rem',
-                    transition: 'all 0.2s ease',
-                    '&:focus': {
-                      outline: 'none',
-                    },
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                    }
-                  },
-                  '& .MuiDataGrid-row': {
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                      transform: 'translateX(2px)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    },
-                    '&.Mui-selected': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                      '&:hover': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                      }
-                    }
-                  },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.03),
-                    borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-                    fontSize: '0.875rem',
-                    fontWeight: 700,
-                    color: theme.palette.text.primary,
-                    '& .MuiDataGrid-columnHeader': {
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.06),
-                      },
-                      '&:focus': {
-                        outline: 'none',
-                      },
-                      '&.MuiDataGrid-columnHeader--sorted': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                      }
-                    }
-                  },
-                  '& .MuiDataGrid-virtualScroller': {
-                    backgroundColor: 'transparent',
-                  },
-                  '& .MuiDataGrid-footerContainer': {
-                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-                    backgroundColor: alpha(theme.palette.grey[50], 0.8),
-                  },
-                  '& .MuiDataGrid-toolbarContainer': {
-                    padding: theme.spacing(2),
-                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-                    backgroundColor: alpha(theme.palette.background.paper, 0.6),
-                  },
-                  '& .MuiTablePagination-root': {
-                    fontSize: '0.875rem',
-                  },
-                  '& .MuiCheckbox-root': {
-                    color: alpha(theme.palette.primary.main, 0.6),
-                    '&.Mui-checked': {
-                      color: theme.palette.primary.main,
-                    }
-                  },
-                  '& .MuiDataGrid-overlay': {
-                    backgroundColor: alpha(theme.palette.background.paper, 0.8),
-                  }
-                }}
-                disableRowSelectionOnClick
-                slots={{
-                  loadingOverlay: () => null, // Disable default loading overlay
-                  noRowsOverlay: () => (
-                    <Stack spacing={1} alignItems="center" justifyContent="center" sx={{ height: '100%' }}>
-                      <Inventory2 sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5 }} />
-                      <Typography variant="h6" color="text.secondary">
-                        No inventory items found
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Try adjusting your search or filters
-                      </Typography>
-                    </Stack>
-                  ),
-                  noResultsOverlay: () => (
-                    <Stack spacing={1} alignItems="center" justifyContent="center" sx={{ height: '100%' }}>
-                      <SearchOff sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5 }} />
-                      <Typography variant="h6" color="text.secondary">
-                        No results found
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        No items match your search criteria
-                      </Typography>
-                    </Stack>
-                  )
-                }}
-              />
-              
-              {/* Custom Loading Overlay */}
-              {loading && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.default, 0.9)} 100%)`,
-                    backdropFilter: 'blur(4px)',
-                    zIndex: 1,
-                    borderRadius: '0 0 12px 12px',
-                  }}
-                >
-                  <Stack spacing={2} alignItems="center">
-                    <Box sx={{ position: 'relative' }}>
-                      <CircularProgress 
-                        size={50}
-                        thickness={4}
-                        sx={{
-                          color: 'primary.main',
-                          background: `conic-gradient(${alpha(theme.palette.primary.main, 0.2)} 0%, transparent 50%)`,
-                          borderRadius: '50%',
-                        }}
-                      />
-                      <Inventory2Icon 
-                        sx={{ 
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          fontSize: 20,
-                          color: 'primary.main',
-                          opacity: 0.8
-                        }} 
-                      />
-                    </Box>
-                    <Box textAlign="center">
-                      <Typography variant="h6" fontWeight={600} color="text.primary" gutterBottom>
-                        Loading Inventory
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Fetching your inventory items...
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Box>
-              )}
-            </Box>
-          </Paper>
+          
+          {/* Data Grid */}
+          <EnhancedDataGrid
+            rows={filteredRows}
+            columns={columns}
+            loading={loading}
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            onSearchClear={() => setSearchText('')}
+            onAdd={handleCreate}
+            onExport={handleExport}
+            onImport={handleImport}
+            onRefresh={handleRefresh}
+            title="Items"
+            subtitle="inventory Items"
+            icon={<AccountTree />}
+            addButtonText="New"
+            pageSizeOptions={[5, 10, 20, 50, 100]}
+            initialState={{
+              pagination: { paginationModel: { page: 0, pageSize: 10 } },
+              sorting: { sortModel: [{ field: 'lft', sort: 'asc' }] }
+            }}
+          />
           <ItemFormDialog
             open={dialogOpen}
             onClose={() => setDialogOpen(false)}
