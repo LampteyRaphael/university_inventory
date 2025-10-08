@@ -38,7 +38,7 @@ import {
 import { DataGrid } from "@mui/x-data-grid";
 import * as XLSX from "xlsx";
 import moment from "moment";
-
+import Notification from "@/Components/Notification";
 
 // Icons
 import {
@@ -66,9 +66,6 @@ import {
   SearchOff,
 } from "@mui/icons-material";
 import { useForm, usePage, router } from "@inertiajs/react";
-import Header from "@/Components/Header";
-import SummaryCard from "@/Components/SummaryCard";
-import DataTable from "@/Components/DataTable";
 
 // Custom Hooks
 const useInventoryManager = (initialItems, auth) => {
@@ -78,6 +75,7 @@ const useInventoryManager = (initialItems, auth) => {
 
   useEffect(() => {
     setLoading(true);
+    // console.log(initialItems)
     const formatted = initialItems?.map((item, index) => ({
       id: item?.item_id ?? index + 1,
       ...item,
@@ -91,7 +89,8 @@ const useInventoryManager = (initialItems, auth) => {
       volume_cubic_m: item?.volume_cubic_m ? Number(item.volume_cubic_m) : null,
       is_hazardous: !!item?.is_hazardous,
       is_active: item?.is_active ?? true,
-      expiry_date: moment(item?.expiry_date).format('YYYY-MM-DD'),
+      // expiry_date:item?.expiry_date??null,
+      expiry_date:moment(item?.expiry_date).format('YYYY-MM-DD'),
       created_at: item?.created_at ? moment(item.created_at).format("MMM DD, YYYY") : "",
       updated_at: item?.updated_at ? moment(item.updated_at).format("MMM DD, YYYY") : "",
     }));
@@ -121,14 +120,214 @@ const useInventoryManager = (initialItems, auth) => {
   }, [rows]);
 
   return {
-    rows,           // Original unfiltered rows
-    filteredRows,   // Filtered rows based on search
+    rows: filteredRows,
     loading,
     searchText,
     setSearchText,
     setRows,
     statistics
   };
+};
+
+// Components
+// const SummaryCard = ({ title, value, icon, color, subtitle }) => {
+//   const theme = useTheme();
+//   return (
+//     <Card sx={{
+//       borderRadius: 3,
+//       p: 2,
+//       background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+//       boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+//       border: '1px solid rgba(0,0,0,0.04)',
+//       transition: 'all 0.3s ease',
+//       '&:hover': {
+//         transform: 'translateY(-2px)',
+//         boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+//       },
+//     }}>
+//       <CardContent sx={{ p: '0 !important' }}>
+//         <Stack direction="row" justifyContent="space-between" alignItems="center">
+//           <Box>
+//             <Typography variant="h4" fontWeight={700} color={color}>
+//               {value}
+//             </Typography>
+//             <Typography variant="body2" color="text.secondary" fontWeight={500}>
+//               {title}
+//             </Typography>
+//             {subtitle && (
+//               <Typography variant="caption" color="text.secondary">
+//                 {subtitle}
+//               </Typography>
+//             )}
+//           </Box>
+//           <Avatar sx={{ bgcolor: `${color}08`, color, width: 48, height: 48 }}>
+//             {icon}
+//           </Avatar>
+//         </Stack>
+//       </CardContent>
+//     </Card>
+//   );
+// };
+const SummaryCard = ({ title, value, icon, color = '#667eea', subtitle, trend, percentage, onClick }) => {
+  const theme = useTheme();
+  
+  return (
+    <Card 
+      onClick={onClick}
+      sx={{
+        borderRadius: 3,
+        p: 2.5,
+        background: `linear-gradient(135deg, ${alpha(color, 0.03)} 0%, ${alpha(color, 0.08)} 100%)`,
+        boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+        border: `1px solid ${alpha(color, 0.1)}`,
+        backdropFilter: 'blur(10px)',
+        cursor: onClick ? 'pointer' : 'default',
+        position: 'relative',
+        overflow: 'hidden',
+        transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        background: `linear-gradient(90deg, ${color}, ${color}80)`,
+      },
+        
+        '&:hover': {
+          transform: 'translateY(-6px)',
+          boxShadow: `0 12px 40px ${alpha(color, 0.15)}`,
+          '&::before': {
+            transform: 'scaleX(1)',
+          },
+          '& .summary-avatar': {
+            transform: 'scale(1.1) rotate(5deg)',
+            boxShadow: `0 8px 32px ${alpha(color, 0.4)}`,
+          }
+        },
+      }}
+    >
+      <CardContent sx={{ p: '0 !important' }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+          <Box sx={{ flex: 1 }}>
+            {/* Header with title and trend */}
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+              <Typography 
+                variant="body2" 
+                color="text.secondary" 
+                fontWeight={600}
+                sx={{
+                  textTransform: 'uppercase',
+                  fontSize: '0.75rem',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                {title}
+              </Typography>
+              
+              {trend && (
+                <Chip 
+                  label={trend} 
+                  size="small" 
+                  color={percentage >= 0 ? 'success' : 'error'}
+                  variant="filled"
+                  sx={{ 
+                    height: 20,
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                  }}
+                />
+              )}
+            </Stack>
+            
+            {/* Main value */}
+            <Typography 
+              variant="h3" 
+              fontWeight={800}
+              sx={{
+                background: `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.8)} 100%)`,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                mb: 0.5,
+                lineHeight: 1.1,
+                filter: 'brightness(1.1)',
+              }}
+            >
+              {value}
+            </Typography>
+            
+            {/* Subtitle */}
+            {subtitle && (
+              <Typography 
+                variant="caption" 
+                color="text.secondary" 
+                sx={{ 
+                  display: 'block',
+                  fontWeight: 500,
+                  lineHeight: 1.4,
+                }}
+              >
+                {subtitle}
+              </Typography>
+            )}
+            
+            {/* Percentage change */}
+            {percentage !== undefined && (
+              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 1.5 }}>
+                {percentage >= 0 ? (
+                  <TrendingUpIcon sx={{ fontSize: 16, color: '#10b981' }} />
+                ) : (
+                  <TrendingDownIcon sx={{ fontSize: 16, color: '#ef4444' }} />
+                )}
+                <Typography 
+                  variant="caption" 
+                  fontWeight={700} 
+                  color={percentage >= 0 ? '#10b981' : '#ef4444'}
+                >
+                  {percentage >= 0 ? '+' : ''}{percentage}%
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  from last period
+                </Typography>
+              </Stack>
+            )}
+          </Box>
+          
+          {/* Icon */}
+          <Avatar 
+            className="summary-avatar"
+            sx={{ 
+              bgcolor: alpha(color, 0.15), 
+              color: color,
+              width: 56,
+              height: 56,
+              borderRadius: 2.5,
+              boxShadow: `0 4px 20px ${alpha(color, 0.2)}`,
+              transition: 'all 0.3s ease',
+            }}
+          >
+            {icon}
+          </Avatar>
+        </Stack>
+        
+        {/* Decorative elements */}
+        <Box 
+          sx={{
+            position: 'absolute',
+            top: -10,
+            right: -10,
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${alpha(color, 0.05)} 0%, transparent 70%)`,
+            zIndex: 0,
+          }}
+        />
+      </CardContent>
+    </Card>
+  );
 };
 
 // Enhanced color palette for different metrics
@@ -142,6 +341,8 @@ export const summaryColors = {
   pink: '#ec4899',
   indigo: '#6366f1'
 };
+
+
 
 const CustomToolbar = ({ searchText, onSearchChange, loading, filteredRows, rows }) => (
   <Box
@@ -224,7 +425,8 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
     handling_instructions: item?.handling_instructions || '',
     storage_conditions: item?.storage_conditions || '',
     shelf_life_days: item?.shelf_life_days ?? null,
-    expiry_date: moment(item?.expiry_date).format('YYYY-MM-DD'),
+    // expiry_date: item?.expiry_date || '',
+    expiry_date:moment(item?.expiry_date).format('YYYY-MM-DD'),
     barcode: item?.barcode || '',
     qr_code: item?.qr_code || '',
     rfid_tag: item?.rfid_tag || '',
@@ -258,7 +460,8 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
         handling_instructions: item?.handling_instructions || '',
         storage_conditions: item?.storage_conditions || '',
         shelf_life_days: item?.shelf_life_days ?? null,
-        expiry_date: moment(item?.expiry_date).format('YYYY-MM-DD'),
+        expiry_date:moment(item?.expiry_date).format('YYYY-MM-DD'),
+        // expiry_date: item?.expiry_date || '',
         barcode: item?.barcode || '',
         qr_code: item?.qr_code || '',
         rfid_tag: item?.rfid_tag || '',
@@ -298,9 +501,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
         onSuccess: () => {
           onClose();
           reset();
-          setDeleteDialogOpen(false);
         },
-        
       });
     } else {
       post(route('item.store'), {
@@ -309,7 +510,6 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
         onSuccess: () => {
           onClose();
           reset();
-          setDeleteDialogOpen(false);
         },
       });
     }
@@ -393,6 +593,7 @@ const ItemFormDialog = ({ open, onClose, item = null, categories = [], universit
             </FormControl>
           </Grid>
 
+          {/* ... Other form fields remain the same ... */}
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <TextField
               fullWidth
@@ -763,22 +964,23 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
- 
+  const { flash } = usePage().props;
 
   const {
     rows,
-    filteredRows,
     loading,
     searchText,
     setSearchText,
     statistics
   } = useInventoryManager(items, auth);
 
-
+  const showAlert = (message, severity = "success") => {
+    setAlert({ open: true, message, severity });
+  };
 
   const handleExport = useCallback(() => {
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(filteredRows.map(item => ({
+    const ws = XLSX.utils.json_to_sheet(rows.map(item => ({
       'Item Code': item.item_code,
       'Name': item.name,
       'Category': categories.find(c => c.category_id === item.category_id)?.name,
@@ -792,7 +994,7 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
     XLSX.utils.book_append_sheet(wb, ws, 'Inventory Items');
     XLSX.writeFile(wb, `inventory_items_${moment().format('YYYYMMDD_HHmm')}.xlsx`);
     showAlert('Inventory data exported successfully');
-  }, [filteredRows, categories]);
+  }, [rows, categories]);
 
   const handleImport = (event) => {
     const file = event.target.files?.[0];
@@ -843,313 +1045,539 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
     }
   };
 
+  useEffect(() => {
+    if (flash.success) {
+      showAlert(flash.success, "success");
+    }
 
+    if (flash.error) {
+      showAlert(flash.error, "error");
+    }
+  }, [flash]);
 
-  const columns = [
-    {
-      field: 'item_id',
-      headerName: 'ID',
-      width: 120,
-      renderCell: (params) => {
-        const id = params.value;
-        const shortId = id ? id.substring(0, 8) : '';
-        return (
-          <Tooltip title={id} arrow>
-            <Typography variant="body2" noWrap sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
-              {shortId}
-            </Typography>
-          </Tooltip>
-        );
-      }
-    },
-    {
-      field: 'item_code',
-      headerName: 'CODE',
-      width: 120,
-      renderCell: (params) => {
-        const id = params.value;
-        const shortId = id ? id.substring(0, 8) : '';
-        return (
-          <Tooltip title={id} arrow>
-            <Typography variant="body2" noWrap sx={{ fontFamily: 'monospace' }}>
-              {shortId}
-            </Typography>
-          </Tooltip>
-        );
-      }
-    },
-    {
-      field: 'name',
-      headerName: 'ITEM',
-      width: 240,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-          <Typography variant="body2" fontWeight="bold" noWrap sx={{ color: 'text.primary' }}>
-            {params.value}
-          </Typography>
-          {params.row.description && (
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {params.row.description}
-            </Typography>
-          )}
-        </Box>
-      )
-    },
-    {
-      field: 'category_id',
-      headerName: 'CATEGORY',
-      width: 160,
-      renderCell: (params) => {
-        const category = categories.find(c => c.category_id === params.value);
-        const categoryColors = {
-          'Electronics': { color: 'primary', variant: 'filled' },
-          'Tools': { color: 'secondary', variant: 'filled' },
-          'Raw Materials': { color: 'success', variant: 'filled' },
-          'Consumables': { color: 'info', variant: 'filled' },
-          'Safety Equipment': { color: 'warning', variant: 'filled' },
-          'Office Supplies': { color: 'secondary', variant: 'outlined' }
-        };
-        
-        const categoryName = category?.name || 'Uncategorized';
-        const categoryStyle = categoryColors[categoryName] || { color: 'default', variant: 'outlined' };
-        
-        return (
-          <Chip
-            label={categoryName}
-            size="small"
-            variant={categoryStyle.variant}
-            color={categoryStyle.color}
-            sx={{ 
-              fontWeight: 600,
-              fontSize: '0.75rem',
-              ...(categoryStyle.variant === 'filled' && {
-                color: 'white'
-              })
-            }}
-          />
-        );
-      },
-    },
-    {
-      field: 'unit',
-      headerName: 'UNIT',
-      width: 160,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-          <Chip 
-            label={`₵${Number(params.row.unit_cost).toFixed(2)}`}
-            size="small"
-            variant="outlined"
-            color="success"
-            sx={{ fontWeight: 600 }}
-          />
-          <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-            {params.row.unit_of_measure}
-          </Typography>
-        </Box>
-      ),
-    },
+  const handleCloseAlert = () => {
+    setAlert((prev) => ({ ...prev, open: false }));
+  };
+
+//   const columns = [
+//       {
+//         field: 'item_id',
+//         headerName: 'ID',
+//         width: 120,
+//         renderCell: (params) => {
+//           const id = params.value;
+//           const shortId = id ? id.substring(0, 8) : '';
     
-    {
-      field: 'stock',
-      headerName: 'STOCK',
-      width: 180,
-      renderCell: (params) => (
-        <Box>
-          <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
-            <Chip 
-              label={`Min: ${params.row.minimum_stock_level}`}
-              size="small"
-              variant="outlined"
-              color="info"
-            />
-            <Chip 
-              label={`Max: ${params.row.maximum_stock_level}`}
-              size="small"
-              variant="outlined"
-              color="info"
-            />
-          </Box>
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
-            <Typography variant="caption" color="warning.main" fontWeight={600}>
-              Reorder: {params.row.reorder_point}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              | EOQ: {params.row.economic_order_quantity}
-            </Typography>
-          </Box>
-        </Box>
-      ),
-    },
+//           return (
+//             <Tooltip title={id} arrow>
+//               <Typography variant="body2" noWrap>
+//                 {shortId}
+//               </Typography>
+//             </Tooltip>
+//           );
+//         }
+//       },
+//       {
+//         field: 'item_code',
+//         headerName: 'CODE',
+//         width: 120,
+//         renderCell: (params) => {
+//           const id = params.value;
+//           const shortId = id ? id.substring(0, 8) : '';
+    
+//           return (
+//             <Tooltip title={id} arrow>
+//               <Typography variant="body2" noWrap>
+//                 {shortId}
+//               </Typography>
+//             </Tooltip>
+//           );
+//         }
+//       },
+//     {
+//       field: 'name',
+//       headerName: 'ITEM',
+//       width: 240,
+//       renderCell: (params) => (
+//         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+//           <Typography variant="body2" fontWeight="bold" noWrap>
+//             {params.value}
+//           </Typography>
+//           {params.row.description && (
+//             <Typography variant="caption" color="text.secondary" noWrap>
+//               {params.row.description}
+//             </Typography>
+//           )}
+//         </Box>
+//       )
+//     },
+//     {
+//       field: 'category_id',
+//       headerName: 'CATEGORY',
+//       width: 160,
+//       renderCell: (params) => {
+//         const category = categories.find(c => c.category_id === params.value);
+//         return (
+//           <Chip
+//             label={category?.name || 'Uncategorized'}
+//             size="small"
+//             variant="outlined"
+//           />
+//         );
+//       },
+//     },
+//     {
+//       field: 'unit',
+//       headerName: 'UNIT',
+//       width: 160,
+//       renderCell: (params) => (
+//         <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+//           <Typography variant="caption" color="text.secondary">
+//             ₵{Number(params.row.unit_cost).toFixed(2)}
+//           </Typography>
+//           <Typography variant="body2">
+//             {params.row.unit_of_measure}
+//           </Typography>
+//         </Box>
+//       ),
+//     },
+//     {
+//       field: 'stock',
+//       headerName: 'STOCK',
+//       width: 180,
+//       renderCell: (params) => (
+//         <Box>
+//           <Typography variant="body2">
+//             Min: {params.row.minimum_stock_level} | Max: {params.row.maximum_stock_level}
+//           </Typography>
+//           <Typography variant="caption" color="text.secondary">
+//             Reorder: {params.row.reorder_point} | EOQ: {params.row.economic_order_quantity}
+//           </Typography>
+//         </Box>
+//       ),
+//     },
+//     {
+//       field: 'value',
+//       headerName: 'VALUE',
+//       width: 180,
+//       renderCell: (params) => (
+//         <Box>
+//           <Typography variant="body2" fontWeight="600" color="primary.main">
+//             ₵{Number(params.row.current_value).toLocaleString()}
+//           </Typography>
+//           <Typography variant="caption" color="text.secondary">
+//             Weight: {params.row.weight_kg || 0}kg | Vol: {params.row.volume_cubic_m || 0}m³
+//           </Typography>
+//         </Box>
+//       ),
+//     },
+//     {
+//       field: 'hazard',
+//       headerName: 'HAZARD',
+//       width: 200,
+//       renderCell: (params) =>
+//         params.row.is_hazardous ? (
+//           <Box>
+//             <Chip label="Hazardous" size="small" color="error" />
+//             <Typography variant="caption" color="text.secondary" noWrap>
+//               {params.row.hazard_type}
+//             </Typography>
+//           </Box>
+//         ) : (
+//           <Chip label="Safe" size="small" color="success" variant="outlined" />
+//         ),
+//     },
+//     {
+//   field: 'storage',
+//   headerName: 'STORAGE & EXPIRY',
+//   width: 220,
+//   renderCell: (params) => {
+//     const { storage_conditions, expiry_date, shelf_life_days } = params.row;
 
-    {
-      field: 'value',
-      headerName: 'VALUE',
-      width: 150,
-      renderCell: (params) => (
-        <Box>
-          <Chip 
-            label={`₵${Number(params.row.current_value).toLocaleString()}`}
-            size="small"
-            color="success"
-            variant="filled"
-            sx={{ fontWeight: 700, color: 'white', mb: 0.5 }}
-          />
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Typography variant="caption" color="text.secondary">
-              {params.row.weight_kg || 0}kg
+//     return (
+//       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+//         {storage_conditions && (
+//           <Tooltip title={storage_conditions} arrow>
+//             <Typography
+//               variant="caption"
+//               noWrap
+//               sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}
+//             >
+//               {storage_conditions}
+//             </Typography>
+//           </Tooltip>
+//         )}
+//         {expiry_date && (
+//           <Typography variant="caption" color="error" noWrap>
+//             Exp: {new Date(expiry_date).toLocaleDateString()}
+//           </Typography>
+//         )}
+//         {shelf_life_days && (
+//           <Typography variant="caption" color="text.secondary" noWrap>
+//             Shelf: {shelf_life_days} days
+//           </Typography>
+//         )}
+//       </Box>
+//     );
+//   },
+// }
+// ,
+//     {
+//       field: 'abc_classification',
+//       headerName: 'CLASS',
+//       width: 100,
+//       align: 'center',
+//       headerAlign: 'center',
+//       renderCell: (params) => (
+//         <Chip
+//           label={params.value}
+//           size="small"
+//           color={
+//             params.value === 'A'
+//               ? 'error'
+//               : params.value === 'B'
+//               ? 'warning'
+//               : 'default'
+//           }
+//           variant="filled"
+//         />
+//       ),
+//     },
+//     {
+//       field: 'actions',
+//       headerName: 'ACTIONS',
+//       width: 120,
+//       sortable: false,
+//       align: 'center',
+//       headerAlign: 'center',
+//       renderCell: (params) => (
+//         <Stack direction="row" spacing={0.5}>
+//           <Tooltip title="Edit item">
+//             <IconButton
+//               size="small"
+//               onClick={() => handleEdit(params.row)}
+//               color="primary"
+//             >
+//               <EditIcon fontSize="small" />
+//             </IconButton>
+//           </Tooltip>
+//           <Tooltip title="Delete item">
+//             <IconButton
+//               size="small"
+//               color="error"
+//               onClick={() => {
+//                 setSelectedItem(params.row);
+//                 setDeleteDialogOpen(true);
+//               }}
+//             >
+//               <DeleteIcon fontSize="small" />
+//             </IconButton>
+//           </Tooltip>
+//         </Stack>
+//       ),
+//     },
+//   ];
+    const columns = [
+      {
+        field: 'item_id',
+        headerName: 'ID',
+        width: 120,
+        renderCell: (params) => {
+          const id = params.value;
+          const shortId = id ? id.substring(0, 8) : '';
+          return (
+            <Tooltip title={id} arrow>
+              <Typography variant="body2" noWrap sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                {shortId}
+              </Typography>
+            </Tooltip>
+          );
+        }
+      },
+      {
+        field: 'item_code',
+        headerName: 'CODE',
+        width: 120,
+        renderCell: (params) => {
+          const id = params.value;
+          const shortId = id ? id.substring(0, 8) : '';
+          return (
+            <Tooltip title={id} arrow>
+              <Typography variant="body2" noWrap sx={{ fontFamily: 'monospace' }}>
+                {shortId}
+              </Typography>
+            </Tooltip>
+          );
+        }
+      },
+      {
+        field: 'name',
+        headerName: 'ITEM',
+        width: 240,
+        renderCell: (params) => (
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Typography variant="body2" fontWeight="bold" noWrap sx={{ color: 'text.primary' }}>
+              {params.value}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              | {params.row.volume_cubic_m || 0}m³
-            </Typography>
-          </Box>
-        </Box>
-      ),
-    },
-    {
-      field: 'hazard',
-      headerName: 'HAZARD',
-      width: 120,
-      renderCell: (params) =>
-        params.row.is_hazardous ? (
-          <Box sx={{ textAlign: 'center' }}>
-            <Chip 
-              label="Hazardous" 
-              size="small" 
-              color="error" 
-              variant="filled"
-              sx={{ fontWeight: 700, color: 'white', mb: 0.5 }}
-            />
-            <Typography variant="caption" color="error.main" fontWeight={600} noWrap>
-              {params.row.hazard_type}
-            </Typography>
-          </Box>
-        ) : (
-          <Chip 
-            label="Safe" 
-            size="small" 
-            color="success" 
-            variant="filled"
-            sx={{ fontWeight: 600, color: 'white' }}
-          />
-        ),
-    },
-    {
-      field: 'storage',
-      headerName: 'STORAGE & EXPIRY',
-      width: 220,
-      renderCell: (params) => {
-        const { storage_conditions, expiry_date, shelf_life_days } = params.row;
-        
-        const isExpired = expiry_date && new Date(expiry_date) < new Date();
-
-        return (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            {storage_conditions && (
-              <Tooltip title={storage_conditions} arrow>
-                <Chip
-                  label="Storage Info"
-                  size="small"
-                  variant="outlined"
-                  color="info"
-                  sx={{ maxWidth: 200 }}
-                />
-              </Tooltip>
-            )}
-            {expiry_date && (
-              <Chip
-                label={`Exp: ${new Date(expiry_date).toLocaleDateString()}`}
-                size="small"
-                color={isExpired ? 'error' : 'warning'}
-                variant={isExpired ? 'filled' : 'outlined'}
-                sx={{ fontWeight: 600 }}
-              />
-            )}
-            {shelf_life_days && (
+            {params.row.description && (
               <Typography variant="caption" color="text.secondary" noWrap>
-                Shelf: {shelf_life_days} days
+                {params.row.description}
               </Typography>
             )}
           </Box>
-        );
+        )
       },
-    },
-    {
-      field: 'abc_classification',
-      headerName: 'CLASS',
-      width: 100,
-      align: 'center',
-      headerAlign: 'center',
-      renderCell: (params) => {
-        const classColors = {
-          'A': { color: 'error', variant: 'filled' },
-          'B': { color: 'warning', variant: 'filled' },
-          'C': { color: 'info', variant: 'filled' },
-          'D': { color: 'default', variant: 'outlined' }
-        };
-        
-        const classConfig = classColors[params.value] || { color: 'default', variant: 'outlined' };
-        
-        return (
-          <Chip
-            label={params.value}
-            size="small"
-            color={classConfig.color}
-            variant={classConfig.variant}
-            sx={{ 
-              fontWeight: 700,
-              minWidth: 40,
-              ...(classConfig.variant === 'filled' && {
-                color: 'white'
-              })
-            }}
-          />
-        );
+      {
+        field: 'category_id',
+        headerName: 'CATEGORY',
+        width: 160,
+        renderCell: (params) => {
+          const category = categories.find(c => c.category_id === params.value);
+          const categoryColors = {
+            'Electronics': { color: 'primary', variant: 'filled' },
+            'Tools': { color: 'secondary', variant: 'filled' },
+            'Raw Materials': { color: 'success', variant: 'filled' },
+            'Consumables': { color: 'info', variant: 'filled' },
+            'Safety Equipment': { color: 'warning', variant: 'filled' },
+            'Office Supplies': { color: 'secondary', variant: 'outlined' }
+          };
+          
+          const categoryName = category?.name || 'Uncategorized';
+          const categoryStyle = categoryColors[categoryName] || { color: 'default', variant: 'outlined' };
+          
+          return (
+            <Chip
+              label={categoryName}
+              size="small"
+              variant={categoryStyle.variant}
+              color={categoryStyle.color}
+              sx={{ 
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                ...(categoryStyle.variant === 'filled' && {
+                  color: 'white'
+                })
+              }}
+            />
+          );
+        },
       },
-    },
-    {
-      field: 'actions',
-      headerName: 'ACTIONS',
-      width: 120,
-      sortable: false,
-      align: 'center',
-      headerAlign: 'center',
-      renderCell: (params) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Edit item">
-            <IconButton
+      {
+        field: 'unit',
+        headerName: 'UNIT',
+        width: 160,
+        renderCell: (params) => (
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+            <Chip 
+              label={`₵${Number(params.row.unit_cost).toFixed(2)}`}
               size="small"
-              onClick={() => handleEdit(params.row)}
-              sx={{ 
-                color: 'primary.main',
-                backgroundColor: 'primary.light',
-                '&:hover': { backgroundColor: 'primary.main', color: 'white' }
-              }}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete item">
-            <IconButton
+              variant="outlined"
+              color="success"
+              sx={{ fontWeight: 600 }}
+            />
+            <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
+              {params.row.unit_of_measure}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        field: 'stock',
+        headerName: 'STOCK',
+        width: 180,
+        renderCell: (params) => (
+          <Box>
+            <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
+              <Chip 
+                label={`Min: ${params.row.minimum_stock_level}`}
+                size="small"
+                variant="outlined"
+                color="info"
+              />
+              <Chip 
+                label={`Max: ${params.row.maximum_stock_level}`}
+                size="small"
+                variant="outlined"
+                color="info"
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Typography variant="caption" color="warning.main" fontWeight={600}>
+                Reorder: {params.row.reorder_point}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                | EOQ: {params.row.economic_order_quantity}
+              </Typography>
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        field: 'value',
+        headerName: 'VALUE',
+        width: 180,
+        renderCell: (params) => (
+          <Box>
+            <Chip 
+              label={`₵${Number(params.row.current_value).toLocaleString()}`}
               size="small"
+              color="success"
+              variant="filled"
+              sx={{ fontWeight: 700, color: 'white', mb: 0.5 }}
+            />
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                {params.row.weight_kg || 0}kg
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                | {params.row.volume_cubic_m || 0}m³
+              </Typography>
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        field: 'hazard',
+        headerName: 'HAZARD',
+        width: 200,
+        renderCell: (params) =>
+          params.row.is_hazardous ? (
+            <Box sx={{ textAlign: 'center' }}>
+              <Chip 
+                label="Hazardous" 
+                size="small" 
+                color="error" 
+                variant="filled"
+                sx={{ fontWeight: 700, color: 'white', mb: 0.5 }}
+              />
+              <Typography variant="caption" color="error.main" fontWeight={600} noWrap>
+                {params.row.hazard_type}
+              </Typography>
+            </Box>
+          ) : (
+            <Chip 
+              label="Safe" 
+              size="small" 
+              color="success" 
+              variant="filled"
+              sx={{ fontWeight: 600, color: 'white' }}
+            />
+          ),
+      },
+      {
+        field: 'storage',
+        headerName: 'STORAGE & EXPIRY',
+        width: 220,
+        renderCell: (params) => {
+          const { storage_conditions, expiry_date, shelf_life_days } = params.row;
+          const isExpired = expiry_date && new Date(expiry_date) < new Date();
+
+          return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {storage_conditions && (
+                <Tooltip title={storage_conditions} arrow>
+                  <Chip
+                    label="Storage Info"
+                    size="small"
+                    variant="outlined"
+                    color="info"
+                    sx={{ maxWidth: 200 }}
+                  />
+                </Tooltip>
+              )}
+              {expiry_date && (
+                <Chip
+                  label={`Exp: ${new Date(expiry_date).toLocaleDateString()}`}
+                  size="small"
+                  color={isExpired ? 'error' : 'warning'}
+                  variant={isExpired ? 'filled' : 'outlined'}
+                  sx={{ fontWeight: 600 }}
+                />
+              )}
+              {shelf_life_days && (
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  Shelf: {shelf_life_days} days
+                </Typography>
+              )}
+            </Box>
+          );
+        },
+      },
+      {
+        field: 'abc_classification',
+        headerName: 'CLASS',
+        width: 100,
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: (params) => {
+          const classColors = {
+            'A': { color: 'error', variant: 'filled' },
+            'B': { color: 'warning', variant: 'filled' },
+            'C': { color: 'info', variant: 'filled' },
+            'D': { color: 'default', variant: 'outlined' }
+          };
+          
+          const classConfig = classColors[params.value] || { color: 'default', variant: 'outlined' };
+          
+          return (
+            <Chip
+              label={params.value}
+              size="small"
+              color={classConfig.color}
+              variant={classConfig.variant}
               sx={{ 
-                color: 'error.main',
-                backgroundColor: 'error.light',
-                '&:hover': { backgroundColor: 'error.main', color: 'white' }
+                fontWeight: 700,
+                minWidth: 40,
+                ...(classConfig.variant === 'filled' && {
+                  color: 'white'
+                })
               }}
-              onClick={() => {
-                setSelectedItem(params.row);
-                setDeleteDialogOpen(true);
-              }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
-  
+            />
+          );
+        },
+      },
+      {
+        field: 'actions',
+        headerName: 'ACTIONS',
+        width: 120,
+        sortable: false,
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: (params) => (
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title="Edit item">
+              <IconButton
+                size="small"
+                onClick={() => handleEdit(params.row)}
+                sx={{ 
+                  color: 'primary.main',
+                  backgroundColor: 'primary.light',
+                  '&:hover': { backgroundColor: 'primary.main', color: 'white' }
+                }}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete item">
+              <IconButton
+                size="small"
+                sx={{ 
+                  color: 'error.main',
+                  backgroundColor: 'error.light',
+                  '&:hover': { backgroundColor: 'error.main', color: 'white' }
+                }}
+                onClick={() => {
+                  setSelectedItem(params.row);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        ),
+      },
+    ];
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -1161,29 +1589,106 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
     >
       <Fade in timeout={500}>
         <Box>
-          {/* <Notification 
+          <Notification 
             open={alert.open} 
             severity={alert.severity} 
             message={alert.message}
             onClose={handleCloseAlert}
-          /> */}
-            <Header
-            header_text={"Inventory Items"}
-            body_text={"Manage your inventory items, track stock levels, and monitor item performance"}
-            handleCreate={handleCreate}
-            handleImport={handleImport}
-            handleExport={handleExport}
-            onClick={() => setSearchText('')}
-            icon={<Inventory sx={{ fontSize: 28 }} />}
-            label={`${filteredRows?.length||0} items found`}
           />
+          
+          <Box
+            sx={{
+              mb: 3,
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: "background.paper",
+              boxShadow: 1,
+            }}
+          >
+            <Grid container spacing={2} alignItems="center" justifyContent="space-between">
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                  <Inventory color="primary" fontSize="large" />
+                  <Box>
+                    <Typography variant="h5" fontWeight={700} color="text.primary">
+                      Inventory Items
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      Manage your inventory items, track stock levels, and monitor item performance
+                    </Typography>
+                  </Box>
+                  {searchText && (
+                    <Chip
+                      label={`${rows.length} items filtered`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ fontWeight: 500 }}
+                    />
+                  )}
+                </Box>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: "auto" }}>
+                <Grid
+                  container
+                  spacing={1.5}
+                  alignItems="center"
+                  justifyContent={{ xs: "flex-start", md: "flex-end" }}
+                  wrap="wrap"
+                >
+                  <Grid>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddCircleOutline />}
+                      onClick={handleCreate}
+                      size="small"
+                      sx={{ borderRadius: 2, textTransform: "none" }}
+                    >
+                      New Item
+                    </Button>
+                  </Grid>
+                  <Grid>
+                    <Button
+                      size="small"
+                      startIcon={<CloudUpload />}
+                      component="label"
+                      variant="outlined"
+                      sx={{ borderRadius: 2, textTransform: "none" }}
+                    >
+                      Import
+                      <input
+                        hidden
+                        accept=".xlsx,.xls,.csv"
+                        type="file"
+                        onChange={handleImport}
+                      />
+                    </Button>
+                  </Grid>
+                  <Grid>
+                    <Button
+                      size="small"
+                      startIcon={<Download />}
+                      onClick={handleExport}
+                      variant="outlined"
+                      sx={{ borderRadius: 2, textTransform: "none" }}
+                    >
+                      Export
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Box>
+
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <SummaryCard
                 title="Total Items"
                 value={statistics.totalItems??0}
                 icon={<StockIcon />}
-                color={theme.palette.primary.main}
+                // color={theme.palette.primary.main}
+                color={summaryColors.primary}
                 subtitle="All inventory items"
               />
             </Grid>
@@ -1216,15 +1721,266 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
             </Grid>
           </Grid>
 
-          <DataTable 
-            filteredRows={filteredRows} 
-            columns={columns}
-            searchText={searchText}
-            setSearchText={setSearchText}
-            loading={loading}
-            rows={rows}
-          />
-
+          {/* <Paper sx={{
+            height: "100%",
+            width: "100%",
+            borderRadius: 2,
+            overflow: 'hidden',
+            boxShadow: 3,
+          }}>
+            <CustomToolbar
+              searchText={searchText}
+              onSearchChange={setSearchText}
+              loading={loading}
+              filteredRows={rows}
+              rows={rows}
+            />
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              loading={loading}
+              pageSizeOptions={[10, 25, 50, 100]}
+              initialState={{
+                pagination: { paginationModel: { pageSize: 25 } },
+                sorting: { sortModel: [{ field: 'updated_at', sort: 'desc' }] },
+              }}
+              sx={{
+                border: 'none',
+                '& .MuiDataGrid-cell': {
+                  borderBottom: `1px solid ${theme.palette.divider}`,
+                },
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: theme.palette.grey[50],
+                  borderBottom: `2px solid ${theme.palette.divider}`,
+                },
+                '& .MuiDataGrid-virtualScroller': {
+                  backgroundColor: theme.palette.background.paper,
+                },
+              }}
+            />
+            
+            {loading && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  zIndex: 1,
+                }}
+              >
+                <Stack spacing={2} alignItems="center">
+                  <CircularProgress size={40} />
+                  <Typography variant="body2" color="text.secondary">
+                    Loading inventory items...
+                  </Typography>
+                </Stack>
+              </Box>
+            )}
+          </Paper> */}
+          <Paper sx={{
+            height: "100%",
+            width: "100%",
+            borderRadius: 3,
+            overflow: 'hidden',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
+            border: '1px solid rgba(255,255,255,0.8)',
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8faff 100%)',
+            backdropFilter: 'blur(10px)',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+              zIndex: 2
+            }
+          }}>
+            {/* Custom Toolbar */}
+            <CustomToolbar
+              searchText={searchText}
+              onSearchChange={setSearchText}
+              loading={loading}
+              filteredRows={rows}
+              rows={rows}
+            />
+            
+            {/* DataGrid */}
+            <Box sx={{ position: 'relative', height: 'calc(100% - 80px)' }}>
+              <DataGrid
+                rows={rows}
+                columns={columns}
+                loading={false} // We handle loading state manually
+                pageSizeOptions={[10, 25, 50, 100]}
+                initialState={{
+                  pagination: { paginationModel: { pageSize: 25 } },
+                  sorting: { sortModel: [{ field: 'updated_at', sort: 'desc' }] },
+                }}
+                sx={{
+                  border: 'none',
+                  '& .MuiDataGrid-main': {
+                    backgroundColor: 'transparent',
+                  },
+                  '& .MuiDataGrid-cell': {
+                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                    py: 1.5,
+                    fontSize: '0.875rem',
+                    transition: 'all 0.2s ease',
+                    '&:focus': {
+                      outline: 'none',
+                    },
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                    }
+                  },
+                  '& .MuiDataGrid-row': {
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                      transform: 'translateX(2px)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    },
+                    '&.Mui-selected': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                      }
+                    }
+                  },
+                  '& .MuiDataGrid-columnHeaders': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.03),
+                    borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                    color: theme.palette.text.primary,
+                    '& .MuiDataGrid-columnHeader': {
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.06),
+                      },
+                      '&:focus': {
+                        outline: 'none',
+                      },
+                      '&.MuiDataGrid-columnHeader--sorted': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                      }
+                    }
+                  },
+                  '& .MuiDataGrid-virtualScroller': {
+                    backgroundColor: 'transparent',
+                  },
+                  '& .MuiDataGrid-footerContainer': {
+                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                    backgroundColor: alpha(theme.palette.grey[50], 0.8),
+                  },
+                  '& .MuiDataGrid-toolbarContainer': {
+                    padding: theme.spacing(2),
+                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                    backgroundColor: alpha(theme.palette.background.paper, 0.6),
+                  },
+                  '& .MuiTablePagination-root': {
+                    fontSize: '0.875rem',
+                  },
+                  '& .MuiCheckbox-root': {
+                    color: alpha(theme.palette.primary.main, 0.6),
+                    '&.Mui-checked': {
+                      color: theme.palette.primary.main,
+                    }
+                  },
+                  '& .MuiDataGrid-overlay': {
+                    backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                  }
+                }}
+                disableRowSelectionOnClick
+                slots={{
+                  loadingOverlay: () => null, // Disable default loading overlay
+                  noRowsOverlay: () => (
+                    <Stack spacing={1} alignItems="center" justifyContent="center" sx={{ height: '100%' }}>
+                      <Inventory2 sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5 }} />
+                      <Typography variant="h6" color="text.secondary">
+                        No inventory items found
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Try adjusting your search or filters
+                      </Typography>
+                    </Stack>
+                  ),
+                  noResultsOverlay: () => (
+                    <Stack spacing={1} alignItems="center" justifyContent="center" sx={{ height: '100%' }}>
+                      <SearchOff sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5 }} />
+                      <Typography variant="h6" color="text.secondary">
+                        No results found
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        No items match your search criteria
+                      </Typography>
+                    </Stack>
+                  )
+                }}
+              />
+              
+              {/* Custom Loading Overlay */}
+              {loading && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.default, 0.9)} 100%)`,
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 1,
+                    borderRadius: '0 0 12px 12px',
+                  }}
+                >
+                  <Stack spacing={2} alignItems="center">
+                    <Box sx={{ position: 'relative' }}>
+                      <CircularProgress 
+                        size={50}
+                        thickness={4}
+                        sx={{
+                          color: 'primary.main',
+                          background: `conic-gradient(${alpha(theme.palette.primary.main, 0.2)} 0%, transparent 50%)`,
+                          borderRadius: '50%',
+                        }}
+                      />
+                      <Inventory2Icon 
+                        sx={{ 
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          fontSize: 20,
+                          color: 'primary.main',
+                          opacity: 0.8
+                        }} 
+                      />
+                    </Box>
+                    <Box textAlign="center">
+                      <Typography variant="h6" fontWeight={600} color="text.primary" gutterBottom>
+                        Loading Inventory
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Fetching your inventory items...
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              )}
+            </Box>
+          </Paper>
           <ItemFormDialog
             open={dialogOpen}
             onClose={() => setDialogOpen(false)}
