@@ -338,158 +338,354 @@ export default function Suppliers({ suppliers, auth, universities }) {
     };
   }, [rows]);
 
-  // Column definitions
-  const columns = useMemo(() => [
-    { field: 'id', headerName: 'ID', width: 70 },
-    { 
-      field: 'supplier_code', 
-      headerName: 'Supplier Code', 
-      width: 130,
-    },
-    { 
-      field: 'legal_name', 
-      headerName: 'Legal Name', 
-      width: 180,
-    },
-    { 
-      field: 'trade_name', 
-      headerName: 'Trade Name', 
-      width: 150,
-      renderCell: (params) => params.value || '-'
-    },
-    { 
-      field: 'supplier_type', 
-      headerName: 'Type', 
-      width: 120,
-      renderCell: (params) => {
-        const type = supplierTypes.find(t => t.value === params.value);
-        return (
-          <Chip 
-            label={type?.label || params.value} 
-            size="small" 
-            color={type?.color || 'default'}
-            variant="outlined"
-          />
-        );
-      }
-    },
-    { 
-      field: 'university_id', 
-      headerName: 'University', 
-      width: 150,
-      renderCell: (params) => {
-        const university = universities?.find(u => u.university_id === params.value);
-        return university ? university.name : params.value;
-      }
-    },
-    { 
-      field: 'contact_person', 
-      headerName: 'Contact Person', 
-      width: 150,
-    },
-    { 
-      field: 'email', 
-      headerName: 'Email', 
-      width: 180,
-      renderCell: (params) => (
-        <Link href={`mailto:${params.value}`} underline="hover">
-          {params.value}
-        </Link>
-      )
-    },
-    { 
-      field: 'phone', 
-      headerName: 'Phone', 
-      width: 130,
-    },
-    { 
-      field: 'city', 
-      headerName: 'City', 
-      width: 120,
-    },
-    { 
-      field: 'country', 
-      headerName: 'Country', 
-      width: 100,
-    },
-    { 
-      field: 'credit_limit', 
-      headerName: 'Credit Limit', 
-      width: 120, 
-      type: 'number',
-      renderCell: (params) => `$${Number(params.value).toLocaleString()}`
-    },
-    { 
-      field: 'rating', 
-      headerName: 'Rating', 
-      width: 140,
-      renderCell: (params) => (
-        <Box display="flex" alignItems="center">
-          <Rating value={params.value} size="small" readOnly />
-          <Typography variant="body2" sx={{ ml: 1 }}>
-            ({params.value.toFixed(1)})
+  // // Column definitions
+  // const columns = useMemo(() => [
+  //   { field: 'id', headerName: 'ID', width: 70 },
+  //   { 
+  //     field: 'supplier_code', 
+  //     headerName: 'Supplier Code', 
+  //     width: 130,
+  //   },
+  //   { 
+  //     field: 'legal_name', 
+  //     headerName: 'Legal Name', 
+  //     width: 180,
+  //   },
+  //   { 
+  //     field: 'trade_name', 
+  //     headerName: 'Trade Name', 
+  //     width: 150,
+  //     renderCell: (params) => params.value || '-'
+  //   },
+  //   { 
+  //     field: 'supplier_type', 
+  //     headerName: 'Type', 
+  //     width: 120,
+  //     renderCell: (params) => {
+  //       const type = supplierTypes.find(t => t.value === params.value);
+  //       return (
+  //         <Chip 
+  //           label={type?.label || params.value} 
+  //           size="small" 
+  //           color={type?.color || 'default'}
+  //           variant="outlined"
+  //         />
+  //       );
+  //     }
+  //   },
+  //   { 
+  //     field: 'university_id', 
+  //     headerName: 'University', 
+  //     width: 150,
+  //     renderCell: (params) => {
+  //       const university = universities?.find(u => u.university_id === params.value);
+  //       return university ? university.name : params.value;
+  //     }
+  //   },
+  //   { 
+  //     field: 'contact_person', 
+  //     headerName: 'Contact Person', 
+  //     width: 150,
+  //   },
+  //   { 
+  //     field: 'email', 
+  //     headerName: 'Email', 
+  //     width: 180,
+  //     renderCell: (params) => (
+  //       <Link href={`mailto:${params.value}`} underline="hover">
+  //         {params.value}
+  //       </Link>
+  //     )
+  //   },
+  //   { 
+  //     field: 'phone', 
+  //     headerName: 'Phone', 
+  //     width: 130,
+  //   },
+  //   { 
+  //     field: 'city', 
+  //     headerName: 'City', 
+  //     width: 120,
+  //   },
+  //   { 
+  //     field: 'country', 
+  //     headerName: 'Country', 
+  //     width: 100,
+  //   },
+  //   { 
+  //     field: 'credit_limit', 
+  //     headerName: 'Credit Limit', 
+  //     width: 120, 
+  //     type: 'number',
+  //     renderCell: (params) => `$${Number(params.value).toLocaleString()}`
+  //   },
+  //   { 
+  //     field: 'rating', 
+  //     headerName: 'Rating', 
+  //     width: 140,
+  //     renderCell: (params) => (
+  //       <Box display="flex" alignItems="center">
+  //         <Rating value={params.value} size="small" readOnly />
+  //         <Typography variant="body2" sx={{ ml: 1 }}>
+  //           ({params.value.toFixed(1)})
+  //         </Typography>
+  //       </Box>
+  //     )
+  //   },
+  //   { 
+  //     field: 'is_approved', 
+  //     headerName: 'Approved', 
+  //     width: 100,
+  //     type: 'boolean',
+  //     renderCell: (params) => (
+  //       params.value ? 
+  //         <ApprovedIcon color="success" /> : 
+  //         <NotApprovedIcon color="disabled" />
+  //     )
+  //   },
+  //   { 
+  //     field: 'is_active', 
+  //     headerName: 'Active', 
+  //     width: 80,
+  //     type: 'boolean',
+  //     renderCell: (params) => (
+  //       <Chip 
+  //         label={params.value ? 'Yes' : 'No'} 
+  //         size="small" 
+  //         color={params.value ? 'success' : 'default'}
+  //         variant={params.value ? 'filled' : 'outlined'}
+  //       />
+  //     )
+  //   },
+  //   { 
+  //     field: 'next_evaluation_date', 
+  //     headerName: 'Next Evaluation', 
+  //     width: 140,
+  //     renderCell: (params) => params.value || '-'
+  //   },
+  //   {
+  //     field: 'actions',
+  //     headerName: 'Actions',
+  //     width: 150,
+  //     sortable: false,
+  //     filterable: false,
+  //     type: 'actions',
+  //     getActions: (params) => [
+  //       <GridActionsCellItem
+  //         icon={<Tooltip title="View"><ViewIcon fontSize="small" /></Tooltip>}
+  //         label="View"
+  //         onClick={() => handleView(params.row)}
+  //       />,
+  //       <GridActionsCellItem
+  //         icon={<Tooltip title="Edit"><EditIcon fontSize="small" /></Tooltip>}
+  //         label="Edit"
+  //         onClick={() => handleEdit(params.row)}
+  //       />,
+  //       <GridActionsCellItem
+  //         icon={<Tooltip title="Delete"><DeleteIcon fontSize="small" /></Tooltip>}
+  //         label="Delete"
+  //         onClick={() => handleDeleteClick(params.row)}
+  //         color="error"
+  //       />,
+  //     ],
+  //   },
+  // ], [universities, supplierTypes]);
+// Column definitions
+const columns = useMemo(() => [
+  { 
+    field: 'id', 
+    headerName: 'ID', 
+    width: 70,
+    renderCell: (params) => (
+      <Tooltip title={params.value} placement="top">
+        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+          {params.value.slice(0, 4)}...
+        </Typography>
+      </Tooltip>
+    )
+  },
+  { 
+    field: 'supplier_info', 
+    headerName: 'Supplier Info', 
+    width: 200,
+    renderCell: (params) => (
+      <Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          {params.row.supplier_code}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" noWrap>
+          {params.row.legal_name}
+        </Typography>
+        {params.row.trade_name && (
+          <Typography variant="caption" color="text.secondary">
+            Trade: {params.row.trade_name}
+          </Typography>
+        )}
+      </Box>
+    )
+  },
+  { 
+    field: 'supplier_type', 
+    headerName: 'Type', 
+    width: 120,
+    renderCell: (params) => {
+      const type = supplierTypes.find(t => t.value === params.value);
+      return (
+        <Chip 
+          label={type?.label || params.value} 
+          size="small" 
+          color={type?.color || 'default'}
+          variant="filled"
+          sx={{ fontWeight: 500 }}
+        />
+      );
+    }
+  },
+  { 
+    field: 'university_contact', 
+    headerName: 'University & Contact', 
+    width: 220,
+    renderCell: (params) => {
+      const university = universities?.find(u => u.university_id === params.row.university_id);
+      return (
+        <Box>
+          <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+            {university?.name || params.row.university_id}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {params.row.contact_person}
           </Typography>
         </Box>
-      )
-    },
-    { 
-      field: 'is_approved', 
-      headerName: 'Approved', 
-      width: 100,
-      type: 'boolean',
-      renderCell: (params) => (
-        params.value ? 
-          <ApprovedIcon color="success" /> : 
-          <NotApprovedIcon color="disabled" />
-      )
-    },
-    { 
-      field: 'is_active', 
-      headerName: 'Active', 
-      width: 80,
-      type: 'boolean',
-      renderCell: (params) => (
+      );
+    }
+  },
+  { 
+    field: 'contact_info', 
+    headerName: 'Contact Info', 
+    width: 180,
+    renderCell: (params) => (
+      <Box>
+        <Link href={`mailto:${params.row.email}`} underline="hover" variant="body2">
+          {params.row.email}
+        </Link>
+        <Typography variant="body2" color="text.secondary">
+          {params.row.phone}
+        </Typography>
+      </Box>
+    )
+  },
+  { 
+    field: 'location', 
+    headerName: 'Location', 
+    width: 140,
+    renderCell: (params) => (
+      <Box>
+        <Typography variant="body2">
+          {params.row.city}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {params.row.country}
+        </Typography>
+      </Box>
+    )
+  },
+  { 
+    field: 'financial_status', 
+    headerName: 'Financial Status', 
+    width: 150,
+    renderCell: (params) => (
+      <Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          ${Number(params.row.credit_limit).toLocaleString()}
+        </Typography>
+        <Box display="flex" alignItems="center" sx={{ mt: 0.5 }}>
+          <Rating value={params.row.rating} size="small" readOnly />
+          <Typography variant="caption" sx={{ ml: 0.5 }}>
+            {params.row.rating.toFixed(1)}
+          </Typography>
+        </Box>
+      </Box>
+    )
+  },
+  { 
+    field: 'status', 
+    headerName: 'Status', 
+    width: 120,
+    renderCell: (params) => (
+      <Box sx={{ textAlign: 'center' }}>
+        <Box sx={{ mb: 1 }}>
+          {params.row.is_approved ? 
+            <Tooltip title="Approved">
+              <ApprovedIcon color="success" />
+            </Tooltip> : 
+            <Tooltip title="Not Approved">
+              <NotApprovedIcon color="disabled" />
+            </Tooltip>
+          }
+        </Box>
         <Chip 
-          label={params.value ? 'Yes' : 'No'} 
+          label={params.row.is_active ? 'Active' : 'Inactive'} 
           size="small" 
-          color={params.value ? 'success' : 'default'}
-          variant={params.value ? 'filled' : 'outlined'}
+          color={params.row.is_active ? 'success' : 'default'}
+          variant="filled"
+          sx={{ fontWeight: 500, fontSize: '0.7rem' }}
         />
-      )
-    },
-    { 
-      field: 'next_evaluation_date', 
-      headerName: 'Next Evaluation', 
-      width: 140,
-      renderCell: (params) => params.value || '-'
-    },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 150,
-      sortable: false,
-      filterable: false,
-      type: 'actions',
-      getActions: (params) => [
-        <GridActionsCellItem
-          icon={<Tooltip title="View"><ViewIcon fontSize="small" /></Tooltip>}
-          label="View"
-          onClick={() => handleView(params.row)}
-        />,
-        <GridActionsCellItem
-          icon={<Tooltip title="Edit"><EditIcon fontSize="small" /></Tooltip>}
-          label="Edit"
-          onClick={() => handleEdit(params.row)}
-        />,
-        <GridActionsCellItem
-          icon={<Tooltip title="Delete"><DeleteIcon fontSize="small" /></Tooltip>}
-          label="Delete"
-          onClick={() => handleDeleteClick(params.row)}
-          color="error"
-        />,
-      ],
-    },
-  ], [universities, supplierTypes]);
+      </Box>
+    )
+  },
+  { 
+    field: 'dates', 
+    headerName: 'Dates', 
+    width: 150,
+    renderCell: (params) => (
+      <Box>
+        {params.row.next_evaluation_date ? (
+          <Tooltip title={`Next evaluation: ${params.row.next_evaluation_date}`}>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              Eval: {params.row.next_evaluation_date||""}
+            </Typography>
+          </Tooltip>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            No eval scheduled
+          </Typography>
+        )}
+        {/* You can add created_at/updated_at here if available */}
+        <Typography variant="caption" color="text.secondary">
+          Updated: {params.row.updated_at || ""}
+        </Typography>
+      </Box>
+    )
+  },
+  {
+    field: 'actions',
+    headerName: 'Actions',
+    width: 120,
+    sortable: false,
+    filterable: false,
+    type: 'actions',
+    getActions: (params) => [
+      <GridActionsCellItem
+        icon={<Tooltip title="View"><ViewIcon fontSize="small" /></Tooltip>}
+        label="View"
+        onClick={() => handleView(params.row)}
+        sx={{ color: 'primary.main' }}
+      />,
+      <GridActionsCellItem
+        icon={<Tooltip title="Edit"><EditIcon fontSize="small" /></Tooltip>}
+        label="Edit"
+        onClick={() => handleEdit(params.row)}
+        sx={{ color: 'warning.main' }}
+      />,
+      <GridActionsCellItem
+        icon={<Tooltip title="Delete"><DeleteIcon fontSize="small" /></Tooltip>}
+        label="Delete"
+        onClick={() => handleDeleteClick(params.row)}
+        sx={{ color: 'error.main' }}
+      />,
+    ],
+  },
+], [universities, supplierTypes]);
 
   // Filter rows based on search text
   const filteredRows = useMemo(() => {
@@ -707,7 +903,7 @@ export default function Suppliers({ suppliers, auth, universities }) {
             <Grid size={{ xs: 12, sm: 6, md: 6 }}>
               <AdvancedSummaryCard 
                 title="Credit Limit"
-                value={`$${(summaryData.totalCreditLimit / 1000).toFixed(0)}K`}
+                value={`₵${(summaryData.totalCreditLimit / 1000).toFixed(0)}K`}
                 trend={{ value: 8, isPositive: false }}
                 icon={<AccountBalanceWallet />}
                 color={theme.palette.info.main}

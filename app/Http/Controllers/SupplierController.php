@@ -54,6 +54,8 @@ class SupplierController extends Controller
                         'is_active'             => $supplier->is_active,
                         'notes'                 => $supplier->notes,
                         'approved_by'           => $supplier->approved_by,
+                        'created_at'           => $supplier->created_at,
+                        'updated_at'           => $supplier->updated_at,
                     ];
 
             });
