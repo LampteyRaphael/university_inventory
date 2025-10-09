@@ -8,10 +8,13 @@ use App\Models\InventoryItem;
 use App\Models\ItemCategory;
 use App\Models\University;
 use App\Repositories\ItemRepository;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ItemController extends Controller
@@ -66,26 +69,16 @@ class ItemController extends Controller
         try {
 
             $validated = $request->validated();
-            $item = $this->itemRepository->create($validated);
+            $validated['created_by']=Auth::user()->user_id;
+            $this->itemRepository->create($validated);
 
-            return redirect()
-                ->route('item.index')
-                ->with('success', 'Item created successfully!');
-            // return redirect()->back()->with('success', 'Item created successfully!');
+            return redirect()->route('item.index')->with('success', 'Item created successfully!');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // return response()->json([
-            //     'success' => false,
-            //     'message' => 'Validation failed',
-            //     'errors' => $e->errors()
-            // ], 422);
-                        return redirect()->back()->with('errors', $e->errors());
+        } catch (ValidationException $e) {
+     
+            return redirect()->back()->with('errors', $e->errors());
 
-        } catch (\Exception $e) {
-            // return response()->json([
-            //     'success' => false,
-            //     'message' => 'Failed to create item: ' . $e->getMessage()
-            // ], 500);
+        } catch (Exception $e) {
             return redirect()->back()->with('errors', 'Failed to create item: ' . $e->getMessage());
 
         }

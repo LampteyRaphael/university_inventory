@@ -1160,18 +1160,12 @@ import {
   Typography,
   TextField,
   Button,
-  Stack,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
   Card,
-  CardContent,
   Grid,
   IconButton,
   Slide,
@@ -1180,36 +1174,25 @@ import {
   Avatar,
   LinearProgress,
   InputAdornment,
-  FormHelperText,
   Switch,
   FormControlLabel,
-  Paper,
   useTheme,
   useMediaQuery,
-  alpha,
   CircularProgress,
 } from "@mui/material";
 import {
-  DataGrid,
-  GridToolbarContainer,
-  GridToolbarExport,
-  GridToolbarColumnsButton,
-  GridToolbarFilterButton,
   GridActionsCellItem,
 } from "@mui/x-data-grid";
 import * as XLSX from "xlsx";
 import moment from "moment";
 import { useForm, router } from "@inertiajs/react";
 import {
-  UploadFile as UploadFileIcon,
   Add as AddIcon,
   Save as SaveIcon,
   Close as CloseIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  Refresh as RefreshIcon,
   AccountBalance as UniversityIcon,
-  Search as SearchIcon,
   Home as HomeIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
@@ -1222,100 +1205,17 @@ import {
   Public as CountryIcon,
   Map as CityIcon,
   CorporateFare as BuildingIcon,
-  CloudUpload as ImportIcon,
-  CloudDownload as ExportIcon,
   Warning as WarningIcon,
-} from "@mui/icons-material";
+  AddCircleOutline,
+  CloudUpload,
+  Download,
+  Person} from "@mui/icons-material";
+import SummaryCard from "@/Components/SummaryCard";
+import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
+import PageHeader from "@/Components/PageHeader";
+import Notification from "@/Components/Notification";
 
-// Modern Card Component
-const ModernCard = ({ children, sx = {} }) => (
-  <Card sx={{
-    borderRadius: 3,
-    p: 2,
-    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-    border: '1px solid rgba(0,0,0,0.04)',
-    transition: 'all 0.3s ease',
-    '&:hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-    },
-    ...sx
-  }}>
-    {children}
-  </Card>
-);
 
-// Summary Card Component
-const SummaryCard = ({ title, value, icon, color, subtitle }) => (
-  <ModernCard>
-    <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography variant="h4" fontWeight={800} color={color} sx={{ mb: 0.5 }}>
-            {value}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" fontWeight={600}>
-            {title}
-          </Typography>
-          {subtitle && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-              {subtitle}
-            </Typography>
-          )}
-        </Box>
-        <Avatar sx={{ 
-          bgcolor: alpha(color, 0.1), 
-          color: color,
-          width: 48,
-          height: 48
-        }}>
-          {icon}
-        </Avatar>
-      </Stack>
-    </CardContent>
-  </ModernCard>
-);
-
-// Custom Toolbar Component
-const CustomToolbar = ({ onCreate, onImport, onRefresh, loading }) => (
-  <GridToolbarContainer sx={{ p: 2, gap: 1, flexWrap: 'wrap' }}>
-    <Button 
-      variant="contained" 
-      startIcon={<AddIcon />} 
-      onClick={onCreate}
-      size="small"
-      disabled={loading}
-    >
-      Add University
-    </Button>
-    <Button 
-      variant="outlined" 
-      startIcon={<ImportIcon />} 
-      onClick={onImport}
-      size="small"
-      disabled={loading}
-    >
-      Import
-    </Button>
-    <GridToolbarExport 
-      printOptions={{ disableToolbarButton: true }}
-      slotProps={{ tooltip: { title: 'Export to Excel' } }}
-    />
-    <GridToolbarColumnsButton />
-    <GridToolbarFilterButton />
-    <Box sx={{ flexGrow: 1 }} />
-    <Button 
-      variant="outlined" 
-      startIcon={<RefreshIcon />} 
-      onClick={onRefresh}
-      size="small"
-      disabled={loading}
-    >
-      Refresh
-    </Button>
-  </GridToolbarContainer>
-);
 
 // Delete Confirmation Dialog Component
 const DeleteConfirmationDialog = ({ open, onClose, university, onConfirm, loading }) => (
@@ -2095,10 +1995,97 @@ export default function Universities({ universities = [], auth, departments = []
     });
   }, []);
 
-  const triggerFileInput = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
+  const handleCloseAlert = () => {
+    setAlert(prev => ({ ...prev, open: false }));
+  };
 
+  // Create action buttons for header
+    const actionButtons = [
+      <Button
+        key="new-department"
+        variant="contained"
+        startIcon={<AddCircleOutline />}
+        onClick={handleCreate}
+        size="medium"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+          '&:hover': {
+            boxShadow: '0 8px 30px rgba(102, 126, 234, 0.4)',
+            transform: 'translateY(-1px)',
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        New University
+      </Button>,
+      <Button
+        key="import"
+        size="medium"
+        startIcon={<CloudUpload />}
+        component="label"
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'primary.main',
+            backgroundColor: 'rgba(102, 126, 234, 0.04)',
+            color: 'primary.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Import
+        <input
+          hidden
+          accept=".xlsx,.xls,.csv"
+          type="file"
+          onChange={handleUpload}
+        />
+      </Button>,
+      <Button
+        key="export"
+        size="medium"
+        startIcon={<Download />}
+        onClick={handleExport}
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'success.main',
+            backgroundColor: 'rgba(16, 185, 129, 0.04)',
+            color: 'success.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Export
+      </Button>
+    ];
+    
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -2110,16 +2097,23 @@ export default function Universities({ universities = [], auth, departments = []
     >
       <Fade in timeout={500}>
         <Box>
-          {alert.open && (
-            <Alert 
-              severity={alert.severity} 
-              onClose={() => setAlert(prev => ({...prev, open: false}))} 
-              sx={{ mb: 2 }}
-            >
-              {alert.message}
-            </Alert>
-          )}
-
+        <Notification 
+          open={alert.open} 
+          severity={alert.severity} 
+          message={alert.message}
+          onClose={handleCloseAlert}
+        />
+        {/* Header section */}
+        <PageHeader
+          title="Universities"
+          subtitle="Manage universities"
+          icon={<Person sx={{ fontSize: 28 }} />}
+          actionButtons={actionButtons}
+          searchText={searchText}
+          onSearchClear={() => setSearchText('')}
+          filteredCount={filteredRows.length}
+          totalCount={rows.length}
+        />
           {/* Summary Cards */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -2158,125 +2152,27 @@ export default function Universities({ universities = [], auth, departments = []
             </Grid>
           </Grid>
 
-          {/* Data Grid Section */}
-          <Paper
-            sx={{
-              height: "100%",
-              width: "100%",
-              borderRadius: 2,
-              overflow: 'hidden',
-              boxShadow: 3,
+          <EnhancedDataGrid
+            rows={filteredRows}
+            columns={columns}
+            loading={gridLoading}
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            onSearchClear={() => setSearchText('')}
+            onAdd={handleCreate}
+            onExport={handleExport}
+            onImport={handleUpload}
+            onRefresh={handleRefresh}
+            title="Universities"
+            subtitle="History"
+            icon={<UniversityIcon />}
+            addButtonText="New"
+            pageSizeOptions={[5, 10, 20, 50, 100]}
+            initialState={{
+              pagination: { paginationModel: { page: 0, pageSize: 10 } },
+              sorting: { sortModel: [{ field: 'lft', sort: 'asc' }] }
             }}
-          >
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: isMobile ? 'column' : 'row',
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              p: 2, 
-              borderBottom: '1px solid', 
-              borderColor: 'divider',
-              gap: 2
-            }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <UniversityIcon color="primary" />
-                <Typography variant="h6" fontWeight={700}>
-                  Universities
-                </Typography>
-                {searchText && (
-                  <Chip 
-                    label={`${filteredRows.length} of ${rows.length} universities`} 
-                    size="small" 
-                    variant="outlined" 
-                  />
-                )}
-              </Stack>
-
-              <Stack 
-                direction={isMobile ? 'column' : 'row'} 
-                spacing={1} 
-                alignItems="center"
-                width={isMobile ? '100%' : 'auto'}
-              >
-                <TextField
-                  size="small"
-                  placeholder="Search universities..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  InputProps={{ 
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                    sx: { width: isMobile ? '100%' : 250 }
-                  }}
-                />
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={statusFilter}
-                    label="Status"
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                  >
-                    <MenuItem value="all">All</MenuItem>
-                    <MenuItem value="active">Active</MenuItem>
-                    <MenuItem value="inactive">Inactive</MenuItem>
-                  </Select>
-                </FormControl>
-              </Stack>
-            </Box>
-
-            <DataGrid
-              autoHeight
-              rows={filteredRows}
-              columns={columns}
-              pageSizeOptions={[5, 10, 20, 50, 100]}
-              initialState={{
-                pagination: {
-                  paginationModel: { page: 0, pageSize: 10 },
-                },
-              }}
-              slots={{
-                toolbar: () => (
-                  <CustomToolbar
-                    onCreate={handleCreate}
-                    onImport={triggerFileInput}
-                    onRefresh={handleRefresh}
-                    loading={gridLoading}
-                  />
-                ),
-              }}
-              sx={{
-                border: 'none',
-                '& .MuiDataGrid-cell': {
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                },
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: 'grey.50',
-                  borderBottom: '2px solid',
-                  borderColor: 'divider',
-                },
-                '& .MuiDataGrid-toolbarContainer': {
-                  p: 1,
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                },
-              }}
-              loading={gridLoading}
-              disableRowSelectionOnClick
-            />
-
-            {/* Hidden file input for import */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleUpload}
-              accept=".xlsx, .xls"
-              style={{ display: 'none' }}
-            />
-          </Paper>
+          />
 
           {/* University Form Dialog */}
           <UniversityFormDialog

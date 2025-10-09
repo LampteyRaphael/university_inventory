@@ -302,7 +302,7 @@ const EnhancedDataGrid = ({
               backgroundColor: 'rgba(248, 250, 252, 0.8)',
             },
           }}
-          loading={loading}
+          loading={false}
           {...dataGridProps}
         />
         

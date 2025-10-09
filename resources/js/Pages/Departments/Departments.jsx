@@ -75,55 +75,11 @@ import {
 } from "@mui/icons-material";
 import Notification from "@/Components/Notification";
 import PageHeader from "@/Components/PageHeader";
+import SummaryCard from "@/Components/SummaryCard";
+import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 
-// Custom Modern Components
-const ModernCard = ({ children, sx = {} }) => (
-  <Card sx={{
-    borderRadius: 3,
-    p: 2,
-    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-    border: '1px solid rgba(0,0,0,0.04)',
-    transition: 'all 0.3s ease',
-    '&:hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-    },
-    ...sx
-  }}>
-    {children}
-  </Card>
-);
 
-const SummaryCard = ({ title, value, icon, color, subtitle }) => (
-  <ModernCard>
-    <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography variant="h4" fontWeight={800} color={color} sx={{ mb: 0.5 }}>
-            {value}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" fontWeight={600}>
-            {title}
-          </Typography>
-          {subtitle && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-              {subtitle}
-            </Typography>
-          )}
-        </Box>
-        <Avatar sx={{ 
-          bgcolor: alpha(color, 0.1), 
-          color: color,
-          width: 48,
-          height: 48
-        }}>
-          {icon}
-        </Avatar>
-      </Stack>
-    </CardContent>
-  </ModernCard>
-);
+
 
 const CustomToolbar = ({ onCreate, onImport, onExport, onRefresh }) => (
   <GridToolbarContainer sx={{ p: 2, gap: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
@@ -169,30 +125,6 @@ const CustomToolbar = ({ onCreate, onImport, onExport, onRefresh }) => (
   </GridToolbarContainer>
 );
 
-const ModernTextField = ({ label, ...props }) => (
-  <TextField
-    {...props}
-    label={label}
-    variant="outlined"
-    size="small"
-    fullWidth
-    sx={{
-      '& .MuiOutlinedInput-root': {
-        borderRadius: 2,
-        backgroundColor: 'white',
-        '&:hover fieldset': {
-          borderColor: 'primary.main',
-        },
-        '&.Mui-focused fieldset': {
-          borderColor: 'primary.main',
-          borderWidth: 2,
-        },
-      },
-    }}
-  />
-);
-
-
 
 export default function Departments({ departments = [], auth, universities=[], users=[] }) {
   const theme = useTheme();
@@ -236,7 +168,7 @@ export default function Departments({ departments = [], auth, universities=[], u
   useEffect(() => {
     setGridLoading(true);
     const processData = setTimeout(() => {
-      const formatted = (departments || []).map((dept, index) => ({
+      const formatted = departments?.map((dept, index) => ({
         id: dept?.department_id ?? index + 1,
         ...dept,
         annual_budget: Number(dept?.annual_budget ?? 0),
@@ -644,7 +576,7 @@ export default function Departments({ departments = [], auth, universities=[], u
       // Create action buttons for header
       const actionButtons = [
         <Button
-          key="new-category"
+          key="new-department"
           variant="contained"
           startIcon={<AddCircleOutline />}
           onClick={handleCreate}
@@ -746,94 +678,10 @@ export default function Departments({ departments = [], auth, universities=[], u
             onClose={handleCloseAlert}
           />
 
-          {/* <Box
-            sx={{
-              mb: 3,
-              p: 2,
-              borderRadius: 2,
-              backgroundColor: "background.paper",
-              boxShadow: 1,
-            }}
-          >
-            <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-                  <Inventory color="primary" fontSize="large" />
-                  <Box>
-                    <Typography variant="h5" fontWeight={700} color="text.primary">
-                      Inventory Department
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      Manage your inventory Department, track stock levels, and monitor Department performance
-                    </Typography>
-                  </Box>
-                  {searchText && (
-                    <Chip
-                      label={`${rows.length} items filtered`}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ fontWeight: 500 }}
-                    />
-                  )}
-                </Box>
-              </Grid>
-
-              <Grid size={{ xs: 12, md: "auto" }}>
-                <Grid
-                  container
-                  spacing={1.5}
-                  alignItems="center"
-                  justifyContent={{ xs: "flex-start", md: "flex-end" }}
-                  wrap="wrap"
-                >
-                  <Grid>
-                    <Button
-                      variant="contained"
-                      startIcon={<AddCircleOutline />}
-                      onClick={handleCreate}
-                      size="small"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      New Department
-                    </Button>
-                  </Grid>
-                  <Grid>
-                    <Button
-                      size="small"
-                      startIcon={<CloudUpload />}
-                      component="label"
-                      variant="outlined"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      Import
-                      <input
-                        hidden
-                        accept=".xlsx,.xls,.csv"
-                        type="file"
-                        onChange={handleUpload}
-                      />
-                    </Button>
-                  </Grid>
-                  <Grid>
-                    <Button
-                      size="small"
-                      startIcon={<Download />}
-                      onClick={handleExport}
-                      variant="outlined"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      Export
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Box> */}
-                    {/* Header Section */}
+          {/* Header Section */}
           <PageHeader
-            title="Inventory Items "
-            subtitle="Manage your inventory items, track stock levels, and monitor item performance"
+            title="Inventory Department"
+            subtitle="Manage your inventory Department, track stock levels, and monitor Department performance"
             icon={<Inventory sx={{ fontSize: 28 }} />}
             actionButtons={actionButtons}
             searchText={searchText}
@@ -880,118 +728,29 @@ export default function Departments({ departments = [], auth, universities=[], u
               />
             </Grid>
           </Grid>
-          {/* Data Grid Section */}
-           <Paper
-            sx={{
-              height: "100%",
-              width: "100%",
-              borderRadius: 2,
-              overflow: 'hidden',
-              boxShadow: 3,
+          
+
+          <EnhancedDataGrid
+            rows={filteredRows}
+            columns={columns}
+            loading={gridLoading}
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            onSearchClear={() => setSearchText('')}
+            onAdd={handleCreate}
+            onExport={handleExport}
+            onImport={handleUpload}
+            onRefresh={handleRefresh}
+            title="Department Hierarchy"
+            subtitle="Hierarchical view of your inventory Departments"
+            icon={<DepartmentIcon />}
+            addButtonText="New Department"
+            pageSizeOptions={[5, 10, 20, 50, 100]}
+            initialState={{
+              pagination: { paginationModel: { page: 0, pageSize: 10 } },
+              sorting: { sortModel: [{ field: 'lft', sort: 'asc' }] }
             }}
-          >
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              backgroundColor: "background.paper",
-              p: 2,
-              borderRadius: 2,
-              boxShadow: 1,
-              mb: 2,
-            }}
-          >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <DepartmentIcon color="primary" />
-                <Typography variant="h6" fontWeight={700}>
-                  Departments
-                </Typography>
-                {searchText && (
-                  <Chip 
-                    label={`${filteredRows.length} of ${rows.length} departments`} 
-                    size="small" 
-                    variant="outlined" 
-                  />
-                )}
-              </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <TextField
-                  size="small"
-                  placeholder="Search departments..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  InputProps={{ 
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                    sx: { width: isMobile ? '100%' : 250 }
-                  }}
-                />
-                <Button 
-                  variant="outlined" 
-                  onClick={handleRefresh} 
-                  startIcon={<RefreshIcon />}
-                >
-                  Refresh
-                </Button>
-                <Button 
-                  variant="contained" 
-                  startIcon={<AddIcon />} 
-                  onClick={handleCreate}
-                >
-                  New Department
-                </Button>
-              </Box>
-            </Box>
-
-              <DataGrid
-                autoHeight
-                rows={filteredRows}
-                columns={columns}
-                pageSizeOptions={[5, 10, 20, 50, 100]}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 10 },
-                  },
-                }}
-                slots={{
-                  toolbar: () => (
-                    <CustomToolbar
-                      onCreate={handleCreate}
-                      onImport={handleUpload}
-                      onExport={handleExport}
-                      onRefresh={handleRefresh}
-                    />
-                  ),
-                }}
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-cell': {
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                  },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: 'grey.50',
-                    borderBottom: '2px solid',
-                    borderColor: 'divider',
-                  },
-                  '& .MuiDataGrid-toolbarContainer': {
-                    p: 1,
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                  },
-                }}
-                loading={gridLoading}
-                disableRowSelectionOnClick
-              />
-          </Paper>
-
-          {/* End of Data Grid */}
+          />
 
           {/* Create/Edit Dialog */}
           <Dialog 
@@ -1244,13 +1003,13 @@ export default function Departments({ departments = [], auth, universities=[], u
                     <InputLabel>Department Head</InputLabel>
                     <Select 
                       name="department_head_id" 
-                      value={data.department_head_id || ""} 
+                      value={data?.department_head_id || ""} 
                       label="Department Head" 
                       onChange={(e) => setData('department_head_id', e.target.value)}
                     >
                       <MenuItem value="">Not assigned</MenuItem>
                       {users?.map(user => (
-                        <MenuItem key={user.id} value={user.id}>
+                        <MenuItem key={user.user_id} value={user.user_id}>
                           {user.name} {user.email}
                         </MenuItem>
                       ))}

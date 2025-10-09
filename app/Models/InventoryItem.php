@@ -6,6 +6,8 @@ use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class InventoryItem extends Model
 {
@@ -66,37 +68,33 @@ class InventoryItem extends Model
         'shelf_life_days'      => 'integer',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
 
-    // public function university()
-    // {
-    //     return $this->belongsTo(University::class, 'university_id', 'university_id');
-    // }
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            // Auto-generate UUID if not provided
+            if (empty($model->item_id)) {
+                $model->item_id = Str::uuid()->toString();
+            }
+            
+            // Set created_by from authenticated user
+            if (Auth::check() && empty($model->created_by)) {
+                $model->created_by = Auth::user()->user_id;
+            }
 
-    // public function category()
-    // {
-    //     return $this->belongsTo(ItemCategory::class, 'category_id', 'category_id');
-    // }
+            // Convert specifications array to JSON if needed
+            if (isset($model->specifications) && is_array($model->specifications)) {
+                $model->specifications = json_encode($model->specifications);
+            }
+        });
 
-    // public function creator()
-    // {
-    //     return $this->belongsTo(User::class, 'created_by', 'id');
-    // }
-
-    // public function updater()
-    // {
-    //     return $this->belongsTo(User::class, 'updated_by', 'id');
-    // }
-
-    // public function recalculateTotalValue()
-    // {
-    //     $this->total_value = $this->current_value * $this->average_cost;
-    //     $this->save();
-    // }
+        static::updating(function ($model) {
+            // Convert specifications array to JSON on update as well
+            if (isset($model->specifications) && is_array($model->specifications)) {
+                $model->specifications = json_encode($model->specifications);
+            }
+        });
+    }
 
     // Relationships
     public function university()

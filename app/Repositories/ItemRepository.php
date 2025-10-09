@@ -13,7 +13,7 @@ class ItemRepository
 
     public function getAll()
     {
-        $query = InventoryItem::with([
+        $query = InventoryItem::orderBy('created_at','desc')->with([
             'university:university_id,name', // Only select needed fields
             'category:category_id,name',
             'creator:user_id,name',

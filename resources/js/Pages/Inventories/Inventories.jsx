@@ -65,139 +65,13 @@ import {
   AddCircleOutline,
   CloudUpload,
   Download,
+  Inventory,
 } from "@mui/icons-material";
 import { router, useForm, usePage } from "@inertiajs/react";
 import Notification from "@/Components/Notification";
-
-const ModernCard = ({ children, sx = {} }) => (
-  <Card sx={{
-    borderRadius: 3,
-    p: 2.5,
-    background: 'linear-gradient(135deg, #ffffff 0%, #f8faff 100%)',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-    border: '1px solid rgba(255,255,255,0.8)',
-    backdropFilter: 'blur(10px)',
-    transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
-    position: 'relative',
-    overflow: 'hidden',
-    '&:before': {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: '3px',
-      background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-    },
-    '&:hover': {
-      transform: 'translateY(-6px)',
-      boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-    },
-    ...sx
-  }}>
-    {children}
-  </Card>
-);
-
-const SummaryCard = ({ title, value, icon, color = '#667eea', subtitle, trend, percentage }) => (
-  <ModernCard sx={{ 
-    background: `linear-gradient(135deg, ${alpha(color, 0.03)} 0%, ${alpha(color, 0.08)} 100%)`,
-    border: `1px solid ${alpha(color, 0.1)}`,
-  }}>
-    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-        <Box sx={{ flex: 1 }}>
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-            <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ 
-              textTransform: 'uppercase',
-              fontSize: '0.75rem',
-              letterSpacing: '0.5px'
-            }}>
-              {title}
-            </Typography>
-            {trend && (
-              <Chip 
-                label={trend} 
-                size="small" 
-                color={percentage >= 0 ? 'success' : 'error'}
-                variant="filled"
-                sx={{ 
-                  height: 20,
-                  fontSize: '0.65rem',
-                  fontWeight: 700
-                }}
-              />
-            )}
-          </Stack>
-          
-          <Typography variant="h3" fontWeight={800} color={color} sx={{ 
-            mb: 0.5,
-            background: `linear-gradient(135deg, ${color} 0%, ${color}99 100%)`,
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: 'brightness(1.1)'
-          }}>
-            {value}
-          </Typography>
-          
-          {subtitle && (
-            <Typography variant="caption" color="text.secondary" sx={{ 
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              fontWeight: 500
-            }}>
-              {subtitle}
-            </Typography>
-          )}
-          
-          {percentage !== undefined && (
-            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 1 }}>
-              {percentage >= 0 ? (
-                <TrendingUpIcon sx={{ fontSize: 16, color: '#10b981' }} />
-              ) : (
-                <TrendingDownIcon sx={{ fontSize: 16, color: '#ef4444' }} />
-              )}
-              <Typography variant="caption" fontWeight={700} color={percentage >= 0 ? '#10b981' : '#ef4444'}>
-                {percentage >= 0 ? '+' : ''}{percentage}%
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                from last period
-              </Typography>
-            </Stack>
-          )}
-        </Box>
-        
-        <Avatar sx={{ 
-          bgcolor: alpha(color, 0.15), 
-          color: color,
-          width: 56,
-          height: 56,
-          borderRadius: 2.5,
-          boxShadow: `0 8px 24px ${alpha(color, 0.3)}`,
-          transition: 'all 0.3s ease',
-          '.modern-card:hover &': {
-            transform: 'scale(1.1) rotate(5deg)',
-          }
-        }}>
-          {icon}
-        </Avatar>
-      </Stack>
-    </CardContent>
-  </ModernCard>
-);
-
-// Enhanced color palette for inventory metrics
-const inventoryColors = {
-  total: '#667eea',
-  inStock: '#10b981',
-  lowStock: '#f59e0b',
-  outOfStock: '#ef4444',
-  value: '#8b5cf6',
-  movements: '#06b6d4'
-};
-
+import PageHeader from "@/Components/PageHeader";
+import SummaryCard from "@/Components/SummaryCard";
+import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 
 export default function InventoryTransactions({ transactions=[], auth, items, departments, locations }) {
   const theme = useTheme();
@@ -769,6 +643,93 @@ const handleSubmit = useCallback(() => {
     }
   }, [flash]);
 
+  // Create action buttons for header
+  const actionButtons = [
+    <Button
+      key="new-department"
+      variant="contained"
+      startIcon={<AddCircleOutline />}
+      onClick={handleCreate}
+      size="medium"
+      sx={{
+        borderRadius: 2.5,
+        textTransform: "none",
+        fontWeight: 700,
+        px: 3,
+        py: 1,
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+        '&:hover': {
+          boxShadow: '0 8px 30px rgba(102, 126, 234, 0.4)',
+          transform: 'translateY(-1px)',
+        },
+        transition: 'all 0.3s ease'
+      }}
+    >
+      New Transaction
+    </Button>,
+    <Button
+      key="import"
+      size="medium"
+      startIcon={<CloudUpload />}
+      component="label"
+      variant="outlined"
+      sx={{
+        borderRadius: 2.5,
+        textTransform: "none",
+        fontWeight: 600,
+        px: 2.5,
+        py: 1,
+        border: '2px solid',
+        borderColor: 'grey.200',
+        color: 'text.primary',
+        '&:hover': {
+          borderColor: 'primary.main',
+          backgroundColor: 'rgba(102, 126, 234, 0.04)',
+          color: 'primary.main',
+          transform: 'translateY(-1px)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+        },
+        transition: 'all 0.3s ease'
+      }}
+    >
+      Import
+      <input
+        hidden
+        accept=".xlsx,.xls,.csv"
+        type="file"
+        onChange={handleUpload}
+      />
+    </Button>,
+    <Button
+      key="export"
+      size="medium"
+      startIcon={<Download />}
+      onClick={handleExport}
+      variant="outlined"
+      sx={{
+        borderRadius: 2.5,
+        textTransform: "none",
+        fontWeight: 600,
+        px: 2.5,
+        py: 1,
+        border: '2px solid',
+        borderColor: 'grey.200',
+        color: 'text.primary',
+        '&:hover': {
+          borderColor: 'success.main',
+          backgroundColor: 'rgba(16, 185, 129, 0.04)',
+          color: 'success.main',
+          transform: 'translateY(-1px)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+        },
+        transition: 'all 0.3s ease'
+      }}
+    >
+      Export
+    </Button>
+  ];
+
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -788,224 +749,17 @@ const handleSubmit = useCallback(() => {
           onClose={handleClose}
         />
 
-        <Box
-          sx={{
-            mb: 4,
-            p: 3,
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,255,0.98) 100%)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-            border: '1px solid rgba(255,255,255,0.8)',
-            backdropFilter: 'blur(10px)',
-            position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '4px',
-              background: 'linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-            }
-          }}
-        >
-          <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-            {/* Left Section - Title and Info */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                <Avatar
-                  sx={{
-                    bgcolor: 'primary.main',
-                    width: 56,
-                    height: 56,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)',
-                  }}
-                >
-                  <InventoryIcon sx={{ fontSize: 28 }} />
-                </Avatar>
-                
-                <Box>
-                  <Typography 
-                    variant="h4" 
-                    fontWeight={800}
-                    sx={{
-                      background: 'linear-gradient(135deg, #2D3748 0%, #4A5568 100%)',
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      mb: 0.5
-                    }}
-                  >
-                    Inventory Transactions
-                  </Typography>
-                  
-                  <Typography 
-                    variant="body1" 
-                    color="text.secondary" 
-                    sx={{ 
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      fontWeight: 500
-                    }}
-                  >
-                    <Box 
-                      component="span" 
-                      sx={{ 
-                        width: 6, 
-                        height: 6, 
-                        borderRadius: '50%', 
-                        bgcolor: 'success.main',
-                        animation: 'pulse 2s infinite'
-                      }} 
-                    />
-                    Manage and track all inventory movements and transactions
-                  </Typography>
-                  
-                  {searchText && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
-                      <Chip
-                        label={`${filteredRows.length} of ${rows.length} transactions`}
-                        size="small"
-                        color="primary"
-                        variant="filled"
-                        sx={{ 
-                          fontWeight: 600,
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                          color: 'white'
-                        }}
-                      />
-                      <Button
-                        size="small"
-                        onClick={() => setSearchText('')}
-                        endIcon={<Close />}
-                        sx={{ 
-                          minWidth: 'auto', 
-                          px: 1,
-                          color: 'text.secondary',
-                          '&:hover': { color: 'error.main' }
-                        }}
-                      >
-                        Clear
-                      </Button>
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-            </Grid>
-
-            {/* Right Section - Buttons */}
-            <Grid size={{ xs: 12, md: "auto" }}>
-              <Grid
-                container
-                spacing={1.5}
-                alignItems="center"
-                justifyContent={{ xs: "flex-start", md: "flex-end" }}
-                wrap="wrap"
-              >
-                <Grid>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddCircleOutline />}
-                    onClick={handleCreate}
-                    size="medium"
-                    sx={{
-                      borderRadius: 2.5,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      px: 3,
-                      py: 1,
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
-                      '&:hover': {
-                        boxShadow: '0 8px 30px rgba(102, 126, 234, 0.4)',
-                        transform: 'translateY(-1px)',
-                      },
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    New Transaction
-                  </Button>
-                </Grid>
-                
-                <Grid>
-                  <Button
-                    size="medium"
-                    startIcon={<CloudUpload />}
-                    component="label"
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 2.5,
-                      textTransform: "none",
-                      fontWeight: 600,
-                      px: 2.5,
-                      py: 1,
-                      border: '2px solid',
-                      borderColor: 'grey.200',
-                      color: 'text.primary',
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                        backgroundColor: 'primary.light',
-                        color: 'primary.main',
-                        transform: 'translateY(-1px)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                      },
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    Import
-                    <input
-                      hidden
-                      accept=".xlsx,.xls,.csv"
-                      type="file"
-                      onChange={handleUpload}
-                    />
-                  </Button>
-                </Grid>
-                
-                <Grid>
-                  <Button
-                    size="medium"
-                    startIcon={<Download />}
-                    onClick={handleExport}
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 2.5,
-                      textTransform: "none",
-                      fontWeight: 600,
-                      px: 2.5,
-                      py: 1,
-                      border: '2px solid',
-                      borderColor: 'grey.200',
-                      color: 'text.primary',
-                      '&:hover': {
-                        borderColor: 'success.main',
-                        backgroundColor: 'success.light',
-                        color: 'success.main',
-                        transform: 'translateY(-1px)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                      },
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    Export
-                  </Button>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
-
-          {/* Add CSS for pulse animation */}
-          <style jsx>{`
-            @keyframes pulse {
-              0% { opacity: 1; }
-              50% { opacity: 0.5; }
-              100% { opacity: 1; }
-            }
-          `}</style>
-        </Box>
+        {/* Header Section */}
+        <PageHeader
+          title="Inventory Transactions"
+          subtitle=" Manage and track all inventory movements and transactions"
+          icon={<Inventory sx={{ fontSize: 28 }} />}
+          actionButtons={actionButtons}
+          searchText={searchText}
+          onSearchClear={() => setSearchText('')}
+          filteredCount={filteredRows.length}
+          totalCount={rows.length}
+        />
 
           {/* Summary Cards */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -1044,243 +798,28 @@ const handleSubmit = useCallback(() => {
           </Grid>
 
           {/* Data Grid Section */}
-          <Paper
-            sx={{
-              height: "100%",
-              width: "100%",
-              borderRadius: 3,
-              overflow: 'hidden',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
-              border: '1px solid rgba(255,255,255,0.8)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f8faff 100%)',
-              backdropFilter: 'blur(10px)',
-              position: 'relative',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-                zIndex: 1
-              }
+
+          <EnhancedDataGrid
+            rows={filteredRows}
+            columns={columns}
+            loading={gridLoading}
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            onSearchClear={() => setSearchText('')}
+            onAdd={handleCreate}
+            onExport={handleExport}
+            onImport={handleUpload}
+            onRefresh={handleRefresh}
+            title="Transactions"
+            subtitle="History"
+            icon={<InventoryIcon />}
+            addButtonText="New"
+            pageSizeOptions={[5, 10, 20, 50, 100]}
+            initialState={{
+              pagination: { paginationModel: { page: 0, pageSize: 10 } },
+              sorting: { sortModel: [{ field: 'lft', sort: 'asc' }] }
             }}
-          >
-            {/* Header Section */}
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                backgroundColor: 'rgba(255,255,255,0.8)',
-                p: 3,
-                borderBottom: '1px solid rgba(0,0,0,0.06)',
-                backdropFilter: 'blur(10px)',
-              }}
-            >
-              {/* Left side - Title + Chip */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar
-                  sx={{
-                    bgcolor: 'primary.main',
-                    width: 44,
-                    height: 44,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
-                  }}
-                >
-                  <InventoryIcon sx={{ fontSize: 20 }} />
-                </Avatar>
-                <Box>
-                  <Typography 
-                    variant="h5" 
-                    fontWeight={800}
-                    sx={{
-                      background: 'linear-gradient(135deg, #2D3748 0%, #4A5568 100%)',
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      mb: 0.5
-                    }}
-                  >
-                    Transaction History
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box 
-                      component="span" 
-                      sx={{ 
-                        width: 4, 
-                        height: 4, 
-                        borderRadius: '50%', 
-                        bgcolor: 'success.main',
-                      }} 
-                    />
-                    Real-time inventory movements and updates
-                  </Typography>
-                </Box>
-                
-                {searchText && (
-                  <Chip
-                    label={`${filteredRows.length} of ${rows.length} transactions`}
-                    size="small"
-                    sx={{ 
-                      fontWeight: 700,
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      color: 'white',
-                      boxShadow: '0 2px 12px rgba(16, 185, 129, 0.3)',
-                    }}
-                  />
-                )}
-              </Box>
-
-              {/* Right side - Search + Refresh */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <TextField
-                  size="small"
-                  placeholder="Search transactions..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon sx={{ color: 'text.secondary' }} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: searchText && (
-                      <InputAdornment position="end">
-                        <IconButton 
-                          size="small" 
-                          onClick={() => setSearchText('')}
-                          sx={{ color: 'text.secondary' }}
-                        >
-                          <Close fontSize="small" />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    width: { xs: "100%", sm: 280 },
-                    backgroundColor: 'rgba(255,255,255,0.8)',
-                    borderRadius: 2,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      border: '2px solid rgba(0,0,0,0.08)',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                      },
-                      '&.Mui-focused': {
-                        borderColor: 'primary.main',
-                        boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)',
-                      }
-                    }
-                  }}
-                />
-                <Button
-                  variant="contained"
-                  onClick={handleRefresh}
-                  startIcon={<RefreshIcon />}
-                  sx={{ 
-                    borderRadius: 2, 
-                    textTransform: "none",
-                    fontWeight: 600,
-                    px: 3,
-                    py: 1,
-                    background: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%)',
-                    boxShadow: '0 4px 20px rgba(6, 182, 212, 0.3)',
-                    '&:hover': {
-                      boxShadow: '0 8px 30px rgba(6, 182, 212, 0.4)',
-                      transform: 'translateY(-1px)',
-                    },
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  Refresh
-                </Button>
-              </Box>
-            </Box>
-
-            {/* DataGrid Section */}
-            <Box sx={{ p: 1 }}>
-              <DataGrid
-                autoHeight
-                rows={filteredRows}
-                columns={columns}
-                pageSizeOptions={[5, 10, 20, 50, 100]}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 10 },
-                  },
-                }}
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-cell': {
-                    borderBottom: '1px solid rgba(0,0,0,0.06)',
-                    py: 1.5,
-                    fontSize: '0.875rem',
-                  },
-                  '& .MuiDataGrid-cell:focus': {
-                    outline: 'none',
-                  },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: 'rgba(248, 250, 252, 0.8)',
-                    borderBottom: '2px solid rgba(0,0,0,0.08)',
-                    fontSize: '0.875rem',
-                    fontWeight: 700,
-                    color: '#2D3748',
-                  },
-                  '& .MuiDataGrid-columnHeader:focus': {
-                    outline: 'none',
-                  },
-                  '& .MuiDataGrid-row': {
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: 'rgba(102, 126, 234, 0.04)',
-                      transform: 'translateX(2px)',
-                    },
-                    '&.Mui-selected': {
-                      backgroundColor: 'rgba(102, 126, 234, 0.08)',
-                      '&:hover': {
-                        backgroundColor: 'rgba(102, 126, 234, 0.12)',
-                      }
-                    }
-                  },
-                  '& .MuiDataGrid-toolbarContainer': {
-                    p: 2,
-                    borderBottom: '1px solid rgba(0,0,0,0.06)',
-                    backgroundColor: 'rgba(255,255,255,0.5)',
-                  },
-                  '& .MuiDataGrid-footerContainer': {
-                    borderTop: '1px solid rgba(0,0,0,0.06)',
-                    backgroundColor: 'rgba(248, 250, 252, 0.8)',
-                  },
-                  '& .MuiTablePagination-root': {
-                    fontSize: '0.875rem',
-                  },
-                  '& .MuiDataGrid-virtualScroller': {
-                    backgroundColor: 'rgba(255,255,255,0.5)',
-                  }
-                }}
-                loading={gridLoading}
-                disableRowSelectionOnClick
-                slots={{
-                  loadingOverlay: LinearProgress,
-                }}
-                slotProps={{
-                  loadingOverlay: {
-                    sx: {
-                      background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                      '& .MuiLinearProgress-bar': {
-                        background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                      }
-                    }
-                  }
-                }}
-              />
-            </Box>
-          </Paper>
+          />
           {/* Create/Edit Dialog */}
           <Dialog 
             open={openDialog} 

@@ -44,7 +44,7 @@ class ItemPostResquest extends FormRequest
                 'rfid_tag' => 'nullable|string|max:255|unique:inventory_items,rfid_tag',
                 'image_url' => 'nullable|url|max:500',
                 'document_url' => 'nullable|url|max:500',
-                'created_by' => 'required|uuid|exists:users,user_id',
+                // 'created_by' => 'required|uuid|exists:users,user_id',
         ];
     }
 }

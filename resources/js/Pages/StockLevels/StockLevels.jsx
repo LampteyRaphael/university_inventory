@@ -60,43 +60,10 @@ import {
 } from "@mui/icons-material";
 import { useForm, usePage } from "@inertiajs/react";
 import Notification from "@/Components/Notification";
+import PageHeader from "@/Components/PageHeader";
+import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
+import SummaryCard from "@/Components/SummaryCard";
 
-// Custom components
-const SummaryCard = ({ title, value, icon, color, subtitle }) => (
-  <Card sx={{ 
-    borderRadius: 3,
-    p: 2,
-    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-    border: '1px solid rgba(0,0,0,0.04)',
-    transition: 'all 0.3s ease',
-    '&:hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-    },
-  }}>
-    <CardContent>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Box>
-          <Typography variant="h4" fontWeight={700} color={color}>
-            {value}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {title}
-          </Typography>
-          {subtitle && (
-            <Typography variant="caption" color="text.secondary">
-              {subtitle}
-            </Typography>
-          )}
-        </Box>
-        <Avatar sx={{ bgcolor: `${color}08`, color }}>
-          {icon}
-        </Avatar>
-      </Stack>
-    </CardContent>
-  </Card>
-);
 
 export default function StockLevels({ stockLevels, auth, universities, items, departments, locations }) {
   const theme = useTheme();
@@ -638,6 +605,93 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
     },
   ], [items, departments, locations, countFrequencies, stockStatuses, handleEdit, handleDeleteClick]);
 
+    // Create action buttons for header
+    const actionButtons = [
+      <Button
+        key="new-department"
+        variant="contained"
+        startIcon={<AddCircleOutline />}
+        onClick={handleCreate}
+        size="medium"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+          '&:hover': {
+            boxShadow: '0 8px 30px rgba(102, 126, 234, 0.4)',
+            transform: 'translateY(-1px)',
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        New Stock
+      </Button>,
+      <Button
+        key="import"
+        size="medium"
+        startIcon={<CloudUpload />}
+        component="label"
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'primary.main',
+            backgroundColor: 'rgba(102, 126, 234, 0.04)',
+            color: 'primary.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Import
+        <input
+          hidden
+          accept=".xlsx,.xls,.csv"
+          type="file"
+          onChange={handleUpload}
+        />
+      </Button>,
+      <Button
+        key="export"
+        size="medium"
+        startIcon={<Download />}
+        onClick={handleExport}
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'success.main',
+            backgroundColor: 'rgba(16, 185, 129, 0.04)',
+            color: 'success.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Export
+      </Button>
+    ];
+  
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -657,86 +711,16 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
           />
 
           {/* Header section */}
-          <Box
-            sx={{
-              mb: 3,
-              p: 2,
-              borderRadius: 2,
-              backgroundColor: "background.paper",
-              boxShadow: 1,
-            }}
-          >
-            <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-              {/* Left Section - Title and Info */}
-              <Grid size={{ xs:12, md:6 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-                  <StockIcon color="primary" fontSize="large" />
-                  <Box>
-                    <Typography variant="h5" fontWeight={700} color="text.primary">
-                      Inventory Stocks
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      Manage and track all inventory movements and stocks
-                    </Typography>
-                  </Box>
-                  {searchText && (
-                    <Chip
-                      label={`${filteredRows.length} of ${rows.length} transactions`}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ fontWeight: 500 }}
-                    />
-                  )}
-                </Box>
-              </Grid>
-
-              {/* Right Section - Buttons */}
-              <Grid size={{ xs:12, md:'auto'}}>
-                <Grid container spacing={1.5} justifyContent="flex-end">
-                  <Grid>
-                    <Button
-                      variant="contained"
-                      startIcon={<AddCircleOutline />}
-                      onClick={handleCreate}
-                      size="small"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      New Stock
-                    </Button>
-                  </Grid>
-                  <Grid>
-                    <Button
-                      size="small"
-                      startIcon={<CloudUpload />}
-                      component="label"
-                      variant="outlined"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      Import
-                      <input
-                        hidden
-                        accept=".xlsx,.xls,.csv"
-                        type="file"
-                        onChange={handleUpload}
-                      />
-                    </Button>
-                  </Grid>
-                  <Grid>
-                    <Button
-                      size="small"
-                      startIcon={<Download />}
-                      onClick={handleExport}
-                      variant="outlined"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      Export
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Box>
+          <PageHeader
+            title="Inventory Stocks"
+            subtitle="Manage and track all inventory movements and stocks"
+            icon={<StockIcon sx={{ fontSize: 28 }} />}
+            actionButtons={actionButtons}
+            searchText={searchText}
+            onSearchClear={() => setSearchText('')}
+            filteredCount={filteredRows.length}
+            totalCount={rows.length}
+          />
 
           {/* Summary Cards */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -775,107 +759,27 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
           </Grid>
 
           {/* Data Grid Section */}
-          <Paper
-            sx={{
-              height: "100%",
-              width: "100%",
-              borderRadius: 2,
-              overflow: 'hidden',
-              boxShadow: 3,
+          <EnhancedDataGrid
+            rows={filteredRows}
+            columns={columns}
+            loading={gridLoading}
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            onSearchClear={() => setSearchText('')}
+            onAdd={handleCreate}
+            onExport={handleExport}
+            onImport={handleUpload}
+            onRefresh={handleRefresh}
+            title="Stock"
+            subtitle="History"
+            icon={<StockIcon />}
+            addButtonText="New"
+            pageSizeOptions={[5, 10, 20, 50, 100]}
+            initialState={{
+              pagination: { paginationModel: { page: 0, pageSize: 10 } },
+              sorting: { sortModel: [{ field: 'lft', sort: 'asc' }] }
             }}
-          >
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                backgroundColor: "background.paper",
-                p: 2,
-                borderRadius: 2,
-                boxShadow: 1,
-                mb: 2,
-              }}
-            >
-              {/* Left side - Title + Chip */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Inventory color="primary" fontSize="medium" />
-                <Typography variant="h6" fontWeight={700} color="text.primary">
-                  Stock History
-                </Typography>
-                {searchText && (
-                  <Chip
-                    label={`${filteredRows.length} of ${rows.length} transactions`}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    sx={{ fontWeight: 500 }}
-                  />
-                )}
-              </Box>
-
-              {/* Right side - Search + Refresh */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <TextField
-                  size="small"
-                  placeholder="Search transactions..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    width: { xs: "100%", sm: 250 },
-                    backgroundColor: "background.default",
-                    borderRadius: 1,
-                  }}
-                />
-                <Button
-                  variant="contained"
-                  onClick={handleRefresh}
-                  startIcon={<RefreshIcon />}
-                  sx={{ borderRadius: 2, textTransform: "none" }}
-                >
-                  Refresh
-                </Button>
-              </Box>
-            </Box>
-            <DataGrid
-              autoHeight
-              rows={filteredRows}
-              columns={columns}
-              pageSizeOptions={[5, 10, 20, 50, 100]}
-              initialState={{
-                pagination: {
-                  paginationModel: { page: 0, pageSize: 10 },
-                },
-              }}
-              sx={{
-                border: 'none',
-                '& .MuiDataGrid-cell': {
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                },
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: 'grey.50',
-                  borderBottom: '2px solid',
-                  borderColor: 'divider',
-                },
-                '& .MuiDataGrid-toolbarContainer': {
-                  p: 1,
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                },
-              }}
-              loading={gridLoading}
-              disableRowSelectionOnClick
-            />
-          </Paper>
-
+          />
           {/* Create/Edit Dialog */}
           <Dialog 
             open={openDialog} 
