@@ -73,86 +73,92 @@ import {
   Payment as PaymentIcon,
   Schedule as TimelineIcon,
   Warning,
+  AddCircleOutline,
+  CloudUpload,
+  Download,
 } from "@mui/icons-material";
 import { useForm, usePage } from '@inertiajs/react';
 import Notification from "@/Components/Notification";
+import PageHeader from "@/Components/PageHeader";
+import SummaryCard from "@/Components/SummaryCard";
+import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 
 // Custom Card Component with modern design
-const SummaryCard = ({ title, value, icon, color, subtitle, trend }) => (
-  <Card sx={{ 
-    borderRadius: 3,
-    p: 2,
-    background: `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(color, 0.05)} 100%)`,
-    border: `1px solid ${alpha(color, 0.2)}`,
-    boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
-    transition: 'all 0.3s ease-in-out',
-    position: 'relative',
-    overflow: 'hidden',
-    '&:hover': {
-      transform: 'translateY(-8px)',
-      boxShadow: `0 12px 40px 0 ${alpha(color, 0.3)}`,
-    },
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 4,
-      background: `linear-gradient(90deg, ${color}, ${alpha(color, 0.7)})`,
-    }
-  }}>
-    <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-      <Stack spacing={1.5}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-          <Box>
-            <Typography variant="h4" fontWeight={800} color={color} sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
-              {value}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mt: 0.5 }}>
-              {title}
-            </Typography>
-            {subtitle && (
-              <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.8 }}>
-                {subtitle}
-              </Typography>
-            )}
-          </Box>
-          <Avatar sx={{ 
-            bgcolor: alpha(color, 0.1), 
-            color: color,
-            width: 48,
-            height: 48,
-            borderRadius: 2
-          }}>
-            {icon}
-          </Avatar>
-        </Stack>
-        {trend && (
-          <Chip 
-            label={trend} 
-            size="small" 
-            sx={{ 
-              backgroundColor: alpha(color, 0.1), 
-              color: color,
-              fontWeight: 600,
-              alignSelf: 'flex-start'
-            }} 
-          />
-        )}
-      </Stack>
-    </CardContent>
-  </Card>
-);
+// const SummaryCard = ({ title, value, icon, color, subtitle, trend }) => (
+//   <Card sx={{ 
+//     borderRadius: 3,
+//     p: 2,
+//     background: `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(color, 0.05)} 100%)`,
+//     border: `1px solid ${alpha(color, 0.2)}`,
+//     boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
+//     transition: 'all 0.3s ease-in-out',
+//     position: 'relative',
+//     overflow: 'hidden',
+//     '&:hover': {
+//       transform: 'translateY(-8px)',
+//       boxShadow: `0 12px 40px 0 ${alpha(color, 0.3)}`,
+//     },
+//     '&::before': {
+//       content: '""',
+//       position: 'absolute',
+//       top: 0,
+//       left: 0,
+//       right: 0,
+//       height: 4,
+//       background: `linear-gradient(90deg, ${color}, ${alpha(color, 0.7)})`,
+//     }
+//   }}>
+//     <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+//       <Stack spacing={1.5}>
+//         <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+//           <Box>
+//             <Typography variant="h4" fontWeight={800} color={color} sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
+//               {value}
+//             </Typography>
+//             <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mt: 0.5 }}>
+//               {title}
+//             </Typography>
+//             {subtitle && (
+//               <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.8 }}>
+//                 {subtitle}
+//               </Typography>
+//             )}
+//           </Box>
+//           <Avatar sx={{ 
+//             bgcolor: alpha(color, 0.1), 
+//             color: color,
+//             width: 48,
+//             height: 48,
+//             borderRadius: 2
+//           }}>
+//             {icon}
+//           </Avatar>
+//         </Stack>
+//         {trend && (
+//           <Chip 
+//             label={trend} 
+//             size="small" 
+//             sx={{ 
+//               backgroundColor: alpha(color, 0.1), 
+//               color: color,
+//               fontWeight: 600,
+//               alignSelf: 'flex-start'
+//             }} 
+//           />
+//         )}
+//       </Stack>
+//     </CardContent>
+//   </Card>
+// );
 
 // Custom Toolbar Component
-const CustomToolbar = () => (
-  <GridToolbarContainer sx={{ p: 2, gap: 1 }}>
-    <GridToolbarColumnsButton />
-    <GridToolbarFilterButton />
-    <GridToolbarExport />
-  </GridToolbarContainer>
-);
+// const CustomToolbar = () => (
+//   <GridToolbarContainer sx={{ p: 2, gap: 1 }}>
+//     <GridToolbarColumnsButton />
+//     <GridToolbarFilterButton />
+//     <GridToolbarExport />
+//   </GridToolbarContainer>
+// );
 
 export default function PurchaseOrders({ purchaseOrders, auth, universities, suppliers, departments, users }) {
   const theme = useTheme();
@@ -660,6 +666,94 @@ export default function PurchaseOrders({ purchaseOrders, auth, universities, sup
       setAlert((prev) => ({ ...prev, open: false }));
     };
 
+  // Create action buttons for header
+    const actionButtons = [
+      <Button
+        key="new-department"
+        variant="contained"
+        startIcon={<AddCircleOutline />}
+        onClick={handleCreate}
+        size="medium"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+          '&:hover': {
+            boxShadow: '0 8px 30px rgba(102, 126, 234, 0.4)',
+            transform: 'translateY(-1px)',
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        New Purchase Order
+      </Button>,
+      <Button
+        key="import"
+        size="medium"
+        startIcon={<CloudUpload />}
+        component="label"
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'primary.main',
+            backgroundColor: 'rgba(102, 126, 234, 0.04)',
+            color: 'primary.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Import
+        <input
+          hidden
+          accept=".xlsx,.xls,.csv"
+          type="file"
+          onChange={handleUpload}
+        />
+      </Button>,
+      <Button
+        key="export"
+        size="medium"
+        startIcon={<Download />}
+        onClick={handleExport}
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'success.main',
+            backgroundColor: 'rgba(16, 185, 129, 0.04)',
+            color: 'success.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Export
+      </Button>
+    ];
+        
+
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -677,7 +771,16 @@ export default function PurchaseOrders({ purchaseOrders, auth, universities, sup
             message={alert.message}
             onClose={handleCloseAlert}
           />
-
+        <PageHeader
+          title="Purchase Order"
+          subtitle="Manage Purchase Order"
+          icon={<PurchaseOrderIcon sx={{ fontSize: 28 }} />}
+          actionButtons={actionButtons}
+          searchText={searchText}
+          onSearchClear={() => setSearchText('')}
+          filteredCount={filteredRows.length}
+          totalCount={rows.length}
+        />
           {/* Enhanced Summary Cards with Modern Design */}
           <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 4 }}>
             <Grid size={{ xs: 12, sm: 6, md: 6 }}>
@@ -730,7 +833,7 @@ export default function PurchaseOrders({ purchaseOrders, auth, universities, sup
           </Grid>
 
           {/* Data Grid Section */}
-          <Paper
+          {/* <Paper
             sx={{
               height: "100%",
               width: "100%",
@@ -878,7 +981,28 @@ export default function PurchaseOrders({ purchaseOrders, auth, universities, sup
               loading={gridLoading}
               disableRowSelectionOnClick
             />
-          </Paper>
+          </Paper> */}
+          <EnhancedDataGrid
+            rows={filteredRows}
+            columns={columns}
+            loading={gridLoading}
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            onSearchClear={() => setSearchText('')}
+            onAdd={handleCreate}
+            onExport={handleExport}
+            onImport={handleUpload}
+            onRefresh={handleRefresh}
+            title="Purchase Order"
+            subtitle="History"
+            icon={<PurchaseOrderIcon />}
+            addButtonText="New"
+            pageSizeOptions={[5, 10, 20, 50, 100]}
+            initialState={{
+              pagination: { paginationModel: { page: 0, pageSize: 10 } },
+              sorting: { sortModel: [{ field: 'lft', sort: 'asc' }] }
+            }}
+          />
 
           {/* Create/Edit Dialog */}
           <Dialog 

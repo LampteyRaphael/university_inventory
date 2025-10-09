@@ -1,159 +1,3 @@
-// import React from 'react';
-// import {
-//   Box,
-//   Typography,
-//   Avatar,
-//   Button,
-//   Chip,
-//   Grid,
-//   IconButton,
-// } from '@mui/material';
-// import { Close as CloseIcon } from '@mui/icons-material';
-
-// const PageHeader = ({
-//   title,
-//   subtitle,
-//   icon,
-//   actionButtons = [],
-//   searchText = '',
-//   onSearchClear,
-//   filteredCount,
-//   totalCount,
-//   gradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-// }) => {
-//   return (
-//     <Box
-//       sx={{
-//         mb: 4,
-//         p: 3,
-//         borderRadius: 3,
-//         background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,255,0.98) 100%)',
-//         boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-//         border: '1px solid rgba(255,255,255,0.8)',
-//         backdropFilter: 'blur(10px)',
-//         position: 'relative',
-//         overflow: 'hidden',
-//         '&::before': {
-//           content: '""',
-//           position: 'absolute',
-//           top: 0,
-//           left: 0,
-//           right: 0,
-//           height: '4px',
-//           background: gradient,
-//         }
-//       }}
-//     >
-//       <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-//         <Grid size={{ xs: 12, md: 6 }}>
-//           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-//             <Avatar
-//               sx={{
-//                 bgcolor: 'primary.main',
-//                 width: 56,
-//                 height: 56,
-//                 background: gradient,
-//                 boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)',
-//               }}
-//             >
-//               {icon}
-//             </Avatar>
-            
-//             <Box>
-//               <Typography 
-//                 variant="h4" 
-//                 fontWeight={800}
-//                 sx={{
-//                   background: 'linear-gradient(135deg, #2D3748 0%, #4A5568 100%)',
-//                   backgroundClip: 'text',
-//                   WebkitBackgroundClip: 'text',
-//                   WebkitTextFillColor: 'transparent',
-//                   mb: 0.5
-//                 }}
-//               >
-//                 {title}
-//               </Typography>
-              
-//               <Typography 
-//                 variant="body1" 
-//                 color="text.secondary" 
-//                 sx={{ 
-//                   display: 'flex',
-//                   alignItems: 'center',
-//                   gap: 1,
-//                   fontWeight: 500
-//                 }}
-//               >
-//                 <Box 
-//                   component="span" 
-//                   sx={{ 
-//                     width: 6, 
-//                     height: 6, 
-//                     borderRadius: '50%', 
-//                     bgcolor: 'success.main',
-//                     animation: 'pulse 2s infinite'
-//                   }} 
-//                 />
-//                 {subtitle}
-//               </Typography>
-              
-//               {searchText && (
-//                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
-//                   <Chip
-//                     label={`${filteredCount} of ${totalCount} items`}
-//                     size="small"
-//                     sx={{ 
-//                       fontWeight: 600,
-//                       background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-//                       color: 'white',
-//                       boxShadow: '0 2px 12px rgba(16, 185, 129, 0.3)',
-//                     }}
-//                   />
-//                   <Button
-//                     size="small"
-//                     onClick={onSearchClear}
-//                     endIcon={<CloseIcon />}
-//                     sx={{ 
-//                       minWidth: 'auto', 
-//                       px: 1,
-//                       color: 'text.secondary',
-//                       '&:hover': { 
-//                         color: 'error.main',
-//                         backgroundColor: 'rgba(239, 68, 68, 0.04)'
-//                       }
-//                     }}
-//                   >
-//                     Clear
-//                   </Button>
-//                 </Box>
-//               )}
-//             </Box>
-//           </Box>
-//         </Grid>
-
-//         {actionButtons.length > 0 && (
-//           <Grid size={{ xs: 12, md: "auto" }}>
-//             <Grid
-//               container
-//               spacing={1.5}
-//               alignItems="center"
-//               justifyContent={{ xs: "flex-start", md: "flex-end" }}
-//               wrap="wrap"
-//             >
-//               {actionButtons.map((button, index) => (
-//                 <Grid key={index}>
-//                   {button}
-//                 </Grid>
-//               ))}
-//             </Grid>
-//           </Grid>
-//         )}
-//       </Grid>
-//     </Box>
-//   );
-// };
-
-// export default PageHeader;
 import React from 'react';
 import {
   Box,
@@ -162,8 +6,9 @@ import {
   Button,
   Chip,
   Grid,
+  alpha,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon, TrendingUp } from '@mui/icons-material';
 
 const PageHeader = ({
   title,
@@ -175,16 +20,26 @@ const PageHeader = ({
   filteredCount,
   totalCount,
   gradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  trend,
 }) => {
   return (
     <Box
       sx={{
         mb: 4,
-        p: 3,
+        p: { xs: 2.5, md: 3 },
         borderRadius: 3,
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,255,0.98) 100%)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-        border: '1px solid rgba(255,255,255,0.8)',
+        background: `
+          radial-gradient(ellipse at top right, ${alpha('#667eea', 0.02)} 0%, transparent 60%),
+          radial-gradient(ellipse at bottom left, ${alpha('#764ba2', 0.02)} 0%, transparent 60%),
+          linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(248,250,255,0.98) 100%)
+        `,
+        boxShadow: `
+          0 2px 4px -1px rgba(0,0,0,0.02),
+          0 4px 8px -2px rgba(0,0,0,0.04),
+          0 8px 16px -4px rgba(0,0,0,0.06)
+        `,
+        border: '1px solid',
+        borderColor: alpha('#e2e8f0', 0.6),
         backdropFilter: 'blur(10px)',
         position: 'relative',
         overflow: 'hidden',
@@ -194,113 +49,177 @@ const PageHeader = ({
           top: 0,
           left: 0,
           right: 0,
-          height: '4px',
-          background: gradient,
+          height: '1px',
+          background: `linear-gradient(90deg, transparent 0%, ${alpha('#667eea', 0.2)} 50%, transparent 100%)`,
         }
       }}
     >
       <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+        {/* Left Section - Title and Info */}
+        <Grid size={{ xs: 12, md: actionButtons.length > 0 ? 7 : 12 }}>
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2.5 }}>
             <Avatar
               sx={{
-                bgcolor: 'primary.main',
-                width: 56,
-                height: 56,
+                width: 60,
+                height: 60,
                 background: gradient,
-                boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)',
+                borderRadius: 2,
+                flexShrink: 0,
+                '& > svg': {
+                  fontSize: 28,
+                }
               }}
             >
               {icon}
             </Avatar>
             
-            <Box>
-              <Typography 
-                variant="h4" 
-                fontWeight={800}
-                sx={{
-                  background: 'linear-gradient(135deg, #2D3748 0%, #4A5568 100%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  mb: 0.5
-                }}
-              >
-                {title}
-              </Typography>
+            <Box sx={{ flex: 1, minWidth: 0 }}> {/* minWidth: 0 prevents overflow */}
+              {/* Title Row */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, flexWrap: 'wrap' }}>
+                <Typography 
+                  variant="h5" 
+                  fontWeight={800}
+                  sx={{
+                    color: 'text.primary',
+                    letterSpacing: '-0.01em',
+                    lineHeight: 1.2,
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {title}
+                </Typography>
+                
+                {trend && (
+                  <Chip
+                    icon={<TrendingUp sx={{ fontSize: 14 }} />}
+                    label={trend}
+                    size="small"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      background: `linear-gradient(135deg, ${alpha('#10b981', 0.9)} 0%, ${alpha('#059669', 0.9)} 100%)`,
+                      color: 'white',
+                      height: 24,
+                      '& .MuiChip-icon': {
+                        color: 'white !important',
+                        fontSize: '14px !important'
+                      }
+                    }}
+                  />
+                )}
+              </Box>
               
+              {/* Subtitle */}
               <Typography 
                 variant="body1" 
-                color="text.secondary" 
                 sx={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  fontWeight: 500
+                  color: 'text.secondary',
+                  fontWeight: 400,
+                  lineHeight: 1.5,
+                  mb: 2,
+                  wordBreak: 'break-word',
                 }}
               >
-                <Box 
-                  component="span" 
-                  sx={{ 
-                    width: 6, 
-                    height: 6, 
-                    borderRadius: '50%', 
-                    bgcolor: 'success.main',
-                    animation: 'pulse 2s infinite'
-                  }} 
-                />
                 {subtitle}
               </Typography>
               
-              {searchText && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
-                  <Chip
-                    label={`${filteredCount} of ${totalCount} items`}
-                    size="small"
-                    sx={{ 
-                      fontWeight: 600,
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      color: 'white',
-                      boxShadow: '0 2px 12px rgba(16, 185, 129, 0.3)',
+              {/* Stats and Search Info */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                {/* Total Count */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: `linear-gradient(135deg, #10b981 0%, #059669 100%)`,
+                      flexShrink: 0,
                     }}
                   />
-                  <Button
-                    size="small"
-                    onClick={onSearchClear}
-                    endIcon={<CloseIcon />}
-                    sx={{ 
-                      minWidth: 'auto', 
-                      px: 1,
-                      color: 'text.secondary',
-                      '&:hover': { 
-                        color: 'error.main',
-                        backgroundColor: 'rgba(239, 68, 68, 0.04)'
-                      }
-                    }}
-                  >
-                    Clear
-                  </Button>
+                  <Typography variant="body2" fontWeight={500} color="text.primary">
+                    {totalCount} total items
+                  </Typography>
                 </Box>
-              )}
+
+                {/* Search Results */}
+                {searchText && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip
+                      label={`${filteredCount} results`}
+                      size="small"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        background: `linear-gradient(135deg, ${alpha('#667eea', 0.9)} 0%, ${alpha('#764ba2', 0.9)} 100%)`,
+                        color: 'white',
+                        height: 24,
+                      }}
+                    />
+                    <Button
+                      size="small"
+                      onClick={onSearchClear}
+                      startIcon={<CloseIcon sx={{ fontSize: 14 }} />}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1,
+                        py: 0.25,
+                        fontSize: '0.75rem',
+                        color: 'text.secondary',
+                        fontWeight: 500,
+                        borderRadius: 1,
+                        backgroundColor: alpha('#64748b', 0.04),
+                        '&:hover': {
+                          color: 'error.main',
+                          backgroundColor: alpha('#ef4444', 0.04),
+                        },
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  </Box>
+                )}
+              </Box>
             </Box>
           </Box>
         </Grid>
 
+        {/* Right Section - Action Buttons */}
         {actionButtons.length > 0 && (
-          <Grid size={{ xs: 12, md: "auto" }}>
-            <Grid
-              container
-              spacing={1.5}
-              alignItems="center"
-              justifyContent={{ xs: "flex-start", md: "flex-end" }}
-              wrap="wrap"
+          <Grid size={{ xs: 12, md: 5 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 1,
+                alignItems: 'center',
+                justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                flexWrap: 'wrap',
+              }}
             >
               {actionButtons.map((button, index) => (
-                <Grid key={index}>
+                <Box
+                  key={index}
+                  sx={{
+                    '& .MuiButton-root': {
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      px: 2,
+                      py: 1,
+                      minHeight: '40px',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                      }
+                    }
+                  }}
+                >
                   {button}
-                </Grid>
+                </Box>
               ))}
-            </Grid>
+            </Box>
           </Grid>
         )}
       </Grid>
