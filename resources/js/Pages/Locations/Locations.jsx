@@ -70,79 +70,18 @@ import {
   Download as DownloadIcon,
   AddCircle as AddCircleIcon,
   FilterList as FilterIcon,
+  Inventory,
+  CloudUpload,
+  AddCircleOutline,
+  Download,
 } from "@mui/icons-material";
 import { orange } from "@mui/material/colors";
 import Notification from "@/Components/Notification";
+import SummaryCard from "@/Components/SummaryCard";
+import formatNumber from "../Service/FormatNumber";
+import PageHeader from "@/Components/PageHeader";
+import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 
-// Enhanced SummaryCard with modern design
-const SummaryCard = ({ title, value, icon, color, subtitle, trend, onClick }) => (
-  <Card 
-    sx={{ 
-      borderRadius: 3,
-      p: 2.5,
-      background: `linear-gradient(135deg, ${alpha(color, 0.08)} 0%, ${alpha(color, 0.02)} 100%)`,
-      border: `1px solid ${alpha(color, 0.1)}`,
-      boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      cursor: onClick ? 'pointer' : 'default',
-      position: 'relative',
-      overflow: 'hidden',
-      '&:hover': {
-        transform: onClick ? 'translateY(-6px)' : 'none',
-        boxShadow: onClick ? `0 12px 40px ${alpha(color, 0.2)}` : '0 8px 32px rgba(0,0,0,0.12)',
-        borderColor: alpha(color, 0.3),
-      },
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 3,
-        background: `linear-gradient(90deg, ${color}, ${alpha(color, 0.7)})`,
-      }
-    }}
-    onClick={onClick}
-  >
-    <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h3" fontWeight={800} color={color} sx={{ mb: 0.5 }}>
-            {value}
-          </Typography>
-          <Typography variant="h6" fontWeight={600} color="text.primary" sx={{ mb: 0.5 }}>
-            {title}
-          </Typography>
-          {subtitle && (
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {subtitle}
-            </Typography>
-          )}
-          {trend && (
-            <Chip 
-              label={trend.value} 
-              size="small" 
-              color={trend.positive ? 'success' : 'error'}
-              variant="filled"
-              sx={{ fontWeight: 600, fontSize: '0.7rem' }}
-            />
-          )}
-        </Box>
-        <Avatar 
-          sx={{ 
-            bgcolor: alpha(color, 0.1), 
-            color: color,
-            width: 56,
-            height: 56,
-            boxShadow: `0 4px 12px ${alpha(color, 0.2)}`,
-          }}
-        >
-          {icon}
-        </Avatar>
-      </Stack>
-    </CardContent>
-  </Card>
-);
 
 // Utilization Progress Component
 const UtilizationProgress = ({ value, color = 'primary' }) => (
@@ -688,6 +627,92 @@ export default function Locations({ locations, auth, universities, departments }
     setAlert((prev) => ({ ...prev, open: false }));
   };
 
+    const actionButtons = [
+      <Button
+        key="new-item"
+        variant="contained"
+        startIcon={<AddCircleOutline />}
+        onClick={handleCreate}
+        size="medium"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+          '&:hover': {
+            boxShadow: '0 8px 30px rgba(102, 126, 234, 0.4)',
+            transform: 'translateY(-1px)',
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        New Location
+      </Button>,
+      <Button
+        key="import"
+        size="medium"
+        startIcon={<CloudUpload />}
+        component="label"
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'primary.main',
+            backgroundColor: 'rgba(102, 126, 234, 0.04)',
+            color: 'primary.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Import
+        <input
+          hidden
+          accept=".xlsx,.xls,.csv"
+          type="file"
+          onChange={handleUpload}
+        />
+      </Button>,
+      <Button
+        key="export"
+        size="medium"
+        startIcon={<Download />}
+        onClick={handleExport}
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'success.main',
+            backgroundColor: 'rgba(16, 185, 129, 0.04)',
+            color: 'success.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Export
+      </Button>
+    ];
+
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -707,12 +732,25 @@ export default function Locations({ locations, auth, universities, departments }
             onClose={handleCloseAlert}
           />
 
+                    {/* Header Section */}
+          <PageHeader
+            title="Inventory Location "
+            subtitle="Manage your inventory Location, track Location, and monitor Location performance"
+            icon={<LocationIcon sx={{ fontSize: 28 }} />}
+            actionButtons={actionButtons}
+            searchText={searchText}
+            onSearchClear={() => setSearchText('')}
+            filteredCount={filteredRows.length}
+            totalCount={rows.length}
+          />
+
           {/* Enhanced Summary Cards */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Total Locations" 
-                value={totalLocations} 
+                value={formatNumber(totalLocations)} 
+                change={"+"+formatNumber(totalLocations)}
                 icon={<LocationIcon />} 
                 color={theme.palette.primary.main}
                 subtitle="All registered locations"
@@ -723,7 +761,8 @@ export default function Locations({ locations, auth, universities, departments }
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Active Locations" 
-                value={activeLocations} 
+                value={formatNumber(activeLocations)} 
+                change={"+"+formatNumber(activeLocations)}
                 icon={<ActiveIcon />} 
                 color={theme.palette.success.main}
                 subtitle={`${((activeLocations / totalLocations) * 100).toFixed(1)}% of total`}
@@ -733,7 +772,8 @@ export default function Locations({ locations, auth, universities, departments }
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Total Capacity" 
-                value={totalCapacity.toLocaleString()} 
+                value={formatNumber(totalCapacity)} 
+                change={"+"+formatNumber(totalCapacity)}
                 icon={<CapacityIcon />} 
                 color={theme.palette.info.main}
                 subtitle="Available storage units"
@@ -743,7 +783,8 @@ export default function Locations({ locations, auth, universities, departments }
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="High Utilization" 
-                value={highUtilizationCount} 
+                value={formatNumber(highUtilizationCount)} 
+                change={"+"+formatNumber(highUtilizationCount)}
                 icon={<UtilizationIcon />} 
                 color={theme.palette.warning.main}
                 subtitle="Locations above 90% capacity"
@@ -753,177 +794,28 @@ export default function Locations({ locations, auth, universities, departments }
           </Grid>
 
           {/* Enhanced Data Grid Section */}
-          <Paper
-            sx={{
-              borderRadius: 3,
-              overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+      
+          <EnhancedDataGrid
+            rows={filteredRows}
+            columns={columns}
+            loading={false}
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            onSearchClear={() => setSearchText('')}
+            onAdd={handleCreate}
+            onExport={handleExport}
+            onImport={handleUpload}
+            onRefresh={handleRefresh}
+            title="Items"
+            subtitle="inventory Items"
+            icon={<LocationIcon />}
+            addButtonText="New"
+            pageSizeOptions={[5, 10, 20, 50, 100]}
+            initialState={{
+              pagination: { paginationModel: { page: 0, pageSize: 10 } },
+              sorting: { sortModel: [{ field: 'lft', sort: 'asc' }] }
             }}
-          >
-            {/* Enhanced Responsive Header */}
-            <Box sx={{ 
-              p: 3,
-              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-              backgroundColor: 'background.paper',
-            }}>
-              <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-                {/* Left Section */}
-                <Grid size={{ xs: 12, md: 'auto' }}>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ 
-                      bgcolor: 'primary.main', 
-                      width: 48, 
-                      height: 48,
-                      boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
-                    }}>
-                      <LocationIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h5" fontWeight={700}>
-                        Locations Management
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Manage and monitor all storage locations
-                      </Typography>
-                    </Box>
-                    {searchText && (
-                      <Chip 
-                        label={`${filteredRows.length} results`} 
-                        size="small" 
-                        color="primary"
-                        variant="filled"
-                        sx={{ fontWeight: 600 }}
-                      />
-                    )}
-                  </Stack>
-                </Grid>
-
-                {/* Right Section - Responsive Actions */}
-                <Grid size={{ xs: 12, md: 'auto' }}>
-                  <Stack 
-                    direction={{ xs: 'column', sm: 'row' }} 
-                    spacing={1} 
-                    alignItems={{ xs: 'stretch', sm: 'center' }}
-                  >
-                    {/* Search */}
-                    <TextField
-                      size="small"
-                      placeholder="Search locations..."
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon color="action" />
-                          </InputAdornment>
-                        ),
-                        sx: { 
-                          minWidth: { xs: '100%', sm: 280 },
-                          borderRadius: 2,
-                        }
-                      }}
-                    />
-
-                    {/* Action Buttons */}
-                    <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-                      <Tooltip title="Refresh Data">
-                        <IconButton onClick={handleRefresh} color="primary">
-                          <RefreshIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Button 
-                        variant="contained" 
-                        startIcon={<AddCircleIcon />} 
-                        onClick={handleCreate}
-                        sx={{ 
-                          borderRadius: 2,
-                          px: 3,
-                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
-                        }}
-                      >
-                        New Location
-                      </Button>
-                    </Stack>
-                  </Stack>
-
-                  {/* Quick Filters */}
-                  <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', gap: 1 }}>
-                    <Chip
-                      icon={<FilterIcon />}
-                      label="All"
-                      variant={filters.status === 'all' ? 'filled' : 'outlined'}
-                      onClick={() => handleFilterChange('status', 'all')}
-                      color="primary"
-                    />
-                    <Chip
-                      label="Active"
-                      variant={filters.status === 'active' ? 'filled' : 'outlined'}
-                      onClick={() => handleFilterChange('status', 'active')}
-                      color="success"
-                    />
-                    <Chip
-                      label="High Usage"
-                      variant={filters.utilization === 'high' ? 'filled' : 'outlined'}
-                      onClick={() => handleFilterChange('utilization', 'high')}
-                      color="warning"
-                    />
-                    <Button
-                      size="small"
-                      startIcon={<DownloadIcon />}
-                      onClick={handleExport}
-                      variant="outlined"
-                      sx={{ borderRadius: 2 }}
-                    >
-                      Export
-                    </Button>
-                    <Button
-                      size="small"
-                      startIcon={<UploadFileIcon />}
-                      component="label"
-                      variant="outlined"
-                      sx={{ borderRadius: 2 }}
-                    >
-                      Import
-                      <input hidden accept=".xlsx,.xls,.csv" type="file" onChange={handleUpload} />
-                    </Button>
-                  </Stack>
-                </Grid>
-              </Grid>
-            </Box>
-
-            {/* Data Grid */}
-            <Box sx={{ height: 600 }}>
-              <DataGrid
-                rows={filteredRows}
-                columns={columns}
-                pageSizeOptions={[10, 25, 50, 100]}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 25 },
-                  },
-                }}
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-cell': {
-                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                  },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                    borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-                    fontSize: '0.875rem',
-                    fontWeight: 700,
-                  },
-                  '& .MuiDataGrid-row:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                  },
-                }}
-                loading={gridLoading}
-                disableRowSelectionOnClick
-              />
-            </Box>
-          </Paper>
-
+          />
           {/* Enhanced Create/Edit Dialog */}
           <Dialog 
             open={openDialog} 
