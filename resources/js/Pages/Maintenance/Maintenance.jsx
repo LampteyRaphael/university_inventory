@@ -56,6 +56,9 @@ import {
   Download,
 } from "@mui/icons-material";
 import { useForm, usePage, router } from "@inertiajs/react";
+import SummaryCard from "@/Components/SummaryCard";
+import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
+import PageHeader from "@/Components/PageHeader";
 
 // Custom Hooks for Maintenance Records
 const useMaintenanceManager = (initialRecords, auth) => {
@@ -65,7 +68,6 @@ const useMaintenanceManager = (initialRecords, auth) => {
 
   useEffect(() => {
     setLoading(true);
-    // console.log(initialRecords)
     const formatted = initialRecords?.map((record, index) => ({
       id: record?.maintenance_id ?? index + 1,
       ...record,
@@ -115,103 +117,6 @@ const useMaintenanceManager = (initialRecords, auth) => {
   };
 };
 
-// Components
-const SummaryCard = ({ title, value, icon, color, subtitle }) => {
-  const theme = useTheme();
-  return (
-    <Card sx={{
-      borderRadius: 3,
-      p: 2,
-      background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-      border: '1px solid rgba(0,0,0,0.04)',
-      transition: 'all 0.3s ease',
-      '&:hover': {
-        transform: 'translateY(-2px)',
-        boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-      },
-    }}>
-      <CardContent sx={{ p: '0 !important' }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Box>
-            <Typography variant="h4" fontWeight={700} color={color}>
-              {value}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" fontWeight={500}>
-              {title}
-            </Typography>
-            {subtitle && (
-              <Typography variant="caption" color="text.secondary">
-                {subtitle}
-              </Typography>
-            )}
-          </Box>
-          <Avatar sx={{ bgcolor: `${color}08`, color, width: 48, height: 48 }}>
-            {icon}
-          </Avatar>
-        </Stack>
-      </CardContent>
-    </Card>
-  );
-};
-
-const CustomToolbar = ({ searchText, onSearchChange, loading, filteredRows, rows }) => (
-  <Box
-    sx={{
-      width: "100%",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      backgroundColor: "background.paper",
-      p: 2,
-      borderRadius: 2,
-      boxShadow: 1,
-      mb: 2,
-    }}
-  >
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-      <MaintenanceIcon color="primary" fontSize="medium" />
-      <Typography variant="body2" fontWeight={700} color="text.primary">
-        Maintenance Records
-      </Typography>
-      {searchText && (
-        <Chip
-          label={`${filteredRows.length} of ${rows.length} records`}
-          size="small"
-          color="primary"
-          variant="outlined"
-          sx={{ fontWeight: 500 }}
-        />
-      )}
-    </Box>
-
-    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-      <TextField
-        size="small"
-        placeholder="Search by code, description, or technician..."
-        value={searchText}
-        onChange={(e) => onSearchChange(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon color="action" />
-            </InputAdornment>
-          ),
-        }}
-        sx={{
-          width: { xs: "100%", sm: 250 },
-          backgroundColor: "background.default",
-          borderRadius: 1,
-        }}
-      />
-      <Tooltip title="Refresh">
-        <IconButton onClick={() => router.reload()} disabled={loading}>
-          <RefreshIcon />
-        </IconButton>
-      </Tooltip>
-    </Box>
-  </Box>
-);
 
 const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], departments = [],universities=[], auth = null }) => {
   const { data, setData, post, put, processing, errors, reset } = useForm({
@@ -295,6 +200,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
       });
     }
   };
+
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -640,6 +546,9 @@ const DeleteConfirmationDialog = ({ open, onClose, record, onConfirm }) => {
   );
 };
 
+
+
+
 // Main Component
 export default function MaintenanceRecords({ records, auth, items=[], departments=[],universities=[] }) {
   const theme = useTheme();
@@ -895,6 +804,93 @@ export default function MaintenanceRecords({ records, auth, items=[], department
     },
   ];
 
+
+    // Create action buttons for header
+const actionButtons = [
+      <Button
+        key="new-department"
+        variant="contained"
+        startIcon={<AddCircleOutline />}
+        onClick={handleCreate}
+        size="medium"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+          '&:hover': {
+            boxShadow: '0 8px 30px rgba(102, 126, 234, 0.4)',
+            transform: 'translateY(-1px)',
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        New Record
+      </Button>,
+      <Button
+        key="import"
+        size="medium"
+        startIcon={<CloudUpload />}
+        component="label"
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'primary.main',
+            backgroundColor: 'rgba(102, 126, 234, 0.04)',
+            color: 'primary.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Import
+        <input
+          hidden
+          accept=".xlsx,.xls,.csv"
+          type="file"
+          // onChange={handleImport}
+        />
+      </Button>,
+      <Button
+        key="export"
+        size="medium"
+        startIcon={<Download />}
+        onClick={handleExport}
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'success.main',
+            backgroundColor: 'rgba(16, 185, 129, 0.04)',
+            color: 'success.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Export
+      </Button>
+];
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -913,193 +909,114 @@ export default function MaintenanceRecords({ records, auth, items=[], department
             onClose={handleCloseAlert}
           />
           
-          <Box
-            sx={{
-              mb: 3,
-              p: 2,
-              borderRadius: 2,
-              backgroundColor: "background.paper",
-              boxShadow: 1,
-            }}
-          >
-            <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-                  <MaintenanceIcon color="primary" fontSize="large" />
-                  <Box>
-                    <Typography variant="h5" fontWeight={700} color="text.primary">
-                      Maintenance Records
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      Manage maintenance schedules, track repairs, and monitor equipment performance
-                    </Typography>
-                  </Box>
-                  {searchText && (
-                    <Chip
-                      label={`${rows.length} records filtered`}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ fontWeight: 500 }}
-                    />
-                  )}
-                </Box>
-              </Grid>
-
-              <Grid size={{ xs: 12, md: "auto" }}>
-                <Grid
-                  container
-                  spacing={1.5}
-                  alignItems="center"
-                  justifyContent={{ xs: "flex-start", md: "flex-end" }}
-                  wrap="wrap"
-                >
-                  <Grid>
-                    <Button
-                      variant="contained"
-                      startIcon={<AddCircleOutline />}
-                      onClick={handleCreate}
-                      size="small"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      New Record
-                    </Button>
-                  </Grid>
-                  <Grid>
-                    <Button
-                      size="small"
-                      startIcon={<Download />}
-                      onClick={handleExport}
-                      variant="outlined"
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                    >
-                      Export
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Box>
+        <PageHeader
+          title="Maintenance Records"
+          subtitle="Manage maintenance schedules, track repairs, and monitor equipment performance"
+          icon={<AddCircleOutline sx={{ fontSize: 28 }} />}
+          actionButtons={actionButtons}
+          searchText={searchText}
+          onSearchClear={() => setSearchText('')}
+          filteredCount={rows?.length||0}
+          totalCount={rows?.length || 0}
+        />
 
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <Grid size={{ xs: 12, sm: 6, md:4  }}>
               <SummaryCard
                 title="Total Records"
                 value={statistics.totalRecords}
                 icon={<WorkOrderIcon />}
                 color={theme.palette.primary.main||""}
                 subtitle="All maintenance records"
+                percentage={statistics.totalRecords}
+                progress={65}
+                showWave={false}
+                showProgress={false}
+                lastUpdated="5 hours ago"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <Grid size={{ xs: 1, sm: 6, md: 4 }}>
               <SummaryCard
                 title="Scheduled"
                 value={statistics.scheduled}
                 icon={<ScheduleIcon />}
                 color={theme.palette.info.main||""}
                 subtitle="Upcoming maintenance"
+                showWave={false}
+                percentage={statistics.scheduled}
+                lastUpdated={statistics.created_at}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4}}>
               <SummaryCard
                 title="In Progress"
                 value={statistics.inProgress}
                 icon={<MaintenanceIcon />}
                 color={theme.palette.warning.main||""}
                 subtitle="Active repairs"
+                showWave={false}
+                percentage={statistics.inProgress}
+                lastUpdated={statistics.created_at}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <SummaryCard
                 title="Completed"
                 value={statistics.completed||""}
                 icon={<CompletedIcon />}
                 color={theme.palette.success.main}
                 subtitle="Finished maintenance"
+                showWave={false}
+                percentage={statistics.completed}
+                lastUpdated={statistics.created_at}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <SummaryCard
                 title="Critical"
                 value={statistics.critical|| ""}
                 icon={<CriticalIcon />}
                 color={theme.palette.error.main}
                 subtitle="High priority issues"
+                showWave={false}
+                percentage={statistics.critical}
+                lastUpdated={statistics.created_at}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <SummaryCard
                 title="Total Cost"
                 value={`₵${statistics?.totalCost?.toLocaleString() ?? 0}`}
                 icon={<DownloadIcon />}
                 color={theme.palette.secondary.main}
                 subtitle="Maintenance costs"
+                showWave={false}
+                percentage={statistics.totalCost}
+                lastUpdated={statistics.created_at}
               />
             </Grid>
           </Grid>
 
-          <Paper sx={{
-            height: "100%",
-            width: "100%",
-            borderRadius: 2,
-            overflow: 'hidden',
-            boxShadow: 3,
-          }}>
-            <CustomToolbar
-              searchText={searchText}
-              onSearchChange={setSearchText}
-              loading={loading}
-              filteredRows={rows}
-              rows={rows}
-            />
-            <DataGrid
-              rows={rows}
-              columns={columns}
-              loading={loading}
-              pageSizeOptions={[10, 25, 50, 100]}
-              initialState={{
-                pagination: { paginationModel: { pageSize: 25 } },
-                sorting: { sortModel: [{ field: 'scheduled_date', sort: 'desc' }] },
-              }}
-              sx={{
-                border: 'none',
-                '& .MuiDataGrid-cell': {
-                  borderBottom: `1px solid ${theme.palette.divider}`,
-                },
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: theme.palette.grey[50],
-                  borderBottom: `2px solid ${theme.palette.divider}`,
-                },
-                '& .MuiDataGrid-virtualScroller': {
-                  backgroundColor: theme.palette.background.paper,
-                },
-              }}
-            />
-            
-            {loading && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  zIndex: 1,
-                }}
-              >
-                <Stack spacing={2} alignItems="center">
-                  <CircularProgress size={40} />
-                  <Typography variant="body2" color="text.secondary">
-                    Loading maintenance records...
-                  </Typography>
-                </Stack>
-              </Box>
-            )}
-          </Paper>
+        <EnhancedDataGrid
+          rows={rows}  // Use the filtered rows from your hook
+          columns={columns}
+          loading={loading}  // Use loading state from your hook
+          searchText={searchText}
+          onSearchChange={setSearchText}
+          onSearchClear={() => setSearchText('')}
+          onAdd={handleCreate}
+          onExport={handleExport}
+          onRefresh={() => router.reload()}  // Add refresh handler
+          title="Maintenance Records"
+          subtitle="History"
+          icon={<MaintenanceIcon />}
+          addButtonText="New Record"
+          pageSizeOptions={[5, 10, 20, 50, 100]}
+          initialState={{
+            pagination: { paginationModel: { page: 0, pageSize: 10 } },
+            sorting: { sortModel: [{ field: 'scheduled_date', sort: 'desc' }] }  // Sort by most recent
+          }}
+        />
 
           <MaintenanceFormDialog
             open={dialogOpen}

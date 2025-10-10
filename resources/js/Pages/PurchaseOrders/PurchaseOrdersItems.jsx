@@ -61,76 +61,16 @@ import {
   CalendarToday as DateIcon,
   TrendingUp as TrendIcon,
   Warning,
+  ReceiptLong,
+  AddCircleOutline,
+  CloudUpload,
+  Download,
+  Receipt,
 } from "@mui/icons-material";
 import Notification from "@/Components/Notification";
-
-// Modern Summary Card Component
-const SummaryCard = ({ title, value, icon, color, subtitle, trend }) => (
-  <Card sx={{ 
-    borderRadius: 3,
-    p: 2,
-    background: `linear-gradient(135deg, ${alpha(color, 0.1)} 0%, ${alpha(color, 0.05)} 100%)`,
-    border: `1px solid ${alpha(color, 0.2)}`,
-    boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
-    transition: 'all 0.3s ease-in-out',
-    position: 'relative',
-    overflow: 'hidden',
-    '&:hover': {
-      transform: 'translateY(-8px)',
-      boxShadow: `0 12px 40px 0 ${alpha(color, 0.3)}`,
-    },
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 4,
-      background: `linear-gradient(90deg, ${color}, ${alpha(color, 0.7)})`,
-    }
-  }}>
-    <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-      <Stack spacing={1.5}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-          <Box>
-            <Typography variant="h4" fontWeight={800} color={color} sx={{ fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
-              {value}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ mt: 0.5 }}>
-              {title}
-            </Typography>
-            {subtitle && (
-              <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.8 }}>
-                {subtitle}
-              </Typography>
-            )}
-          </Box>
-          <Avatar sx={{ 
-            bgcolor: alpha(color, 0.1), 
-            color: color,
-            width: 48,
-            height: 48,
-            borderRadius: 2
-          }}>
-            {icon}
-          </Avatar>
-        </Stack>
-        {trend && (
-          <Chip 
-            label={trend} 
-            size="small" 
-            sx={{ 
-              backgroundColor: alpha(color, 0.1), 
-              color: color,
-              fontWeight: 600,
-              alignSelf: 'flex-start'
-            }} 
-          />
-        )}
-      </Stack>
-    </CardContent>
-  </Card>
-);
+import SummaryCard from "@/Components/SummaryCard";
+import PageHeader from "@/Components/PageHeader";
+import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 
 // Custom Toolbar Component
 const CustomToolbar = ({ onCreate, onImport, onExport, onRefresh }) => (
@@ -373,23 +313,23 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
         );
       }
     },
-    { 
+     { 
       field: 'delivery_info', 
       headerName: 'Delivery', 
-      width: 180,
+      width: 250,
       renderCell: (params) => {
-        const { expected_delivery_date, actual_delivery_date, status } = params.row;
+       const { expected_delivery_date, actual_delivery_date, status } = params.row;
         const isOverdue = expected_delivery_date && moment().isAfter(moment(expected_delivery_date));
         const isToday = expected_delivery_date && moment().isSame(moment(expected_delivery_date), 'day');
         
         return (
-          <Stack spacing={0.5}>
-            <Box display="flex" alignItems="center" gap={0.5}>
-              <DateIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              
               <Typography variant="caption" fontWeight="600">
                 Expected:
               </Typography>
-            </Box>
+            
             <Chip 
               label={expected_delivery_date || '—'} 
               size="small"
@@ -400,6 +340,9 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
               variant="outlined"
               sx={{ height: 20 }}
             />
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
             {actual_delivery_date && (
               <>
                 <Typography variant="caption" fontWeight="600" sx={{ mt: 0.5 }}>
@@ -410,7 +353,9 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
                 </Typography>
               </>
             )}
-          </Stack>
+            </Box>
+
+        </Box> 
         );
       }
     },
@@ -701,6 +646,93 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
     setAlert((prev) => ({ ...prev, open: false }));
   };
 
+  // Create action buttons for header
+    const actionButtons = [
+      <Button
+        key="new-department"
+        variant="contained"
+        startIcon={<AddCircleOutline />}
+        onClick={handleCreate}
+        size="medium"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+          '&:hover': {
+            boxShadow: '0 8px 30px rgba(102, 126, 234, 0.4)',
+            transform: 'translateY(-1px)',
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        New Purchase Order Item
+      </Button>,
+      <Button
+        key="import"
+        size="medium"
+        startIcon={<CloudUpload />}
+        component="label"
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'primary.main',
+            backgroundColor: 'rgba(102, 126, 234, 0.04)',
+            color: 'primary.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Import
+        <input
+          hidden
+          accept=".xlsx,.xls,.csv"
+          type="file"
+          onChange={handleUpload}
+        />
+      </Button>,
+      <Button
+        key="export"
+        size="medium"
+        startIcon={<Download />}
+        onClick={handleExport}
+        variant="outlined"
+        sx={{
+          borderRadius: 2.5,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 2.5,
+          py: 1,
+          border: '2px solid',
+          borderColor: 'grey.200',
+          color: 'text.primary',
+          '&:hover': {
+            borderColor: 'success.main',
+            backgroundColor: 'rgba(16, 185, 129, 0.04)',
+            color: 'success.main',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          },
+          transition: 'all 0.3s ease'
+        }}
+      >
+        Export
+      </Button>
+  ];
+         
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -719,6 +751,16 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
             message={alert.message}
             onClose={handleCloseAlert}
           />
+          <PageHeader
+          title="Purchase Order Items"
+          subtitle="Manage Purchase Order Items"
+          icon={<ReceiptLong sx={{ fontSize: 28 }} />}
+          actionButtons={actionButtons}
+          searchText={searchText}
+          onSearchClear={() => setSearchText('')}
+          filteredCount={filteredRows?.length||0}
+          totalCount={rows?.length || 0}
+        />
 
           {/* Enhanced Summary Cards */}
           <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 4 }}>
@@ -763,141 +805,27 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
           </Grid>
 
           {/* Data Grid Section */}
-          <Paper
-            sx={{
-              height: "100%",
-              width: "100%",
-              borderRadius: 3,
-              overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          <EnhancedDataGrid
+            rows={filteredRows}
+            columns={columns}
+            loading={gridLoading}
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            onSearchClear={() => setSearchText('')}
+            onAdd={handleCreate}
+            onExport={handleExport}
+            onImport={handleUpload}
+            onRefresh={handleRefresh}
+            title="Purchase Order"
+            subtitle="History"
+            icon={<Receipt />}
+            addButtonText="New"
+            pageSizeOptions={[5, 10, 20, 50, 100]}
+            initialState={{
+              pagination: { paginationModel: { page: 0, pageSize: 10 } },
+              sorting: { sortModel: [{ field: 'lft', sort: 'asc' }] }
             }}
-          >
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: isMobile ? 'column' : 'row',
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              p: 3, 
-              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-              gap: 2,
-              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`
-            }}>
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Avatar sx={{ 
-                  bgcolor: alpha(theme.palette.primary.main, 0.1), 
-                  color: theme.palette.primary.main,
-                  width: 48,
-                  height: 48
-                }}>
-                  <InventoryIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h5" fontWeight={800} color="text.primary">
-                    Purchase Order Items
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Manage and track all purchase order line items
-                  </Typography>
-                </Box>
-                {searchText && (
-                  <Chip 
-                    label={`${filteredRows.length} of ${rows.length} items`} 
-                    size="small" 
-                    variant="outlined" 
-                    color="primary"
-                  />
-                )}
-              </Stack>
-
-              <Stack 
-                direction={isMobile ? 'column' : 'row'} 
-                spacing={1} 
-                alignItems="center"
-                width={isMobile ? '100%' : 'auto'}
-              >
-                <TextField
-                  size="small"
-                  placeholder="Search order items..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  InputProps={{ 
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon color="action" />
-                      </InputAdornment>
-                    ),
-                    sx: { 
-                      width: isMobile ? '100%' : 300,
-                      borderRadius: 2
-                    }
-                  }}
-                />
-                <Button 
-                  variant="outlined" 
-                  onClick={handleRefresh} 
-                  startIcon={<RefreshIcon />}
-                  sx={{ borderRadius: 2 }}
-                  disabled={processing}
-                >
-                  Refresh
-                </Button>
-                <Button 
-                  variant="contained" 
-                  startIcon={<AddIcon />} 
-                  onClick={handleCreate}
-                  sx={{ borderRadius: 2 }}
-                  disabled={processing}
-                >
-                  New Item
-                </Button>
-              </Stack>
-            </Box>
-
-            <DataGrid
-              autoHeight
-              rows={filteredRows}
-              columns={columns}
-              pageSizeOptions={[10, 25, 50, 100]}
-              initialState={{
-                pagination: {
-                  paginationModel: { page: 0, pageSize: 25 },
-                },
-              }}
-              slots={{
-                toolbar: () => (
-                  <CustomToolbar
-                    onCreate={handleCreate}
-                    onImport={handleUpload}
-                    onExport={handleExport}
-                    onRefresh={handleRefresh}
-                  />
-                ),
-              }}
-              sx={{
-                border: 'none',
-                '& .MuiDataGrid-cell': {
-                  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                },
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                  borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-                  fontSize: '0.875rem',
-                  fontWeight: 700,
-                },
-                '& .MuiDataGrid-toolbarContainer': {
-                  p: 2,
-                  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                },
-                '& .MuiDataGrid-row:hover': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                },
-              }}
-              loading={gridLoading || processing}
-              disableRowSelectionOnClick
-            />
-          </Paper>
-
+          />
           {/* ✅ FIXED: Create/Edit Dialog - Now properly showing */}
           <Dialog 
             open={openDialog} 

@@ -63,6 +63,7 @@ import Notification from "@/Components/Notification";
 import PageHeader from "@/Components/PageHeader";
 import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 import SummaryCard from "@/Components/SummaryCard";
+import formatNumber from "../Service/FormatNumber";
 
 
 export default function StockLevels({ stockLevels, auth, universities, items, departments, locations }) {
@@ -727,7 +728,8 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
             <Grid size={{ xs:12, sm:6, md:3 }}>
               <SummaryCard 
                 title="Total Items" 
-                value={totalItems} 
+                value={formatNumber(totalItems)} 
+                change={"+"+formatNumber(totalItems)}
                 icon={<StockIcon />} 
                 color={theme.palette.primary.main} 
               />
@@ -735,7 +737,8 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
             <Grid size={{ xs:12, sm:6, md:3 }}>
               <SummaryCard 
                 title="Total Value" 
-                value={`$${totalValue.toLocaleString()}`} 
+                change={"+"+formatNumber(totalValue)}
+                value={`₵${formatNumber(totalValue)}`} 
                 icon={<AmountIcon />} 
                 color={theme.palette.success.main} 
               />
@@ -743,7 +746,8 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
             <Grid size={{ xs:12, sm:6, md:3 }}>
               <SummaryCard 
                 title="Low Stock Items" 
-                value={lowStockItems} 
+                value={formatNumber(lowStockItems)} 
+                change={"+"+formatNumber(lowStockItems)}
                 icon={<OverdueIcon />} 
                 color={theme.palette.warning.main} 
               />
@@ -751,7 +755,8 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
             <Grid size={{ xs:12, sm:6, md:3 }}>
               <SummaryCard 
                 title="Critical Items" 
-                value={criticalStockItems} 
+                value={formatNumber(criticalStockItems)} 
+                change={"+"+formatNumber(criticalStockItems)}
                 icon={<Warning />} 
                 color={theme.palette.error.main} 
               />

@@ -72,6 +72,7 @@ import Notification from "@/Components/Notification";
 import PageHeader from "@/Components/PageHeader";
 import SummaryCard from "@/Components/SummaryCard";
 import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
+import formatNumber from "../Service/FormatNumber";
 
 export default function InventoryTransactions({ transactions=[], auth, items, departments, locations }) {
   const theme = useTheme();
@@ -730,6 +731,10 @@ const handleSubmit = useCallback(() => {
     </Button>
   ];
 
+
+
+// Then use it:
+
   return (
     <AuthenticatedLayout
       auth={auth}
@@ -763,34 +768,47 @@ const handleSubmit = useCallback(() => {
 
           {/* Summary Cards */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid size={{ xs:12, sm:6, md:6}}>
+            <Grid size={{ xs:12, sm:6, md:3}}>
               <SummaryCard 
                 title="Total Transactions" 
-                value={totalTransactions || ""} 
+                dataType="inventory"
+                value={formatNumber(totalTransactions) || 0} 
                 icon={<InventoryIcon />} 
+                animationDelay="1"
+                change={`+${formatNumber(totalTransactions)}`} // Shows: +₵237.5k
+                loading={gridLoading}
                 color={theme.palette.primary.main} 
               />
             </Grid>
-            <Grid size={{ xs:12, sm:6, md:6}}>
+            <Grid size={{ xs:12, sm:6, md:3}}>
               <SummaryCard 
                 title="Total Value" 
-                value={`₵${totalValue?.toFixed(2)?? 0}`} 
+                dataType="inventory"
+                animationDelay="1"
+                change={formatNumber(totalValue) ? `+${formatNumber(totalValue)}%` : "+0%"}
+                value={`₵${formatNumber(totalValue)?? 0}`} 
                 icon={<TotalValueIcon />} 
                 color={theme.palette.success.main} 
               />
             </Grid>
-            <Grid size={{ xs:12, sm:6, md:6}}>
+            <Grid size={{ xs:12, sm:6, md:3}}>
               <SummaryCard 
                 title="Pending Transactions" 
-                value={pendingTransactions??0} 
+                dataType="inventory"
+                animationDelay="1"
+                value={formatNumber(pendingTransactions)??0} 
+                change={"+"+formatNumber(pendingTransactions)??0}
                 icon={<PendingIcon />} 
                 color={theme.palette.warning.main} 
               />
             </Grid>
-            <Grid size={{ xs:12, sm:6, md:6}}>
+            <Grid size={{ xs:12, sm:6, md:3}}>
               <SummaryCard 
                 title="Last 7 Days" 
-                value={recentTransactions??0} 
+                dataType="inventory"
+                animationDelay="1"
+                value={formatNumber(recentTransactions)??0} 
+                change={"+"+formatNumber(recentTransactions)??0}
                 icon={<DateIcon />} 
                 color={theme.palette.info.main} 
               />

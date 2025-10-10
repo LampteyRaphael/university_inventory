@@ -2119,6 +2119,7 @@ export default function Universities({ universities = [], auth, departments = []
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Total Universities" 
+                
                 value={totalUniversities} 
                 icon={<UniversityIcon />} 
                 color={theme.palette.primary.main} 

@@ -77,6 +77,7 @@ import Notification from "@/Components/Notification";
 import PageHeader from "@/Components/PageHeader";
 import SummaryCard from "@/Components/SummaryCard";
 import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
+import formatNumber from "../Service/FormatNumber";
 
 
 
@@ -692,32 +693,36 @@ export default function Departments({ departments = [], auth, universities=[], u
        
           {/* Summary Cards */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid size={{ xs:12, sm: 6}}>
+            <Grid size={{ xs:12, sm: 3}}>
               <SummaryCard 
                 title="Total Departments" 
-                value={totalDepartments} 
+                value={formatNumber(totalDepartments)} 
+                change={"+"+formatNumber(totalDepartments)}
+                animationDelay="1"
                 icon={<DepartmentIcon />} 
                 color={theme.palette.primary.main} 
               />
             </Grid>
-            <Grid size={{ xs:12, sm: 6}}>
+            <Grid size={{ xs:12, sm: 3}}>
               <SummaryCard 
                 title="Active Departments" 
-                value={activeDepartments} 
+                value={formatNumber(activeDepartments)} 
+                change={"+"+formatNumber(activeDepartments)}
                 icon={<ActiveIcon />} 
                 color={theme.palette.success.main} 
                 subtitle={`${((activeDepartments / totalDepartments) * 100).toFixed(0)}% active`}
               />
             </Grid>
-            <Grid size={{ xs:12, sm: 6}}>
+            <Grid size={{ xs:12, sm: 3}}>
               <SummaryCard 
                 title="Total Budget" 
-                value={`₵${totalBudget.toLocaleString()}`} 
+                value={`₵${formatNumber(totalBudget)}`} 
                 icon={<BudgetIcon />} 
+                change={"+"+formatNumber(totalBudget)}
                 color={theme.palette.info.main} 
               />
             </Grid>
-            <Grid size={{ xs:12, sm: 6}}>
+            <Grid size={{ xs:12, sm: 3}}>
               <SummaryCard 
                 title="Budget Utilization" 
                 value={`${budgetUtilization.toFixed(1)}%`} 

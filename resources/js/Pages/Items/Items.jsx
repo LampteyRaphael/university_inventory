@@ -37,6 +37,7 @@ import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 import SummaryCard from "@/Components/SummaryCard";
 import DeleteConfirmationDialog from "./DeleteConfirmationDialogItem";
 import ItemFormDialog from "./ItemFormDialog";
+import formatNumber from "../Service/FormatNumber";
 
 // Custom Hooks
 const useInventoryManager = (initialItems, auth) => {
@@ -644,38 +645,45 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
           />
        
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard
                 title="Total Items"
-                value={statistics.totalItems??0}
                 icon={<StockIcon />}
-                // color={theme.palette.primary.main}
+                animationDelay="1"
+                value={statistics.totalItems??0} 
+                change={"+"+statistics.totalItems??0}
                 color={summaryColors.primary}
                 subtitle="All inventory items"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard
                 title="Total Value"
-                value={`₵${statistics?.totalValue?.toLocaleString()?? 0 }`}
+                dataType="inventory"
+                change={"+"+formatNumber(statistics.totalValue??0)}
+                value={`₵${formatNumber(statistics?.totalValue)?? 0 }`}
                 icon={<AmountIcon />}
                 color={theme.palette.success.main}
                 subtitle="Current inventory value"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard
                 title="Active Items"
-                value={statistics?.activeItems??0}
+                dataType="inventory"
+                value={formatNumber(statistics?.activeItems)??0}
+                change={"+"+formatNumber(statistics.activeItems??0)}
                 icon={<QrCodeIcon />}
                 color={theme.palette.info.main}
                 subtitle="Currently active"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard
                 title="Low Stock"
-                value={statistics?.lowStockItems??0}
+                dataType="inventory"
+                value={formatNumber(statistics?.lowStockItems)??0}
+                change={"+"+formatNumber(statistics.lowStockItems)?? 0}
                 icon={<WarningIcon />}
                 color={theme.palette.warning.main}
                 subtitle="Need reordering"
