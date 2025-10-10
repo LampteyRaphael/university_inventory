@@ -59,6 +59,7 @@ import { useForm, usePage, router } from "@inertiajs/react";
 import SummaryCard from "@/Components/SummaryCard";
 import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 import PageHeader from "@/Components/PageHeader";
+import formatNumber from "../Service/FormatNumber";
 
 // Custom Hooks for Maintenance Records
 const useMaintenanceManager = (initialRecords, auth) => {
@@ -924,75 +925,66 @@ const actionButtons = [
             <Grid size={{ xs: 12, sm: 6, md:4  }}>
               <SummaryCard
                 title="Total Records"
-                value={statistics.totalRecords}
+                value={formatNumber(statistics?.totalRecords)}
+                change={"+" + formatNumber(statistics?.totalRecords)}
+                animationDelay="1"
                 icon={<WorkOrderIcon />}
                 color={theme.palette.primary.main||""}
                 subtitle="All maintenance records"
-                percentage={statistics.totalRecords}
-                progress={65}
-                showWave={false}
-                showProgress={false}
-                lastUpdated="5 hours ago"
               />
             </Grid>
             <Grid size={{ xs: 1, sm: 6, md: 4 }}>
               <SummaryCard
                 title="Scheduled"
-                value={statistics.scheduled}
+                value={formatNumber(statistics?.scheduled??0)}
+                change={"+" + formatNumber(statistics?.scheduled??0)}
+                animationDelay="1"
                 icon={<ScheduleIcon />}
                 color={theme.palette.info.main||""}
                 subtitle="Upcoming maintenance"
-                showWave={false}
-                percentage={statistics.scheduled}
-                lastUpdated={statistics.created_at}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4}}>
+            <Grid size={{ xs: 12, sm: 2, md:4}}>
               <SummaryCard
                 title="In Progress"
-                value={statistics.inProgress}
+                value={formatNumber(statistics?.inProgress??0)}
+                change={"+" + formatNumber(statistics?.inProgress??0)}
+                animationDelay="1"
                 icon={<MaintenanceIcon />}
                 color={theme.palette.warning.main||""}
                 subtitle="Active repairs"
-                showWave={false}
-                percentage={statistics.inProgress}
-                lastUpdated={statistics.created_at}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <SummaryCard
                 title="Completed"
-                value={statistics.completed||""}
+                value={formatNumber(statistics?.completed??0)}
+                change={"+" + formatNumber(statistics?.completed??0)}
+                animationDelay="1"
                 icon={<CompletedIcon />}
                 color={theme.palette.success.main}
                 subtitle="Finished maintenance"
-                showWave={false}
-                percentage={statistics.completed}
-                lastUpdated={statistics.created_at}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <SummaryCard
                 title="Critical"
-                value={statistics.critical|| ""}
+                value={formatNumber(statistics.critical??0)}
+                change={"+" + formatNumber(statistics?.critical??0)}
+                animationDelay="1"
                 icon={<CriticalIcon />}
                 color={theme.palette.error.main}
                 subtitle="High priority issues"
-                showWave={false}
-                percentage={statistics.critical}
-                lastUpdated={statistics.created_at}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <SummaryCard
                 title="Total Cost"
-                value={`₵${statistics?.totalCost?.toLocaleString() ?? 0}`}
+                value={`₵${formatNumber(statistics?.totalCost??0)}`}
+                change={"+" + formatNumber(statistics?.totalCost??0)}
                 icon={<DownloadIcon />}
                 color={theme.palette.secondary.main}
                 subtitle="Maintenance costs"
-                showWave={false}
-                percentage={statistics.totalCost}
-                lastUpdated={statistics.created_at}
               />
             </Grid>
           </Grid>

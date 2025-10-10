@@ -71,6 +71,7 @@ import Notification from "@/Components/Notification";
 import SummaryCard from "@/Components/SummaryCard";
 import PageHeader from "@/Components/PageHeader";
 import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
+import formatNumber from "../Service/FormatNumber";
 
 // Custom Toolbar Component
 const CustomToolbar = ({ onCreate, onImport, onExport, onRefresh }) => (
@@ -764,39 +765,43 @@ export default function PurchaseOrderItems({ orderItems, auth, purchaseOrders, i
 
           {/* Enhanced Summary Cards */}
           <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 4 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Total Items" 
-                value={totalItems.toLocaleString()} 
+                value={totalItems??0} 
+                change={"+" + formatNumber(totalItems??0)}
                 icon={<InventoryIcon />} 
                 color={theme.palette.primary.main}
                 subtitle="All order items"
                 trend="+12% this month"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <SummaryCard 
                 title="Total Value" 
-                value={`₵${totalValue.toLocaleString()}`} 
+                value={`₵${formatNumber(totalValue??0)}`} 
+                change={"+" + formatNumber(totalValue??0)}
                 icon={<TotalIcon />} 
                 color={theme.palette.success.main}
                 subtitle="Combined line total"
                 trend="+8.5% growth"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Pending Receipt" 
-                value={pendingReceipt.toString()} 
+                value={formatNumber(pendingReceipt??0)} 
+                change={"+" + formatNumber(pendingReceipt??0)}
                 icon={<ShippingIcon />} 
                 color={theme.palette.warning.main}
                 subtitle="Awaiting delivery"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <SummaryCard 
                 title="Overdue Items" 
-                value={overdueItems.toString()} 
+                value={overdueItems??0} 
+                change={"+" + formatNumber(overdueItems??0)}
                 icon={<DateIcon />} 
                 color={theme.palette.error.main}
                 subtitle="Past delivery date"

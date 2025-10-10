@@ -1214,6 +1214,7 @@ import SummaryCard from "@/Components/SummaryCard";
 import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 import PageHeader from "@/Components/PageHeader";
 import Notification from "@/Components/Notification";
+import formatNumber from "../Service/FormatNumber";
 
 
 
@@ -2119,8 +2120,8 @@ export default function Universities({ universities = [], auth, departments = []
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Total Universities" 
-                
-                value={totalUniversities} 
+                value={totalUniversities??0} 
+                change={"+" + formatNumber(totalUniversities??0)}
                 icon={<UniversityIcon />} 
                 color={theme.palette.primary.main} 
               />
@@ -2128,16 +2129,18 @@ export default function Universities({ universities = [], auth, departments = []
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Active Universities" 
-                value={activeUniversities} 
+                value={activeUniversities??0} 
+                change={"+" + formatNumber(activeUniversities??0)}
                 icon={<ActiveIcon />} 
                 color={theme.palette.success.main} 
-                subtitle={`${((activeUniversities / totalUniversities) * 100).toFixed(0)}% active`}
+                subtitle={`${(formatNumber((activeUniversities / totalUniversities) * 100))}% active`}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Total Departments" 
-                value={totalDepartments} 
+                value={totalDepartments??0} 
+                change={"+" + formatNumber(totalDepartments??0)}
                 icon={<BuildingIcon />} 
                 color={theme.palette.info.main} 
                 subtitle={`Avg: ${(totalDepartments / totalUniversities).toFixed(1)} per university`}

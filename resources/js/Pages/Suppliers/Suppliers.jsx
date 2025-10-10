@@ -57,6 +57,7 @@ import {
 import Notification from "@/Components/Notification";
 import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 import SummaryCard from "@/Components/SummaryCard";
+import formatNumber from "../Service/FormatNumber";
 
 
 
@@ -603,52 +604,43 @@ const columns = useMemo(() => [
 
           {/* Advanced Summary Cards */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-              {/* <SummaryCard 
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <SummaryCard 
                 title="Total Suppliers"
                 value={summaryData?.totalSuppliers || 0}
-                trend={{ value: 12, isPositive: true }}
+                change={"+" + formatNumber(summaryData?.totalSuppliers??0)}
                 icon={<SupplierIcon />}
                 color={theme.palette.primary.main}
                 subtitle="All registered suppliers"
-              /> */}
-              <SummaryCard 
-                title="Total Orders" 
-                value={summaryData?.totalSuppliers} 
-                icon={<SupplierIcon />} 
-                color={theme.palette.primary.main}
-                subtitle="All purchase orders"
-                trend="+12% this month"
               />
             </Grid>
             
-             <Grid size={{ xs: 12, sm: 6, md:6 }}>
+             <Grid size={{ xs: 12, sm: 6, md:3 }}>
               <SummaryCard 
                 title="Approval Rate"
                 value={`${summaryData.approvalRate}%`}
-                // trend={{ value: 5, isPositive: true }}
                 icon={<ApprovedIcon />}
                 color={theme.palette.success.main}
                 subtitle={`${summaryData.approvedSuppliers} approved`}
               />
             </Grid>
             
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Avg Rating"
                 value={summaryData.averageRating}
-                // trend={{ value: 0.2, isPositive: true }}
+                // change={"+"+formatNumber(summaryData?.averageRating??0)}
                 icon={<RatingIcon />}
                 color={theme.palette.warning.main}
                 subtitle="Out of 5.0"
               />
             </Grid>
             
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Credit Limit"
-                value={`₵${(summaryData.totalCreditLimit / 1000).toFixed(0)}K`}
-                // trend={{ value: 8, isPositive: false }}
+                value={`₵${(formatNumber(summaryData?.totalCreditLimit??0))}`}
+                change={"+" + formatNumber(summaryData?.totalCreditLimit??0)}
                 icon={<AccountBalanceWallet />}
                 color={theme.palette.info.main}
                 subtitle="Total allocated"

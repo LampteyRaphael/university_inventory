@@ -82,6 +82,7 @@ import Notification from "@/Components/Notification";
 import PageHeader from "@/Components/PageHeader";
 import SummaryCard from "@/Components/SummaryCard";
 import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
+import formatNumber from "../Service/FormatNumber";
 
 // Custom Card Component with modern design
 // const SummaryCard = ({ title, value, icon, color, subtitle, trend }) => (
@@ -783,48 +784,50 @@ export default function PurchaseOrders({ purchaseOrders, auth, universities, sup
         />
           {/* Enhanced Summary Cards with Modern Design */}
           <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 4 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <SummaryCard 
                 title="Total Orders" 
-                value={totalOrders} 
+                value={totalOrders??0} 
+                change={"+" + formatNumber(totalOrders??0)}
                 icon={<PurchaseOrderIcon />} 
                 color={theme.palette.primary.main}
                 subtitle="All purchase orders"
-                trend="+12% this month"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Total Value" 
-                value={`₵${totalValue?.toLocaleString()??0}`} 
+                value={`₵${formatNumber(totalValue??0)}`} 
+                change={"+" + formatNumber(totalValue??0)}
                 icon={<AmountIcon />} 
                 color={theme.palette.success.main}
                 subtitle="Combined amount"
-                trend="+8.5% growth"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <SummaryCard 
                 title="Overdue" 
-                value={overdueOrders || 0} 
+                value={overdueOrders??0} 
+                change={"+" + formatNumber(overdueOrders??0)}
                 icon={<OverdueIcon />} 
                 color={theme.palette.error.main}
                 subtitle="Need attention"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <SummaryCard 
                 title="Pending Approval" 
                 value={pendingApproval || 0} 
+                change={"+" + formatNumber(pendingApproval??0)}
                 icon={<PendingIcon />} 
                 color={theme.palette.warning.main}
                 subtitle="Awaiting review"
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <SummaryCard 
                 title="Avg. Order" 
-                value={`₵${averageOrderValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} 
+                value={`₵${formatNumber(averageOrderValue??0)}`} 
                 icon={<PerformanceIcon />} 
                 color={theme.palette.info.main}
                 subtitle="Average value"
