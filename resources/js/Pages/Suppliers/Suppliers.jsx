@@ -172,10 +172,10 @@ export default function Suppliers({ suppliers, auth, universities }) {
         delivery_reliability: Number(supplier?.delivery_reliability ?? 0),
         quality_rating: Number(supplier?.quality_rating ?? 0),
         payment_terms_days: Number(supplier?.payment_terms_days ?? 30),
-        approval_date: supplier?.approval_date ? 
-          moment(supplier.approval_date).format("MMM Do YYYY") : "",
-        next_evaluation_date: supplier?.next_evaluation_date ? 
-          moment(supplier.next_evaluation_date).format("MMM Do YYYY") : "",
+        approval_date: supplier?.approval_date ??"",
+          // moment(supplier.approval_date).format("MMM Do YYYY") : "",
+        next_evaluation_date: supplier?.next_evaluation_date ??"", 
+          // moment(supplier.next_evaluation_date).format("MMM Do YYYY") : "",
         created_at: supplier?.created_at ? 
           moment(supplier.created_at).format("MMM Do YYYY, h:mm a") : "",
         updated_at: supplier?.updated_at ? 
@@ -1052,7 +1052,7 @@ const columns = useMemo(() => [
                       label="Approval Date"
                       name="approval_date"
                       type="date"
-                      value={data.approval_date}
+                      value={moment(data.approval_date).format("YYYY-MM-DD")}
                       onChange={e => setData('approval_date', e.target.value)}
                       error={!!errors.approval_date}
                       helperText={errors.approval_date}
@@ -1067,7 +1067,7 @@ const columns = useMemo(() => [
                       label="Next Evaluation Date"
                       name="next_evaluation_date"
                       type="date"
-                      value={data.next_evaluation_date}
+                      value={ moment(data.next_evaluation_date).format("YYYY-MM-DD")}
                       onChange={e => setData('next_evaluation_date', e.target.value)}
                       error={!!errors.next_evaluation_date}
                       helperText={errors.next_evaluation_date}

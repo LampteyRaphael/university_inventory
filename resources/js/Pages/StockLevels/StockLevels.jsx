@@ -508,8 +508,8 @@ export default function StockLevels({ stockLevels, auth, universities, items, de
       headerName: 'Stock Count', 
       width: 160,
       renderCell: (params) => (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center'}}>
             <Chip 
               label={params.row.count_frequency || 'N/A'} 
               size="small" 

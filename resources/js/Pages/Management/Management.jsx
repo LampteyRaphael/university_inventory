@@ -34,7 +34,7 @@ import {
   Tab,
   Tabs,
 } from "@mui/material";
-import {DataGrid, GridActionsCellItem} from "@mui/x-data-grid";
+import { DataGrid, GridActionsCellItem } from "@mui/x-data-grid";
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -55,15 +55,16 @@ import {
   Save as SaveIcon,
   Close as CloseIcon,
   Warning as WarningIcon,
+  Lock as PermissionIcon,
 } from "@mui/icons-material";
 import Notification from "@/Components/Notification";
 
 // Permission Matrix Component
-const PermissionMatrix = ({ permissions, selectedPermissions, onPermissionChange }) => {
+const PermissionMatrix = ({ permissions, selectedPermissions, onPermissionChange, disabled = false }) => {
   const groupedPermissions = useMemo(() => {
     const groups = {};
     permissions.forEach(permission => {
-      const [module] = permission.split('.');
+      const [module] = permission.name.split('.');
       if (!groups[module]) groups[module] = [];
       groups[module].push(permission);
     });
@@ -72,29 +73,37 @@ const PermissionMatrix = ({ permissions, selectedPermissions, onPermissionChange
 
   return (
     <Box sx={{ mt: 2 }}>
-      <Typography variant="h6" gutterBottom>Permissions</Typography>
+      <Typography variant="h6" gutterBottom>Permission Matrix</Typography>
       <Grid container spacing={2}>
+        
         {Object.entries(groupedPermissions).map(([module, modulePermissions]) => (
-          <Grid size={{ xs: 12, md: 6 }} key={module}>
+          <Grid item xs={12} md={6} key={module}>
             <Card variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                {module.replace('_', ' ').toUpperCase()}
+                {module.replace(/_/g, ' ').toUpperCase()}
               </Typography>
               <Stack spacing={1}>
                 {modulePermissions.map(permission => (
+                  
                   <FormControlLabel
-                    key={permission}
+                    key={permission.permission_id}
                     control={
                       <Switch
-                        checked={selectedPermissions.includes(permission)}
-                        onChange={(e) => onPermissionChange(permission, e.target.checked)}
+                        checked={selectedPermissions.includes(permission.is_system_permission )}
+                        onChange={(e) => onPermissionChange(permission.is_system_permission , e.target.checked)}
                         size="small"
+                        disabled={disabled}
                       />
                     }
                     label={
-                      <Typography variant="body2">
-                        {permission.split('.')[1].replace('_', ' ')}
-                      </Typography>
+                      <Box>
+                        <Typography variant="body2" fontWeight={600}>
+                          {permission.action.replace(/_/g, ' ')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {permission.description}
+                        </Typography>
+                      </Box>
                     }
                   />
                 ))}
@@ -107,30 +116,80 @@ const PermissionMatrix = ({ permissions, selectedPermissions, onPermissionChange
   );
 };
 
-export default function UserManagement({ auth, users, roles, universities, departments, permissions }) {
+// Role Permissions Dialog
+const RolePermissionsDialog = ({ open, onClose, role, permissions, onSave, loading = false }) => {
+  const [selectedPermissions, setSelectedPermissions] = useState([]);
+
+  React.useEffect(() => {
+    if (role) {
+      setSelectedPermissions(role?.permissions || []);
+    }
+  }, [role]);
+
+  const handlePermissionChange = (permission, checked) => {
+    setSelectedPermissions(prev =>
+      checked ? [...prev, permission] : prev.filter(p => p !== permission)
+    );
+  };
+
+  const handleSave = () => {
+    onSave(role.role_id, selectedPermissions);
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+      <DialogTitle>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <PermissionIcon />
+          <Typography variant="h6">
+            Manage Permissions: {role?.name}
+          </Typography>
+        </Stack>
+      </DialogTitle>
+      <DialogContent>
+        {role?.description && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {role.description}
+          </Typography>
+        )}
+        
+        <PermissionMatrix
+          permissions={permissions}
+          selectedPermissions={selectedPermissions}
+          onPermissionChange={handlePermissionChange}
+          disabled={loading}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} disabled={loading}>Cancel</Button>
+        <Button 
+          variant="contained" 
+          onClick={handleSave}
+          disabled={loading}
+          startIcon={<SaveIcon />}
+        >
+          {loading ? 'Saving...' : 'Save Permissions'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default function UserManagement({ auth, users, roles, universities, departments, permissions: allPermissions }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { flash } = usePage().props;
   
   const [rows, setRows] = useState([]);
   const [searchText, setSearchText] = useState("");
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openUserDialog, setOpenUserDialog] = useState(false);
   const [openRoleDialog, setOpenRoleDialog] = useState(false);
+  const [openPermissionsDialog, setOpenPermissionsDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const [alert, setAlert] = useState({ open: false, message: "", severity: "success" });
-
-  // Available permissions
-  const availablePermissions = [
-    'users.view', 'users.create', 'users.edit', 'users.delete', 'users.manage_roles',
-    'inventory.view', 'inventory.create', 'inventory.edit', 'inventory.delete', 'inventory.manage_categories',
-    'purchase_orders.view', 'purchase_orders.create', 'purchase_orders.edit', 'purchase_orders.approve', 'purchase_orders.delete',
-    'reports.view', 'reports.generate', 'reports.export',
-    'settings.view', 'settings.edit', 'settings.manage_system',
-    'departments.view', 'departments.create', 'departments.edit', 'departments.delete',
-  ];
 
   // User form
   const { data: userData, setData: setUserData, post: postUser, put: putUser, delete: deleteUser, processing: userProcessing, errors: userErrors, reset: resetUser } = useForm({
@@ -144,6 +203,8 @@ export default function UserManagement({ auth, users, roles, universities, depar
     role_id: '',
     position: '',
     is_active: true,
+    employee_id: '',
+    username: '',
   });
 
   // Role form
@@ -156,6 +217,9 @@ export default function UserManagement({ auth, users, roles, universities, depar
     university_id: '',
   });
 
+  // Permissions form
+  const { post: postPermissions, processing: permissionsProcessing } = useForm();
+
   const showAlert = (message, severity = "success") => {
     setAlert({ open: true, message, severity });
   };
@@ -165,7 +229,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
     const processedUsers = (users || []).map(user => ({
       id: user.user_id,
       ...user,
-      full_name: `${user.first_name} ${user.last_name}`,
+      full_name: user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.name,
       last_login: user.last_login_at ? new Date(user.last_login_at).toLocaleDateString() : 'Never',
       status: user.is_active ? 'active' : 'inactive',
     }));
@@ -181,14 +245,14 @@ export default function UserManagement({ auth, users, roles, universities, depar
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar sx={{ bgcolor: 'primary.main' }}>
-            {params.row?.first_name?.charAt(0)}{params.row.last_name?.charAt(0)}
+            {params.row.first_name?.charAt(0)}{params.row.last_name?.charAt(0)}
           </Avatar>
           <Box>
             <Typography variant="body2" fontWeight={600}>
-              {params.row?.full_name}
+              {params.row.full_name}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {params.row?.email}
+              {params.row.email}
             </Typography>
           </Box>
         </Box>
@@ -199,11 +263,13 @@ export default function UserManagement({ auth, users, roles, universities, depar
       headerName: 'Role', 
       width: 150,
       renderCell: (params) => {
-        const role = roles?.find(r => r.role_id === params.row?.role_id);
+        const role = roles?.find(r => r.role_id === params.row.role_id);
         const getRoleIcon = (roleName) => {
-          switch(roleName) {
+          switch(roleName?.toLowerCase()) {
             case 'super_admin': return <SuperAdminIcon />;
             case 'inventory_manager': return <ManagerIcon />;
+            case 'department_head': return <ManagerIcon />;
+            case 'procurement_officer': return <UserIcon />;
             default: return <UserIcon />;
           }
         };
@@ -211,11 +277,12 @@ export default function UserManagement({ auth, users, roles, universities, depar
         return (
           <Chip 
             icon={role ? getRoleIcon(role.name) : <UserIcon />}
-            label={role?.name?.replace('_', ' ') || 'No Role'} 
+            label={role?.name ? role.name.replace(/_/g, ' ') : 'No Role'} 
             size="small"
             color={
               role?.name === 'super_admin' ? 'error' :
-              role?.name === 'inventory_manager' ? 'warning' : 'default'
+              role?.name === 'inventory_manager' ? 'warning' : 
+              role?.name === 'department_head' ? 'primary' : 'default'
             }
             variant="outlined"
           />
@@ -227,7 +294,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
       headerName: 'Department', 
       width: 150,
       renderCell: (params) => {
-        const department = departments?.find(d => d.department_id === params.row?.department_id);
+        const department = departments?.find(d => d.department_id === params.row.department_id);
         return department?.name || '—';
       }
     },
@@ -253,7 +320,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 180,
+      width: 200,
       type: 'actions',
       getActions: (params) => [
         <GridActionsCellItem
@@ -290,9 +357,9 @@ export default function UserManagement({ auth, users, roles, universities, depar
       renderCell: (params) => (
         <Box>
           <Typography variant="body2" fontWeight={600}>
-            {params.row.name.replace('_', ' ')}
+            {params?.row?.name.replace(/_/g, ' ')}
           </Typography>
-          {params.row.is_system_role && (
+          {params?.row?.is_system_role && (
             <Chip label="System" size="small" color="primary" variant="outlined" />
           )}
         </Box>
@@ -309,7 +376,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
       width: 120,
       renderCell: (params) => (
         <Chip 
-          label={`${params.row.permissions?.length || 0} perms`}
+          label={`${params.row?.permissions?.length || 0} perms`}
           size="small"
           variant="outlined"
         />
@@ -328,7 +395,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 150,
+      width: 200,
       type: 'actions',
       getActions: (params) => [
         <GridActionsCellItem
@@ -336,6 +403,11 @@ export default function UserManagement({ auth, users, roles, universities, depar
           label="Edit Role"
           onClick={() => handleEditRole(params.row)}
           disabled={params.row.is_system_role}
+        />,
+        <GridActionsCellItem
+          icon={<PermissionIcon />}
+          label="Manage Permissions"
+          onClick={() => handleManagePermissions(params.row)}
         />,
         <GridActionsCellItem
           icon={<DeleteIcon />}
@@ -355,7 +427,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
       university_id: auth.user.university_id,
       is_active: true,
     });
-    setOpenDialog(true);
+    setOpenUserDialog(true);
   };
 
   const handleEditUser = (user) => {
@@ -371,13 +443,15 @@ export default function UserManagement({ auth, users, roles, universities, depar
       role_id: user.role_id,
       position: user.position || '',
       is_active: user.is_active,
+      employee_id: user.employee_id || '',
+      username: user.username || '',
     });
-    setOpenDialog(true);
+    setOpenUserDialog(true);
   };
 
   const handleChangeRole = (user) => {
     setSelectedUser(user);
-    // Open role change dialog
+    // You can implement a role change dialog here
     showAlert(`Change role for ${user.full_name}`, 'info');
   };
 
@@ -405,6 +479,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
 
   const handleEditRole = (role) => {
     setSelectedRole(role);
+    console.log(role)
     setRoleData({
       role_id: role.role_id,
       name: role.name,
@@ -416,17 +491,34 @@ export default function UserManagement({ auth, users, roles, universities, depar
     setOpenRoleDialog(true);
   };
 
+  const handleManagePermissions = (role) => {
+    setSelectedRole(role);
+    setOpenPermissionsDialog(true);
+  };
+
   const handleDeleteRole = (role) => {
     setSelectedRole(role);
     // Open role delete confirmation
     showAlert(`Delete role: ${role.name}`, 'warning');
   };
 
+  const handleSavePermissions = (roleId, permissions) => {
+    postPermissions(route('admin.roles.update-permissions', roleId), {
+      permissions: permissions,
+    }, {
+      onSuccess: () => {
+        setOpenPermissionsDialog(false);
+        showAlert('Permissions updated successfully');
+      },
+      onError: () => showAlert('Failed to update permissions', 'error'),
+    });
+  };
+
   const handleUserSubmit = () => {
     if (selectedUser) {
       putUser(route('admin.users.update', selectedUser.user_id), {
         onSuccess: () => {
-          setOpenDialog(false);
+          setOpenUserDialog(false);
           showAlert('User updated successfully');
         },
         onError: () => showAlert('Failed to update user', 'error'),
@@ -434,7 +526,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
     } else {
       postUser(route('admin.users.store'), {
         onSuccess: () => {
-          setOpenDialog(false);
+          setOpenUserDialog(false);
           showAlert('User created successfully');
         },
         onError: () => showAlert('Failed to create user', 'error'),
@@ -466,9 +558,20 @@ export default function UserManagement({ auth, users, roles, universities, depar
     const currentPermissions = roleData.permissions || [];
     const newPermissions = checked 
       ? [...currentPermissions, permission]
-      : current.filter(p => p !== permission);
+      : currentPermissions.filter(p => p !== permission);
     setRoleData('permissions', newPermissions);
   };
+
+  // Filter users based on search
+  const filteredUsers = useMemo(() => {
+    if (!searchText) return rows;
+    
+    return rows.filter(user => 
+      user.full_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchText.toLowerCase()) ||
+      user.employee_id?.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }, [rows, searchText]);
 
   return (
     <AuthenticatedLayout
@@ -547,7 +650,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
             </Box>
 
             <DataGrid
-              rows={rows}
+              rows={filteredUsers}
               columns={userColumns}
               pageSizeOptions={[10, 25, 50]}
               initialState={{
@@ -583,8 +686,9 @@ export default function UserManagement({ auth, users, roles, universities, depar
             </Box>
 
             <DataGrid
-              rows={roles || []}
+              rows={roles}
               columns={roleColumns}
+              getRowId={(row) => row.role_id}
               pageSizeOptions={[10, 25, 50]}
               initialState={{
                 pagination: { paginationModel: { pageSize: 25 } },
@@ -601,13 +705,14 @@ export default function UserManagement({ auth, users, roles, universities, depar
         )}
 
         {/* User Dialog */}
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
+        <Dialog open={openUserDialog} onClose={() => setOpenUserDialog(false)} maxWidth="md" fullWidth>
           <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white' }}>
             {selectedUser ? 'Edit User' : 'Create New User'}
           </DialogTitle>
           <DialogContent sx={{ p: 3 }}>
+            <br></br>
             <Grid container spacing={3}>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="First Name"
@@ -618,7 +723,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   helperText={userErrors.first_name}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Last Name"
@@ -629,7 +734,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   helperText={userErrors.last_name}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Email"
@@ -641,7 +746,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   helperText={userErrors.email}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Phone"
@@ -650,9 +755,28 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   onChange={(e) => setUserData('phone', e.target.value)}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Employee ID"
+                  name="employee_id"
+                  value={userData.employee_id}
+                  onChange={(e) => setUserData('employee_id', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Username"
+                  name="username"
+                  value={userData.username}
+                  onChange={(e) => setUserData('username', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
                 <FormControl fullWidth error={!!userErrors.role_id}>
                   <InputLabel>Role</InputLabel>
+                  {/* {console.log(roles)} */}
                   <Select
                     name="role_id"
                     value={userData.role_id}
@@ -661,14 +785,31 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   >
                     {roles?.map(role => (
                       <MenuItem key={role.role_id} value={role.role_id}>
-                        {role.name.replace('_', ' ')}
+                        {role.name.replace(/_/g, ' ')}
                       </MenuItem>
                     ))}
                   </Select>
                   {userErrors.role_id && <FormHelperText>{userErrors.role_id}</FormHelperText>}
                 </FormControl>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Department</InputLabel>
+                  <Select
+                    name="department_id"
+                    value={userData.department_id}
+                    label="Department"
+                    onChange={(e) => setUserData('department_id', e.target.value)}
+                  >
+                    {departments?.map(dept => (
+                      <MenuItem key={dept.department_id} value={dept.department_id}>
+                        {dept.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   label="Position"
@@ -677,7 +818,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   onChange={(e) => setUserData('position', e.target.value)}
                 />
               </Grid>
-              <Grid size={{ xs: 12 }}>
+              <Grid item xs={12}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -691,7 +832,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
             </Grid>
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
-            <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+            <Button onClick={() => setOpenUserDialog(false)}>Cancel</Button>
             <Button 
               variant="contained" 
               onClick={handleUserSubmit}
@@ -708,8 +849,9 @@ export default function UserManagement({ auth, users, roles, universities, depar
             {selectedRole ? 'Edit Role' : 'Create New Role'}
           </DialogTitle>
           <DialogContent sx={{ p: 3 }}>
+            <br></br>
             <Grid container spacing={3}>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Role Name"
@@ -721,7 +863,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   placeholder="e.g., inventory_manager"
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Description"
@@ -732,10 +874,10 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   helperText={roleErrors.description}
                 />
               </Grid>
-              <Grid size={{ xs: 12 }}>
+              <Grid item xs={12}>
                 <PermissionMatrix
-                  permissions={availablePermissions}
-                  selectedPermissions={roleData.permissions || []}
+                  permissions={allPermissions || []}
+                  selectedPermissions={roleData?.permissions || []}
                   onPermissionChange={handlePermissionChange}
                 />
               </Grid>
@@ -752,6 +894,16 @@ export default function UserManagement({ auth, users, roles, universities, depar
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Permissions Dialog */}
+        <RolePermissionsDialog
+          open={openPermissionsDialog}
+          onClose={() => setOpenPermissionsDialog(false)}
+          role={selectedRole}
+          permissions={allPermissions || []}
+          onSave={handleSavePermissions}
+          loading={permissionsProcessing}
+        />
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>

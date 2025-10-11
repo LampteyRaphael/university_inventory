@@ -12,6 +12,7 @@ use App\Http\Controllers\MaintenanceRecordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseOrderItemController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\StockLevelsController;
 use App\Http\Controllers\SupplierController;
@@ -53,10 +54,23 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth','verified')->group(function () {
  
-    Route::resource('users', UserController::class);
-    Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole'])->name('users.assign-role');
-    Route::post('/users/import', [UserController::class, 'import'])->name('users.import');
-    Route::get('/users/export', [UserController::class, 'export'])->name('users.export');
+     Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::post('/users', [UserController::class, 'store'])->name('admin.users.store');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+    Route::put('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
+
+    // Role management
+    Route::get('/roles', [RoleController::class, 'index'])->name('admin.roles.index');
+    Route::post('/roles', [RoleController::class, 'store'])->name('admin.roles.store');
+    Route::put('/roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('admin.roles.destroy');
+    Route::post('/roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('admin.roles.update-permissions');
+    
+    // Route::resource('users', UserController::class);
+    // Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole'])->name('users.assign-role');
+    // Route::post('/users/import', [UserController::class, 'import'])->name('users.import');
+    // Route::get('/users/export', [UserController::class, 'export'])->name('users.export');
 
 
     //Item categories
@@ -183,7 +197,7 @@ Route::middleware('auth','verified')->group(function () {
 
 
     // User Management
-    Route::get('/user-management', [RouteController::class, 'management'])->name('user.management');  
+    // Route::get('/user-management', [RouteController::class, 'management'])->name('user.management');  
 
 });
 

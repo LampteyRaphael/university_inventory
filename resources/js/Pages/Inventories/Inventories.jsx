@@ -774,9 +774,7 @@ const handleSubmit = useCallback(() => {
                 dataType="inventory"
                 value={formatNumber(totalTransactions) || 0} 
                 icon={<InventoryIcon />} 
-                animationDelay="1"
                 change={`+${formatNumber(totalTransactions)}`} // Shows: +₵237.5k
-                loading={gridLoading}
                 color={theme.palette.primary.main} 
               />
             </Grid>
@@ -784,7 +782,6 @@ const handleSubmit = useCallback(() => {
               <SummaryCard 
                 title="Total Value" 
                 dataType="inventory"
-                animationDelay="1"
                 change={formatNumber(totalValue) ? `+${formatNumber(totalValue)}%` : "+0%"}
                 value={`₵${formatNumber(totalValue)?? 0}`} 
                 icon={<TotalValueIcon />} 
@@ -795,7 +792,6 @@ const handleSubmit = useCallback(() => {
               <SummaryCard 
                 title="Pending Transactions" 
                 dataType="inventory"
-                animationDelay="1"
                 value={formatNumber(pendingTransactions)??0} 
                 change={"+"+formatNumber(pendingTransactions)??0}
                 icon={<PendingIcon />} 
@@ -806,7 +802,6 @@ const handleSubmit = useCallback(() => {
               <SummaryCard 
                 title="Last 7 Days" 
                 dataType="inventory"
-                animationDelay="1"
                 value={formatNumber(recentTransactions)??0} 
                 change={"+"+formatNumber(recentTransactions)??0}
                 icon={<DateIcon />} 

@@ -222,7 +222,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
       icon: <SettingsIcon />,
       items: [
         { text: 'System Settings', icon: <SettingsIcon /> },
-        { text: 'User Management', icon: <PeopleIcon />, route:'user.management' }
+        { text: 'User Management', icon: <PeopleIcon />, route:'users.index' }
       ]
     }
   ];
