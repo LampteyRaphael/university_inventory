@@ -35,7 +35,7 @@ const PermissionMatrix = ({ permissions, selectedPermissions, onPermissionChange
       </Typography>
       <Grid container spacing={2}>
         {Object.entries(groupedPermissions).map(([module, modulePermissions]) => (
-          <Grid item xs={12} md={6} key={module}>
+          <Grid size={{ xs: 12, md:6 }} key={module}>
             <Card variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 {module.replace(/_/g, ' ').toUpperCase()}
@@ -675,7 +675,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
           </DialogTitle>
           <DialogContent>
             <Grid container spacing={3} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, md:6 }}>
                 <TextField
                   fullWidth
                   label="First Name"
@@ -685,7 +685,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   helperText={userErrors.first_name}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, md:6 }}>
                 <TextField
                   fullWidth
                   label="Last Name"
@@ -695,7 +695,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   helperText={userErrors.last_name}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, md:6 }}>
                 <TextField
                   fullWidth
                   label="Email"
@@ -706,7 +706,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   helperText={userErrors.email}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, md:6 }}>
                 <FormControl fullWidth error={!!userErrors.role_id}>
                   <InputLabel>Role</InputLabel>
                   <Select
@@ -723,11 +723,11 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   {userErrors.role_id && <FormHelperText>{userErrors.role_id}</FormHelperText>}
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12}}>
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={userData.is_active}
+                      checked={true}
                       onChange={(e) => setUserData('is_active', e.target.checked)}
                     />
                   }
@@ -755,7 +755,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
           </DialogTitle>
           <DialogContent>
             <Grid container spacing={3} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, md:6 }}>
                 <TextField
                   fullWidth
                   label="Role Name"
@@ -766,7 +766,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   placeholder="e.g., inventory_manager"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, md:6 }}>
                 <TextField
                   fullWidth
                   label="Description"
@@ -776,7 +776,7 @@ export default function UserManagement({ auth, users, roles, universities, depar
                   helperText={roleErrors.description}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12}}>
                 <PermissionMatrix
                   permissions={allPermissions || []}
                   selectedPermissions={roleData.permissions || []}

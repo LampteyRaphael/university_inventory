@@ -8,6 +8,7 @@ use App\Models\Department;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
@@ -238,7 +239,7 @@ class UserController extends Controller
         // $this->authorize('users.edit');
         
         // Prevent users from deactivating themselves
-        if ($user->user_id === auth()->id()) {
+        if ($user->user_id === Auth::user()->user_id) {
             return redirect()->back()->with('error', 'You cannot deactivate your own account.');
         }
 
