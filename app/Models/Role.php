@@ -335,6 +335,13 @@ class Role extends Model
             ->where('role_permission.is_enabled', true)
             ->get();
     }
+
+    // Role model
+public function permissions()
+{
+    return $this->belongsToMany(Permission::class, 'role_permissions', 'role_id', 'permission_id')
+                ->withTimestamps();
+}
     
     public function university()
     {
@@ -346,17 +353,17 @@ class Role extends Model
         return $this->hasMany(User::class, 'role_id', 'role_id');
     }
 
-    public function permissions()
-    {
-        return $this->belongsToMany(
-            Permission::class,
-            'role_permission',
-            'role_id',
-            'permission_id',
-            'role_id',
-            'permission_id'
-        );
-    }
+    // public function permissions()
+    // {
+    //     return $this->belongsToMany(
+    //         Permission::class,
+    //         'role_permission',
+    //         'role_id',
+    //         'permission_id',
+    //         'role_id',
+    //         'permission_id'
+    //     );
+    // }
 
     /**
      * Scope queries

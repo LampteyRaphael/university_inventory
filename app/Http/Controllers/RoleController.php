@@ -87,15 +87,8 @@ class RoleController extends Controller
             'description' => $validated['description'],
         ]);
 
-        //  $validated['id'] = (string) \Illuminate\Support\Str::uuid();
-        // Sync permissions
-        // if (isset($validated['permissions'])) {
-        //     $permissionIds = Permission::whereIn('name', $validated['permissions'])
-        //         ->pluck('permission_id')
-        //         ->toArray();
-        //     $role->permissions()->sync($permissionIds);
-        // }
-        
+
+        // Sync permissions with manual UUID generation
         if (isset($validated['permissions'])) {
             $permissionIds = Permission::whereIn('name', $validated['permissions'])
                 ->pluck('permission_id')

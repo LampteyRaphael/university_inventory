@@ -450,7 +450,7 @@ class InventoryTransactionController extends Controller
     {
         $user = Auth::user();
         if (!$user || !$user->hasPermission($permission)) {
-            abort(403, 'Insufficient permissions for this action.');
+            return redirect()->route('inventory-transactions.index')->with('error', 'Insufficient permissions for this action.');
         }
     }
 
@@ -1386,5 +1386,5 @@ class InventoryTransactionController extends Controller
         $stockLevel->last_updated = now();
         $stockLevel->save();
     }
-    
+
 }
