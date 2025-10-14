@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\Permission;
+use App\Models\University;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class RoleController extends Controller
 {
@@ -18,20 +21,37 @@ class RoleController extends Controller
             ->get()
             ->map(function ($role) {
                 return [
+                    'id' => $role->role_id, // Add this for MUI Data Grid
                     'role_id' => $role->role_id,
                     'university_id' => $role->university_id,
                     'name' => $role->name,
+                    'slug' => $role->slug,
                     'description' => $role->description,
                     'is_system_role' => $role->is_system_role,
+                    'is_assignable' => $role->is_assignable,
                     'level' => $role->level,
-                    'permissions' => $role->permissions->pluck('name'),
+                    'permissions' => $role->permissions->map(function ($permission) {
+                        return [
+                            'permission_id' => $permission->permission_id,
+                            'name' => $permission->name,
+                            'slug' => $permission->slug,
+                            'module' => $permission->module,
+                            'action' => $permission->action,
+                            'category' => $permission->category,
+                        ];
+                    }),
                     'user_count' => $role->users()->count(),
+                    'settings' => $role->settings,
                 ];
             });
 
-        return Inertia::render('Admin/UserManagement', [
+        $permissions = Permission::all()->groupBy('module');
+        $universities = University::select('university_id', 'name')->get();
+
+        return Inertia::render('Admin/RoleManagement', [
             'roles' => $roles,
-            'permissions' => Permission::all(),
+            'permissions' => $permissions,
+            'universities' => $universities,
         ]);
     }
 
@@ -41,27 +61,43 @@ class RoleController extends Controller
         
         $validated = $request->validate([
             'name' => 'required|string|unique:roles,name',
+            'slug' => 'required|string|unique:roles,slug',
             'description' => 'nullable|string',
-            'university_id' => 'required|exists:universities,university_id',
+            'university_id' => 'nullable|exists:universities,university_id',
+            'level' => 'required|integer|min:0|max:100',
+            'is_assignable' => 'boolean',
             'permissions' => 'array',
-            'permissions.*' => 'string|exists:permissions,name',
+            'permissions.*' => 'uuid|exists:permissions,permission_id',
+            'settings' => 'nullable|array',
         ]);
 
-        $role = Role::create([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-            'university_id' => $validated['university_id'],
-            'is_system_role' => false,
-            'level' => 50, // Default level for custom roles
-        ]);
+        DB::transaction(function () use ($validated) {
+            $role = Role::create([
+                'role_id' => (string) Str::uuid(),
+                'name' => $validated['name'],
+                'slug' => $validated['slug'],
+                'description' => $validated['description'] ?? null,
+                'university_id' => $validated['university_id'] ?? null,
+                'level' => $validated['level'],
+                'is_system_role' => false,
+                'is_assignable' => $validated['is_assignable'] ?? true,
+                'settings' => $validated['settings'] ?? null,
+            ]);
 
-        // Assign permissions
-        if (!empty($validated['permissions'])) {
-            $permissionIds = Permission::whereIn('name', $validated['permissions'])
-                ->pluck('permission_id')
-                ->toArray();
-            $role->permissions()->sync($permissionIds);
-        }
+            // Assign permissions with UUID for pivot table
+            if (!empty($validated['permissions'])) {
+                $permissionData = [];
+                foreach ($validated['permissions'] as $permissionId) {
+                    $permissionData[$permissionId] = [
+                        'id' => (string) Str::uuid(),
+                        'is_enabled' => true,
+                        'granted_at' => now(),
+                        'granted_by' => auth()->id(),
+                    ];
+                }
+                $role->permissions()->sync($permissionData);
+            }
+        });
 
         return redirect()->back()->with('success', 'Role created successfully.');
     }
@@ -77,35 +113,39 @@ class RoleController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|unique:roles,name,' . $role->role_id . ',role_id',
+            'slug' => 'required|string|unique:roles,slug,' . $role->role_id . ',role_id',
             'description' => 'nullable|string',
+            'level' => 'required|integer|min:0|max:100',
+            'is_assignable' => 'boolean',
             'permissions' => 'array',
-            'permissions.*' => 'string|exists:permissions,name',
+            'permissions.*' => 'uuid|exists:permissions,permission_id',
+            'settings' => 'nullable|array',
         ]);
 
-        $role->update([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-        ]);
+        DB::transaction(function () use ($role, $validated) {
+            $role->update([
+                'name' => $validated['name'],
+                'slug' => $validated['slug'],
+                'description' => $validated['description'],
+                'level' => $validated['level'],
+                'is_assignable' => $validated['is_assignable'] ?? true,
+                'settings' => $validated['settings'] ?? null,
+            ]);
 
-
-        // Sync permissions with manual UUID generation
-        if (isset($validated['permissions'])) {
-            $permissionIds = Permission::whereIn('name', $validated['permissions'])
-                ->pluck('permission_id')
-                ->toArray();
-            
-            // Create sync data with UUIDs
-            $syncData = [];
-            foreach ($permissionIds as $permissionId) {
-                $syncData[$permissionId] = [
-                    'id' => (string) \Illuminate\Support\Str::uuid(),
-                    'is_enabled' => true,
-                    'granted_at' => now(),
-                ];
+            // Sync permissions with UUID for pivot table
+            if (isset($validated['permissions'])) {
+                $permissionData = [];
+                foreach ($validated['permissions'] as $permissionId) {
+                    $permissionData[$permissionId] = [
+                        'id' => (string) Str::uuid(),
+                        'is_enabled' => true,
+                        'granted_at' => now(),
+                        'granted_by' => auth()->id(),
+                    ];
+                }
+                $role->permissions()->sync($permissionData);
             }
-            
-            $role->permissions()->sync($syncData);
-        }
+        });
 
         return redirect()->back()->with('success', 'Role updated successfully.');
     }
@@ -116,16 +156,82 @@ class RoleController extends Controller
         
         $validated = $request->validate([
             'permissions' => 'required|array',
-            'permissions.*' => 'string|exists:permissions,name',
+            'permissions.*.permission_id' => 'required|uuid|exists:permissions,permission_id',
+            'permissions.*.is_enabled' => 'boolean',
+            'permissions.*.constraints' => 'nullable|array',
+            'permissions.*.expires_at' => 'nullable|date|after:now',
         ]);
 
-        $permissionIds = Permission::whereIn('name', $validated['permissions'])
-            ->pluck('permission_id')
-            ->toArray();
+        DB::transaction(function () use ($role, $validated) {
+            $permissionData = [];
+            foreach ($validated['permissions'] as $permission) {
+                $permissionData[$permission['permission_id']] = [
+                    'id' => (string) Str::uuid(),
+                    'is_enabled' => $permission['is_enabled'] ?? true,
+                    'constraints' => $permission['constraints'] ?? null,
+                    'expires_at' => $permission['expires_at'] ?? null,
+                    'granted_at' => now(),
+                    'granted_by' => auth()->id(),
+                ];
+            }
             
-        $role->permissions()->sync($permissionIds);
+            $role->permissions()->sync($permissionData);
+        });
 
         return redirect()->back()->with('success', 'Role permissions updated successfully.');
+    }
+
+    public function grantPermission(Request $request, Role $role)
+    {
+        // $this->authorize('users.manage_roles');
+        
+        $validated = $request->validate([
+            'permission_id' => 'required|uuid|exists:permissions,permission_id',
+            'is_enabled' => 'boolean',
+            'constraints' => 'nullable|array',
+            'expires_at' => 'nullable|date|after:now',
+        ]);
+
+        $role->permissions()->attach($validated['permission_id'], [
+            'id' => (string) Str::uuid(),
+            'is_enabled' => $validated['is_enabled'] ?? true,
+            'constraints' => $validated['constraints'] ?? null,
+            'expires_at' => $validated['expires_at'] ?? null,
+            'granted_at' => now(),
+            'granted_by' => auth()->id(),
+        ]);
+
+        return redirect()->back()->with('success', 'Permission granted successfully.');
+    }
+
+    public function revokePermission(Request $request, Role $role)
+    {
+        // $this->authorize('users.manage_roles');
+        
+        $validated = $request->validate([
+            'permission_id' => 'required|uuid|exists:permissions,permission_id',
+        ]);
+
+        $role->permissions()->detach($validated['permission_id']);
+
+        return redirect()->back()->with('success', 'Permission revoked successfully.');
+    }
+
+    public function togglePermission(Request $request, Role $role)
+    {
+        // $this->authorize('users.manage_roles');
+        
+        $validated = $request->validate([
+            'permission_id' => 'required|uuid|exists:permissions,permission_id',
+            'is_enabled' => 'required|boolean',
+        ]);
+
+        $role->permissions()->updateExistingPivot($validated['permission_id'], [
+            'is_enabled' => $validated['is_enabled'],
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Permission status updated successfully.');
     }
 
     public function destroy(Role $role)
@@ -141,8 +247,44 @@ class RoleController extends Controller
             return redirect()->back()->with('error', 'Cannot delete role that has users assigned.');
         }
 
-        $role->delete();
+        DB::transaction(function () use ($role) {
+            // Detach all permissions first
+            $role->permissions()->detach();
+            $role->delete();
+        });
         
         return redirect()->back()->with('success', 'Role deleted successfully.');
+    }
+
+    public function show(Role $role)
+    {
+        // $this->authorize('users.manage_roles');
+        
+        $role->load(['permissions', 'university', 'users']);
+
+        return Inertia::render('Admin/RoleDetail', [
+            'role' => [
+                'role_id' => $role->role_id,
+                'university_id' => $role->university_id,
+                'name' => $role->name,
+                'slug' => $role->slug,
+                'description' => $role->description,
+                'is_system_role' => $role->is_system_role,
+                'is_assignable' => $role->is_assignable,
+                'level' => $role->level,
+                'settings' => $role->settings,
+                'permissions' => $role->permissions,
+                'user_count' => $role->users()->count(),
+                'users' => $role->users->map(function ($user) {
+                    return [
+                        'user_id' => $user->user_id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                    ];
+                }),
+                'created_at' => $role->created_at,
+                'updated_at' => $role->updated_at,
+            ],
+        ]);
     }
 }

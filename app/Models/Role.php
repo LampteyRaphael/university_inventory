@@ -55,7 +55,7 @@ class Role extends Model
      * Relationships
      */
 
-    public function permissionsWithPivot()
+    public function permission()
     {
         return $this->belongsToMany(
             Permission::class,

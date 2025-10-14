@@ -221,20 +221,26 @@ class User extends Authenticatable
 
 
 
+     /**
+     * Check if user has a specific permission.
+     *
+     * @param string $permissionName
+     * @return bool
+     */
     public function hasPermission($permissionName)
-{
+    {
     // Always use the role relationship, not the string attribute
-    if (!$this->role_id || !$this->role()->exists()) {
-        return false;
+        if (!$this->role_id || !$this->role()->exists()) {
+            return false;
+        }
+        
+        // Eager load the role relationship if not already loaded
+        if (!$this->relationLoaded('role')) {
+            $this->load('role');
+        }
+        
+        return $this->role->hasActivePermission($permissionName);
     }
-    
-    // Eager load the role relationship if not already loaded
-    if (!$this->relationLoaded('role')) {
-        $this->load('role');
-    }
-    
-    return $this->role->hasActivePermission($permissionName);
-}
 
 /**
  * Check if user has any of the given permissions - FIXED VERSION
@@ -272,19 +278,32 @@ public function getRoleAttribute()
 }
 
 
-    public function hasAllPermissions(array $permissions)
-    {
-        if (!$this->role_id || !$this->role) return false;
+    /**
+     * Check if user has a specific permission.
+     *
+     * @param string $permissions
+     * @return bool
+     */
+    
+    // public function hasAllPermissions(array $permissions)
+    // {
+    //     if (!$this->role_id || !$this->role) return false;
         
-        foreach ($permissions as $permission) {
-            if (!$this->role->hasActivePermission($permission)) {
-                return false;
-            }
-        }
+    //     foreach ($permissions as $permission) {
+    //         if (!$this->role->hasActivePermission($permission)) {
+    //             return false;
+    //         }
+    //     }
         
-        return true;
-    }
+    //     return true;
+    // }
 
+    /**
+     * Check if user has a specific permission.
+     *
+     * @param string $module, $action
+     * @return bool
+     */
     public function canPerform($module, $action)
     {
         if (!$this->role_id || !$this->role) return false;

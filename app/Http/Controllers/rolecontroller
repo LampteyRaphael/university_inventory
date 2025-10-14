@@ -1,0 +1,234 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\Role;
+use App\Models\Permission;
+use Inertia\Inertia;
+use Illuminate\Http\Request;
+
+class RoleController extends Controller
+{
+    public function index()
+    {        
+        $roles = Role::with(['permissions', 'university'])
+            ->get()
+            ->map(function ($role) {
+                return [
+                    'role_id' => $role->role_id,
+                    'university_id' => $role->university_id,
+                    'name' => $role->name,
+                    'description' => $role->description,
+                    'is_system_role' => $role->is_system_role,
+                    'level' => $role->level,
+                    'permissions' => $role->permissions->pluck('name'),
+                    'user_count' => $role->users()->count(),
+                ];
+            });
+
+        return Inertia::render('Management/Management', [
+            'roles' => $roles,
+            'permissions' => Permission::all(),
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        // $this->authorize('users.manage_roles');
+        
+        $validated = $request->validate([
+            'name' => 'required|string|unique:roles,name',
+            'description' => 'nullable|string',
+            'university_id' => 'required|exists:universities,university_id',
+            'permissions' => 'array',
+            'permissions.*' => 'string|exists:permissions,name',
+        ]);
+
+        $role = Role::create([
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'university_id' => $validated['university_id'],
+            'is_system_role' => false,
+            'level' => 50, // Default level for custom roles
+        ]);
+
+        // Assign permissions
+        if (!empty($validated['permissions'])) {
+            $permissionIds = Permission::whereIn('name', $validated['permissions'])
+                ->pluck('permission_id')
+                ->toArray();
+            $role->permissions()->sync($permissionIds);
+        }
+
+        return redirect()->back()->with('success', 'Role created successfully.');
+    }
+
+    // public function update(Request $request, Role $role)
+    // {
+    //     // $this->authorize('users.manage_roles');
+        
+    //     // Prevent modification of system roles
+    //     if ($role->is_system_role) {
+    //         return redirect()->back()->with('error', 'System roles cannot be modified.');
+    //     }
+
+    //     $validated = $request->validate([
+    //         'name' => 'required|string|unique:roles,name,' . $role->role_id . ',role_id',
+    //         'description' => 'nullable|string',
+    //         'permissions' => 'array',
+    //         'permissions.*' => 'string|exists:permissions,name',
+    //     ]);
+
+    //     $role->update([
+    //         'name' => $validated['name'],
+    //         'description' => $validated['description'],
+    //     ]);
+
+
+    //     // Sync permissions with manual UUID generation
+    //     if (isset($validated['permissions'])) {
+    //         $permissionIds = Permission::whereIn('name', $validated['permissions'])
+    //             ->pluck('permission_id')
+    //             ->toArray();
+            
+    //         // Create sync data with UUIDs
+    //         $syncData = [];
+    //         foreach ($permissionIds as $permissionId) {
+    //             $syncData[$permissionId] = [
+    //                 'id' => (string) \Illuminate\Support\Str::uuid(),
+    //                 'is_enabled' => true,
+    //                 'granted_at' => now(),
+    //             ];
+    //         }
+            
+    //         $role->permissions()->sync($syncData);
+    //     }
+
+    //     return redirect()->back()->with('success', 'Role updated successfully.');
+    // }
+
+    public function update(Request $request, Role $role)
+    {
+        // $this->authorize('users.manage_roles');
+        
+        // Prevent modification of system roles
+        if ($role->is_system_role) {
+            return redirect()->back()->with('error', 'System roles cannot be modified.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|unique:roles,name,' . $role->role_id . ',role_id',
+            'description' => 'nullable|string',
+            'permissions' => 'array',
+            'permissions.*' => 'string|exists:permissions,name',
+        ]);
+
+        $role->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+        ]);
+
+        // Sync permissions and update is_system_permission
+        if (isset($validated['permissions'])) {
+            $permissionIds = Permission::whereIn('name', $validated['permissions'])
+                ->pluck('permission_id')
+                ->toArray();
+            
+            // Create sync data with UUIDs for the pivot table
+            $syncData = [];
+            foreach ($permissionIds as $permissionId) {
+                $syncData[$permissionId] = [
+                    'id' => (string) \Illuminate\Support\Str::uuid(),
+                    'is_enabled' => true,
+                    'granted_at' => now(),
+                ];
+            }
+            
+            $role->permissions()->sync($syncData);
+            
+            // Update is_system_permission in permissions table
+            Permission::whereIn('permission_id', $permissionIds)
+                    ->update(['is_system_permission' => 1]);
+            
+            // Optional: Set is_system_permission to 0 for permissions not in this role
+            // Permission::whereNotIn('permission_id', $permissionIds)
+            //         ->update(['is_system_permission' => 0]);
+
+        }
+
+        return redirect()->back()->with('success', 'Role & Permission updated successfully.');
+    }
+
+    public function updatePermissions(Request $request, Role $role)
+    {
+        // $this->authorize('users.manage_roles');
+        
+        $validated = $request->validate([
+            'permissions' => 'required|array',
+            'permissions.*' => 'string|exists:permissions,name',
+        ]);
+
+        $permissionIds = Permission::whereIn('name', $validated['permissions'])
+            ->pluck('permission_id')
+            ->toArray();
+        
+        // Create sync data with UUIDs for the pivot table
+        $syncData = [];
+        foreach ($permissionIds as $permissionId) {
+            $syncData[$permissionId] = [
+                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'is_enabled' => true,
+                'granted_at' => now(),
+            ];
+        }
+        
+        $role->permissions()->sync($syncData);
+        
+        // Update is_system_permission in permissions table
+        Permission::whereIn('permission_id', $permissionIds)
+                ->update(['is_system_permission' => 1]);
+        
+        // Optional: Set is_system_permission to 0 for permissions not in this role
+        Permission::whereNotIn('permission_id', $permissionIds)
+                ->update(['is_system_permission' => 0]);
+
+        return redirect()->back()->with('success', 'Role permissions updated successfully.');
+    }
+
+    // public function updatePermissions(Request $request, Role $role)
+    // {
+    //     // $this->authorize('users.manage_roles');
+        
+    //     $validated = $request->validate([
+    //         'permissions' => 'required|array',
+    //         'permissions.*' => 'string|exists:permissions,name',
+    //     ]);
+
+    //     $permissionIds = Permission::whereIn('name', $validated['permissions'])
+    //         ->pluck('permission_id')
+    //         ->toArray();
+            
+    //     $role->permissions()->sync($permissionIds);
+
+    //     return redirect()->back()->with('success', 'Role permissions updated successfully.');
+    // }
+
+    public function destroy(Role $role)
+    {
+        // $this->authorize('users.manage_roles');
+        
+        // Prevent deletion of system roles or roles with users
+        if ($role->is_system_role) {
+            return redirect()->back()->with('error', 'System roles cannot be deleted.');
+        }
+        
+        if ($role->users()->count() > 0) {
+            return redirect()->back()->with('error', 'Cannot delete role that has users assigned.');
+        }
+
+        $role->delete();
+        
+        return redirect()->back()->with('success', 'Role deleted successfully.');
+    }
+}
