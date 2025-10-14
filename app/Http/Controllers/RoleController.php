@@ -8,6 +8,7 @@ use App\Models\Permission;
 use App\Models\University;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
@@ -92,7 +93,7 @@ class RoleController extends Controller
                         'id' => (string) Str::uuid(),
                         'is_enabled' => true,
                         'granted_at' => now(),
-                        'granted_by' => auth()->id(),
+                        'granted_by' => Auth::user()->user_id,
                     ];
                 }
                 $role->permissions()->sync($permissionData);
@@ -140,7 +141,7 @@ class RoleController extends Controller
                         'id' => (string) Str::uuid(),
                         'is_enabled' => true,
                         'granted_at' => now(),
-                        'granted_by' => auth()->id(),
+                        'granted_by' => Auth::user()->user_id,
                     ];
                 }
                 $role->permissions()->sync($permissionData);
@@ -171,7 +172,7 @@ class RoleController extends Controller
                     'constraints' => $permission['constraints'] ?? null,
                     'expires_at' => $permission['expires_at'] ?? null,
                     'granted_at' => now(),
-                    'granted_by' => auth()->id(),
+                    'granted_by' => Auth::user()->user_id,
                 ];
             }
             
@@ -198,7 +199,7 @@ class RoleController extends Controller
             'constraints' => $validated['constraints'] ?? null,
             'expires_at' => $validated['expires_at'] ?? null,
             'granted_at' => now(),
-            'granted_by' => auth()->id(),
+            'granted_by' => Auth::user()->user_id,
         ]);
 
         return redirect()->back()->with('success', 'Permission granted successfully.');
