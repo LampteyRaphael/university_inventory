@@ -56,52 +56,72 @@ class RoleController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        // $this->authorize('users.manage_roles');
+public function store(Request $request)
+{
+    // $this->authorize('users.manage_roles');
+    
+    $validated = $request->validate([
+        'name' => 'required|string|unique:roles,name',
+        'description' => 'nullable|string',
+        'university_id' => 'required|exists:universities,university_id',
+        'permissions' => 'array',
+        'permissions.*' => 'string|exists:permissions,name',
+    ]);
+
+    $role = Role::create([
+        'name' => $validated['name'],
+        'slug' => Str::slug($validated['name']),
+        'description' => $validated['description'],
+        'university_id' => $validated['university_id'],
+        'is_system_role' => false,
+        'level' => 50,
+    ]);
+
+    // Assign permissions with proper UUID handling
+    // if (!empty($validated['permissions'])) {
+    //     $permissions = Permission::whereIn('name', $validated['permissions'])->get();
         
-        $validated = $request->validate([
-            'name' => 'required|string|unique:roles,name',
-            'slug' => 'required|string|unique:roles,slug',
-            'description' => 'nullable|string',
-            'university_id' => 'nullable|exists:universities,university_id',
-            'level' => 'required|integer|min:0|max:100',
-            'is_assignable' => 'boolean',
-            'permissions' => 'array',
-            'permissions.*' => 'uuid|exists:permissions,permission_id',
-            'settings' => 'nullable|array',
-        ]);
+    //     foreach ($permissions as $permission) {
+    //         // This will automatically trigger the pivot model's creating event
+    //         $role->permissions()->attach($permission->permission_id, [
+    //             'is_enabled' => true,
+    //             'granted_at' => now(),
+    //             // The UUID for pivot id will be generated automatically by the pivot model
+    //         ]);
+    //     }
 
-        DB::transaction(function () use ($validated) {
-            $role = Role::create([
-                'role_id' => (string) Str::uuid(),
-                'name' => $validated['name'],
-                'slug' => $validated['slug'],
-                'description' => $validated['description'] ?? null,
-                'university_id' => $validated['university_id'] ?? null,
-                'level' => $validated['level'],
-                'is_system_role' => false,
-                'is_assignable' => $validated['is_assignable'] ?? true,
-                'settings' => $validated['settings'] ?? null,
-            ]);
-
-            // Assign permissions with UUID for pivot table
-            if (!empty($validated['permissions'])) {
-                $permissionData = [];
-                foreach ($validated['permissions'] as $permissionId) {
-                    $permissionData[$permissionId] = [
-                        'id' => (string) Str::uuid(),
-                        'is_enabled' => true,
-                        'granted_at' => now(),
-                        'granted_by' => Auth::user()->user_id,
-                    ];
-                }
-                $role->permissions()->sync($permissionData);
-            }
-        });
-
-        return redirect()->back()->with('success', 'Role created successfully.');
+    // In your store method
+if (!empty($validated['permissions'])) {
+    $permissions = Permission::whereIn('name', $validated['permissions'])->get();
+    
+    $permissionData = [];
+    foreach ($permissions as $permission) {
+        $permissionData[$permission->permission_id] = [
+            'id' => Str::uuid(), // Manually generate UUID for each pivot
+            'is_enabled' => true,
+            'granted_at' => now(),
+            'granted_by'=>Auth::user()->user_id,
+            'created_at'=> now(),
+        ];
     }
+    
+    // $role->permissions()->syncWithoutDetaching($permissionData);
+// }
+        
+        // Alternatively, you can use sync with additional data:
+        // $permissionData = [];
+        // foreach ($permissions as $permission) {
+        //     $permissionData[$permission->permission_id] = [
+        //         'id' => Str::uuid(), // Generate UUID manually
+        //         'is_enabled' => true,
+        //         'granted_at' => now(),
+        //     ];
+        // }
+        $role->permissions()->sync($permissionData);
+    }
+
+    return redirect()->back()->with('success', 'Role created successfully.');
+}
 
     public function update(Request $request, Role $role)
     {
