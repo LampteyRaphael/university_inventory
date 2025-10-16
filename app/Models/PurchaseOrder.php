@@ -584,6 +584,11 @@ class PurchaseOrder extends Model
         return $this->belongsTo(Supplier::class, 'supplier_id', 'supplier_id');
     }
 
+        public function items()
+    {
+        return $this->hasMany(PurchaseOrderItem::class, 'order_id', 'order_id');
+    }
+
     /**
      * Get the department that owns the purchase order.
      */

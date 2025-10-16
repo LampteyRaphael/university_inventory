@@ -15,13 +15,13 @@ class User extends Authenticatable
     protected $primaryKey = 'user_id';
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $table ='users';
+    protected $table = 'users';
 
     protected $fillable = [
         'user_id',
         'university_id',
         'department_id',
-        'role_id', // Make sure this is included
+        'role_id',
         'employee_id',
         'username',
         'email',
@@ -31,7 +31,7 @@ class User extends Authenticatable
         'last_name',
         'phone',
         'position',
-        'role', // Keep this for backward compatibility
+        'role', // Keep for backward compatibility
         'permissions',
         'is_active',
         'hire_date',
@@ -57,56 +57,65 @@ class User extends Authenticatable
         'permissions' => 'array',
     ];
 
+    // Add appends for computed attributes
+    protected $appends = ['full_name', 'display_role'];
+
     public function university()
     {
-        return $this->belongsTo(University::class, 'university_id');
+        return $this->belongsTo(University::class, 'university_id', 'university_id');
     }
 
     public function department()
     {
-        return $this->belongsTo(Department::class, 'department_id');
-    }
-
-    public function getFullNameAttribute()
-    {
-        return $this->first_name && $this->last_name 
-            ? "{$this->first_name} {$this->last_name}"
-            : $this->name;
+        return $this->belongsTo(Department::class, 'department_id', 'department_id');
     }
 
     /**
-     * Role relationship - NEW relationship using role_id
+     * Role relationship - FIXED: Added proper foreign key and local key
      */
     public function role()
     {
         return $this->belongsTo(Role::class, 'role_id', 'role_id');
     }
 
+    public function getFullNameAttribute()
+    {
+        if ($this->first_name && $this->last_name) {
+            return "{$this->first_name} {$this->last_name}";
+        }
+        return $this->name;
+    }
+
     /**
-     * Get the role slug safely - handles both string role and role relationship
+     * Get the role slug safely - FIXED VERSION
      */
     public function getRoleSlug()
     {
-        // First try to get from role relationship
-        if ($this->role_id && $this->role) {
+        // Use role relationship if available
+        if ($this->role_id && $this->relationLoaded('role') && $this->role) {
             return $this->role->slug;
         }
         
         // Fallback to the old string role column
-        return $this->role; // This returns the string from enum column
+        return $this->attributes['role'] ?? null;
     }
 
     /**
-     * Get the role name safely
+     * Get the role name safely - FIXED VERSION
      */
     public function getRoleName()
     {
-        if ($this->role_id && $this->role) {
+        // Use role relationship if available
+        if ($this->role_id && $this->relationLoaded('role') && $this->role) {
             return $this->role->name;
         }
         
         // Fallback: convert the enum string to a display name
-        return ucwords(str_replace('_', ' ', $this->role));
+        if (isset($this->attributes['role'])) {
+            return ucwords(str_replace('_', ' ', $this->attributes['role']));
+        }
+        
+        return null;
     }
 
     /**
@@ -114,19 +123,30 @@ class User extends Authenticatable
      */
     public function hasRole($roleName)
     {
-        // Handle role relationship (preferred)
-        if ($this->role_id && $this->role) {
-            if (is_array($roleName)) {
-                return in_array($this->role->slug, $roleName) || in_array($this->role->name, $roleName);
+        // Use role relationship if available
+        if ($this->role_id) {
+            // Ensure role relationship is loaded
+            if (!$this->relationLoaded('role')) {
+                $this->load('role');
             }
-            return $this->role->slug === $roleName || $this->role->name === $roleName;
+            
+            if ($this->role) {
+                if (is_array($roleName)) {
+                    return in_array($this->role->slug, $roleName) || in_array($this->role->name, $roleName);
+                }
+                return $this->role->slug === $roleName || $this->role->name === $roleName;
+            }
         }
         
         // Fallback: check against the string role column
-        if (is_array($roleName)) {
-            return in_array($this->role, $roleName);
+        if (isset($this->attributes['role'])) {
+            if (is_array($roleName)) {
+                return in_array($this->attributes['role'], $roleName);
+            }
+            return $this->attributes['role'] === $roleName;
         }
-        return $this->role === $roleName;
+        
+        return false;
     }
 
     /**
@@ -134,47 +154,7 @@ class User extends Authenticatable
      */
     public function hasAnyRole(array $roles)
     {
-        // Handle role relationship (preferred)
-        if ($this->role_id && $this->role) {
-            foreach ($roles as $role) {
-                if ($this->role->slug === $role || $this->role->name === $role) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        
-        // Fallback: check against the string role column
-        foreach ($roles as $role) {
-            if ($this->role === $role) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Check role level hierarchy - FIXED VERSION
-     */
-    public function hasHigherRoleThan($level)
-    {
-        if ($this->role_id && $this->role) {
-            return $this->role->level > $level;
-        }
-        
-        // Fallback: approximate levels for string roles
-        $roleLevels = [
-            'super_admin' => 100,
-            'inventory_manager' => 80,
-            'department_head' => 70,
-            'procurement_officer' => 60,
-            'faculty' => 40,
-            'staff' => 30,
-            'student' => 10,
-        ];
-        
-        $userLevel = $roleLevels[$this->role] ?? 0;
-        return $userLevel > $level;
+        return $this->hasRole($roles);
     }
 
     /**
@@ -182,8 +162,15 @@ class User extends Authenticatable
      */
     public function getRoleLevel()
     {
-        if ($this->role_id && $this->role) {
-            return $this->role->level;
+        // Use role relationship if available
+        if ($this->role_id) {
+            if (!$this->relationLoaded('role')) {
+                $this->load('role');
+            }
+            
+            if ($this->role) {
+                return $this->role->level;
+            }
         }
         
         // Fallback: approximate levels for string roles
@@ -197,7 +184,15 @@ class User extends Authenticatable
             'student' => 10,
         ];
         
-        return $roleLevels[$this->role] ?? 0;
+        return $roleLevels[$this->attributes['role'] ?? 'student'] ?? 0;
+    }
+
+    /**
+     * Check role level hierarchy - FIXED VERSION
+     */
+    public function hasHigherRoleThan($level)
+    {
+        return $this->getRoleLevel() > $level;
     }
 
     /**
@@ -219,100 +214,69 @@ class User extends Authenticatable
         return $this->getRoleLevel() > $otherUser->getRoleLevel();
     }
 
-
-
-     /**
-     * Check if user has a specific permission.
-     *
-     * @param string $permissionName
-     * @return bool
+    /**
+     * Check if user has a specific permission - FIXED VERSION
      */
     public function hasPermission($permissionName)
     {
-    // Always use the role relationship, not the string attribute
-        if (!$this->role_id || !$this->role()->exists()) {
+        // Always use the role relationship
+        if (!$this->role_id) {
             return false;
         }
         
-        // Eager load the role relationship if not already loaded
+        // Ensure role relationship is loaded with permissions
         if (!$this->relationLoaded('role')) {
-            $this->load('role');
+            $this->load(['role' => function($query) {
+                $query->with('permissions');
+            }]);
+        }
+        
+        if (!$this->role) {
+            return false;
         }
         
         return $this->role->hasActivePermission($permissionName);
     }
 
-/**
- * Check if user has any of the given permissions - FIXED VERSION
- */
-public function hasAnyPermission(array $permissions)
-{
-    if (!$this->role_id || !$this->role()->exists()) {
+    /**
+     * Check if user has any of the given permissions - FIXED VERSION
+     */
+    public function hasAnyPermission(array $permissions)
+    {
+        foreach ($permissions as $permission) {
+            if ($this->hasPermission($permission)) {
+                return true;
+            }
+        }
+        
         return false;
     }
-    
-    if (!$this->relationLoaded('role')) {
-        $this->load('role');
-    }
-    
-    foreach ($permissions as $permission) {
-        if ($this->role->hasActivePermission($permission)) {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
-/**
- * Safe role accessor that always returns the Role object
- */
-public function getRoleAttribute()
-{
-    if (isset($this->attributes['role']) && !$this->relationLoaded('role')) {
-        // If the string role is loaded but relationship isn't, load it
-        $this->load('role');
-    }
-    
-    return $this->getRelationValue('role');
-}
-
 
     /**
-     * Check if user has a specific permission.
-     *
-     * @param string $permissions
-     * @return bool
+     * Check if user has all of the given permissions
      */
-    
-    // public function hasAllPermissions(array $permissions)
-    // {
-    //     if (!$this->role_id || !$this->role) return false;
+    public function hasAllPermissions(array $permissions)
+    {
+        foreach ($permissions as $permission) {
+            if (!$this->hasPermission($permission)) {
+                return false;
+            }
+        }
         
-    //     foreach ($permissions as $permission) {
-    //         if (!$this->role->hasActivePermission($permission)) {
-    //             return false;
-    //         }
-    //     }
-        
-    //     return true;
-    // }
+        return true;
+    }
 
     /**
-     * Check if user has a specific permission.
-     *
-     * @param string $module, $action
-     * @return bool
+     * Check if user can perform specific module action
      */
     public function canPerform($module, $action)
     {
-        if (!$this->role_id || !$this->role) return false;
-        
-        return $this->role->canPerform($module, $action);
+        $permissionName = "{$module}.{$action}";
+        return $this->hasPermission($permissionName);
     }
 
     /**
-     * Helper methods for common role checks - UPDATED
+     * Helper methods for common role checks
      */
     public function isSuperAdmin()
     {
@@ -390,5 +354,29 @@ public function getRoleAttribute()
     public function getDisplayRoleAttribute()
     {
         return $this->getRoleName();
+    }
+
+    /**
+     * Scope for active users
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope for users with role
+     */
+    public function scopeWithRole($query, $role)
+    {
+        if (is_array($role)) {
+            return $query->whereHas('role', function($q) use ($role) {
+                $q->whereIn('slug', $role)->orWhereIn('name', $role);
+            })->orWhereIn('role', $role);
+        }
+        
+        return $query->whereHas('role', function($q) use ($role) {
+            $q->where('slug', $role)->orWhere('name', $role);
+        })->orWhere('role', $role);
     }
 }

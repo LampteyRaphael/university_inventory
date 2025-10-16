@@ -98,11 +98,12 @@ Route::middleware('auth','verified')->group(function () {
 
 
         //inventories table
+        // Route::group(['middleware' => ['inventory_manager']], function () {
         Route::get('/inventory-transactions', [InventoryTransactionController::class, 'transactionIndex'])->name('inventory-transactions.index');
         Route::post('/inventory-transactions', [InventoryTransactionController::class, 'store'])->name('inventory-transactions.store');
         Route::put('/inventory-transactions/{id}', [InventoryTransactionController::class, 'update'])->name('inventory-transactions.update');
         Route::delete('/inventory-transactions/{id}', [InventoryTransactionController::class, 'destroy'])->name('inventory-transactions.destroy');
-
+        // });
 
         //departments
         Route::get('/departments', [DepartmentController::class, 'index'])->name('department.index');
@@ -190,10 +191,19 @@ Route::middleware('auth','verified')->group(function () {
     // Route::delete('/audit-logs/{id}/force', [AuditLogController::class, 'forceDelete'])->name('audit-logs.force-delete');
     // Route::post('/audit-logs/{id}/restore', [AuditLogController::class, 'restore'])->name('audit-logs.restore');
 
-    Route::get('/inventory-report',[InventoryReportController::class,'index'])->name('inventory-report.index');
-    Route::post('/reports/generate', [InventoryReportController::class, 'generate'])->name('reports.generate');
-    // Route::post('/reports/generate', [InventoryReportController::class, 'export'])->name('reports.export');
+    // Route::get('/inventory-report',[InventoryReportController::class,'index'])->name('inventory-report.index');
+    // Route::post('/reports/generate', [InventoryReportController::class, 'generate'])->name('reports.generate');
+    // Route::post('/reports-generate', [InventoryReportController::class, 'export'])->name('reports.export');
 
+    Route::prefix('reports')->group(function () {
+    Route::get('/', [InventoryReportController::class, 'index'])->name('inventory-report.index');
+    Route::post('/generate', [InventoryReportController::class, 'generate'])->name('inventory-report.generate');
+    Route::get('/quick/{type}', [InventoryReportController::class, 'quickReport'])->name('inventory-report.quick');
+    Route::post('/preview', [InventoryReportController::class, 'preview'])->name('inventory-report.preview');
+    Route::post('/export', [InventoryReportController::class, 'exportReport'])->name('inventory-report.export');
+    Route::post('/clear', [InventoryReportController::class, 'clear'])->name('inventory-report.clear');
+    Route::get('/filter-options', [InventoryReportController::class, 'getFilterOptions'])->name('inventory-report.filter-options');
+});
 
 
     // User Management

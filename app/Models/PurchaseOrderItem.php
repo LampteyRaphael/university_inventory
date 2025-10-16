@@ -367,6 +367,16 @@ class PurchaseOrderItem extends Model
         return $query->withStatus(self::STATUS_RECEIVED);
     }
 
+     public function order()
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'order_id', 'order_id');
+    }
+    
+    public function item()
+    {
+        return $this->belongsTo(InventoryItem::class, 'item_id', 'item_id');
+    }
+
     /**
      * Scope a query to only include cancelled items.
      *

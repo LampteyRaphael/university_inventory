@@ -24,6 +24,49 @@ class InventoryTransactionController extends Controller
         $this->transactionRepository = $inventoryRepository;
     }
 
+    // private function canApproveTransactions()
+    // {
+    //     $user = Auth::user();
+        
+    //     // Users with approve permission can approve
+    //     if ($user->hasPermission('purchase_orders.approve')) {
+    //         return true;
+    //     }
+        
+    //     // Department heads can approve transactions in their department
+    //     if ($user->hasRole('department_head')) {
+    //         return true;
+    //     }
+        
+    //     // Higher level roles can approve (super_admin, inventory_manager)
+    //     if ($user->role && $user->role->level >= 70) { // department_head level and above
+    //         return true;
+    //     }
+        
+    //     return false;
+    // }
+
+    /**
+     * Check if user can manage transactions for specific department
+     */
+    // private function canManageDepartment($departmentId)
+    // {
+    //     $user = Auth::user();
+        
+    //     // Super admins and inventory managers can manage all departments
+    //     if ($user->hasRole('super_admin') || $user->hasRole('inventory_manager')) {
+    //         return true;
+    //     }
+        
+    //     // Department heads can only manage their own department
+    //     if ($user->hasRole('department_head') && $user->department_id == $departmentId) {
+    //         return true;
+    //     }
+        
+    //     // Faculty and staff can only view, not manage
+    //     return false;
+    // }
+
     public function transactionIndex(Request $request)
     {
         try {

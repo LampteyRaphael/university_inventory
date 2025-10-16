@@ -102,11 +102,6 @@ class InventoryItem extends Model
         return $this->belongsTo(University::class, 'university_id', 'university_id');
     }
 
-    public function category()
-    {
-        return $this->belongsTo(ItemCategory::class, 'category_id', 'category_id');
-    }
-
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -115,6 +110,16 @@ class InventoryItem extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function purchaseOrderItems()
+    {
+        return $this->hasMany(PurchaseOrderItem::class, 'item_id', 'item_id');
+    }
+    
+    public function category()
+    {
+        return $this->belongsTo(ItemCategory::class, 'category_id', 'category_id');
     }
 
     // Scopes

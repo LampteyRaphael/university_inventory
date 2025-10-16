@@ -494,6 +494,7 @@ class Role extends Model
         return false;
     }
 
+    
     public function hasAnyPermission(array $permissions)
     {
         return $this->permissions()->whereIn('name', $permissions)->exists();
