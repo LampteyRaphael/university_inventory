@@ -1801,94 +1801,352 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
   };
 
   // Enhanced Summary Cards with conditional rendering
-  const SummaryCards = ({ summary }) => {
-    if (!summary || typeof summary !== 'object') {
-      return (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          No summary data available for this report.
-        </Alert>
-      );
-    }
+  // const SummaryCards = ({ summary }) => {
+  //   if (!summary || typeof summary !== 'object') {
+  //     return (
+  //       <Alert severity="info" sx={{ mb: 3 }}>
+  //         No summary data available for this report.
+  //       </Alert>
+  //     );
+  //   }
 
-    const summaryMetrics = [
-      {
-        label: 'Total Transactions',
-        value: summary.total_transactions?.toLocaleString() || 
-               summary.total_acquisitions?.toLocaleString() || 
-               summary.total_orders?.toLocaleString() || 
-               '0',
-        icon: <Numbers color="primary" />,
-        color: 'primary'
-      },
-      {
-        label: 'Total Value',
-        value: `₵${(summary.total_value || 
-                    summary.total_inventory_value || 
-                    summary.total_amount || 
-                    0).toLocaleString()}`,
-        icon: <AttachMoney color="success" />,
-        color: 'success'
-      },
-      {
-        label: 'Incoming Stock',
-        value: (summary.incoming_stock?.toLocaleString() || 
-                summary.total_incoming?.toLocaleString() || 
-                '0'),
-        icon: <TrendingUp color="info" />,
-        color: 'info'
-      },
-      {
-        label: 'Outgoing Stock',
-        value: (summary.outgoing_stock?.toLocaleString() || 
-                summary.total_outgoing?.toLocaleString() || 
-                '0'),
-        icon: <TrendingDown color="warning" />,
-        color: 'warning'
-      },
-      {
-        label: 'Low Stock Items',
-        value: (summary.low_stock_items?.toLocaleString() || 
-                summary.items_need_reorder?.toLocaleString() || 
-                '0'),
-        icon: <Warning color="error" />,
-        color: 'error'
-      },
-      {
-        label: 'Out of Stock',
-        value: (summary.out_of_stock_items?.toLocaleString() || 
-                summary.out_of_stock_items?.toLocaleString() || 
-                '0'),
-        icon: <Inventory2 color="secondary" />,
-        color: 'secondary'
-      }
-    ];
+  //   const summaryMetrics = [
+  //     {
+  //       label: 'Total Transactions',
+  //       value: summary.total_transactions?.toLocaleString() || 
+  //              summary.total_acquisitions?.toLocaleString() || 
+  //              summary.total_orders?.toLocaleString() || 
+  //              '0',
+  //       icon: <Numbers color="primary" />,
+  //       color: 'primary'
+  //     },
+  //     {
+  //       label: 'Total Value',
+  //       value: `₵${(summary.total_value || 
+  //                   summary.total_inventory_value || 
+  //                   summary.total_amount || 
+  //                   0).toLocaleString()}`,
+  //       icon: <AttachMoney color="success" />,
+  //       color: 'success'
+  //     },
+  //     {
+  //       label: 'Incoming Stock',
+  //       value: (summary.incoming_stock?.toLocaleString() || 
+  //               summary.total_incoming?.toLocaleString() || 
+  //               '0'),
+  //       icon: <TrendingUp color="info" />,
+  //       color: 'info'
+  //     },
+  //     {
+  //       label: 'Outgoing Stock',
+  //       value: (summary.outgoing_stock?.toLocaleString() || 
+  //               summary.total_outgoing?.toLocaleString() || 
+  //               '0'),
+  //       icon: <TrendingDown color="warning" />,
+  //       color: 'warning'
+  //     },
+  //     {
+  //       label: 'Low Stock Items',
+  //       value: (summary.low_stock_items?.toLocaleString() || 
+  //               summary.items_need_reorder?.toLocaleString() || 
+  //               '0'),
+  //       icon: <Warning color="error" />,
+  //       color: 'error'
+  //     },
+  //     {
+  //       label: 'Out of Stock',
+  //       value: (summary.out_of_stock_items?.toLocaleString() || 
+  //               summary.out_of_stock_items?.toLocaleString() || 
+  //               '0'),
+  //       icon: <Inventory2 color="secondary" />,
+  //       color: 'secondary'
+  //     }
+  //   ];
 
+  //   return (
+  //     <Grid container spacing={2} sx={{ mb: 3 }}>
+  //       {summaryMetrics.map((metric, index) => (
+  //         <Grid key={index} size={{ xs: 6, md: 4 }}>
+  //           <Card sx={{ height: '100%', borderLeft: `4px solid` }}>
+  //             <CardContent>
+  //               <Box display="flex" alignItems="center" gap={2}>
+  //                 <Avatar sx={{ bgcolor: `${metric.color}.light`, width: 48, height: 48 }}>
+  //                   {metric.icon}
+  //                 </Avatar>
+  //                 <Box>
+  //                   <Typography color="textSecondary" gutterBottom variant="overline">
+  //                     {metric.label}
+  //                   </Typography>
+  //                   <Typography variant="h6" fontWeight="bold">
+  //                     {metric.value}
+  //                   </Typography>
+  //                 </Box>
+  //               </Box>
+  //             </CardContent>
+  //           </Card>
+  //         </Grid>
+  //       ))}
+  //     </Grid>
+  //   );
+  // };
+  // Enhanced Summary Cards with conditional rendering for different report types
+// const SummaryCards = ({ summary, reportType }) => {
+//   if (!summary || typeof summary !== 'object') {
+//     return (
+//       <Alert severity="info" sx={{ mb: 3 }}>
+//         No summary data available for this report.
+//       </Alert>
+//     );
+//   }
+
+//   // Different summary metrics based on report type
+//   const getSummaryMetrics = () => {
+//     if (reportType === 'stock-level') {
+//       return [
+//         {
+//           label: 'Total Items',
+//           value: summary.total_items?.toLocaleString() || '0',
+//           icon: <Inventory2 color="primary" />,
+//           color: 'primary'
+//         },
+//         {
+//           label: 'Total Inventory Value',
+//           value: `₵${(summary.total_inventory_value || 0).toLocaleString()}`,
+//           icon: <AttachMoney color="success" />,
+//           color: 'success'
+//         },
+//         {
+//           label: 'Total Current Quantity',
+//           value: (summary.total_current_quantity?.toLocaleString() || '0'),
+//           icon: <Numbers color="info" />,
+//           color: 'info'
+//         },
+//         {
+//           label: 'Total Available Quantity',
+//           value: (summary.total_available_quantity?.toLocaleString() || '0'),
+//           icon: <TrendingUp color="warning" />,
+//           color: 'warning'
+//         },
+//         {
+//           label: 'Items Need Reorder',
+//           value: (summary.items_need_reorder?.toLocaleString() || '0'),
+//           icon: <Warning color="error" />,
+//           color: 'error'
+//         },
+//         {
+//           label: 'Out of Stock Items',
+//           value: (summary.out_of_stock_items?.toLocaleString() || '0'),
+//           icon: <Inventory2 color="secondary" />,
+//           color: 'secondary'
+//         }
+//       ];
+//     } else {
+//       // Default metrics for other report types
+//       return [
+//         {
+//           label: 'Total Transactions',
+//           value: summary.total_transactions?.toLocaleString() || 
+//                  summary.total_acquisitions?.toLocaleString() || 
+//                  summary.total_orders?.toLocaleString() || 
+//                  '0',
+//           icon: <Numbers color="primary" />,
+//           color: 'primary'
+//         },
+//         {
+//           label: 'Total Value',
+//           value: `₵${(summary.total_value || 
+//                       summary.total_inventory_value || 
+//                       summary.total_amount || 
+//                       0).toLocaleString()}`,
+//           icon: <AttachMoney color="success" />,
+//           color: 'success'
+//         },
+//         {
+//           label: 'Incoming Stock',
+//           value: (summary.incoming_stock?.toLocaleString() || 
+//                   summary.total_incoming?.toLocaleString() || 
+//                   '0'),
+//           icon: <TrendingUp color="info" />,
+//           color: 'info'
+//         },
+//         {
+//           label: 'Outgoing Stock',
+//           value: (summary.outgoing_stock?.toLocaleString() || 
+//                   summary.total_outgoing?.toLocaleString() || 
+//                   '0'),
+//           icon: <TrendingDown color="warning" />,
+//           color: 'warning'
+//         },
+//         {
+//           label: 'Low Stock Items',
+//           value: (summary.low_stock_items?.toLocaleString() || 
+//                   summary.items_need_reorder?.toLocaleString() || 
+//                   '0'),
+//           icon: <Warning color="error" />,
+//           color: 'error'
+//         },
+//         {
+//           label: 'Out of Stock',
+//           value: (summary.out_of_stock_items?.toLocaleString() || 
+//                   summary.out_of_stock_items?.toLocaleString() || 
+//                   '0'),
+//           icon: <Inventory2 color="secondary" />,
+//           color: 'secondary'
+//         }
+//       ];
+//     }
+//   };
+
+//   const summaryMetrics = getSummaryMetrics();
+
+//   return (
+//     <Grid container spacing={2} sx={{ mb: 3 }}>
+//       {summaryMetrics.map((metric, index) => (
+//         <Grid key={index} size={{ xs: 6, md: 4 }}>
+//           <Card sx={{ height: '100%', borderLeft: `4px solid` }}>
+//             <CardContent>
+//               <Box display="flex" alignItems="center" gap={2}>
+//                 <Avatar sx={{ bgcolor: `${metric.color}.light`, width: 48, height: 48 }}>
+//                   {metric.icon}
+//                 </Avatar>
+//                 <Box>
+//                   <Typography color="textSecondary" gutterBottom variant="overline">
+//                     {metric.label}
+//                   </Typography>
+//                   <Typography variant="h6" fontWeight="bold">
+//                     {metric.value}
+//                   </Typography>
+//                 </Box>
+//               </Box>
+//             </CardContent>
+//           </Card>
+//         </Grid>
+//       ))}
+//     </Grid>
+//   );
+// };
+
+// Enhanced Summary Cards with comprehensive data
+const SummaryCards = ({ summary, reportType }) => {
+  if (!summary || typeof summary !== 'object') {
     return (
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {summaryMetrics.map((metric, index) => (
-          <Grid key={index} size={{ xs: 6, md: 4 }}>
-            <Card sx={{ height: '100%', borderLeft: `4px solid` }}>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={2}>
-                  <Avatar sx={{ bgcolor: `${metric.color}.light`, width: 48, height: 48 }}>
-                    {metric.icon}
-                  </Avatar>
-                  <Box>
-                    <Typography color="textSecondary" gutterBottom variant="overline">
-                      {metric.label}
-                    </Typography>
-                    <Typography variant="h6" fontWeight="bold">
-                      {metric.value}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <Alert severity="info" sx={{ mb: 3 }}>
+        No summary data available for this report.
+      </Alert>
     );
+  }
+
+  const getSummaryMetrics = () => {
+    if (reportType === 'stock-level') {
+      return [
+        {
+          label: 'Total Items',
+          value: summary.total_items?.toLocaleString() || '0',
+          icon: <Inventory2 color="primary" />,
+          color: 'primary'
+        },
+        {
+          label: 'Total Inventory Value',
+          value: `₵${(summary.total_inventory_value || 0).toLocaleString()}`,
+          icon: <AttachMoney color="success" />,
+          color: 'success'
+        },
+        {
+          label: 'Total Current Quantity',
+          value: (summary.total_current_quantity?.toLocaleString() || '0'),
+          icon: <Numbers color="info" />,
+          color: 'info'
+        },
+        {
+          label: 'Total Available Quantity',
+          value: (summary.total_available_quantity?.toLocaleString() || '0'),
+          icon: <TrendingUp color="warning" />,
+          color: 'warning'
+        },
+        {
+          label: 'Items Need Reorder',
+          value: (summary.items_need_reorder?.toLocaleString() || '0'),
+          icon: <Warning color="error" />,
+          color: 'error'
+        },
+        {
+          label: 'Out of Stock Items',
+          value: (summary.out_of_stock_items?.toLocaleString() || '0'),
+          icon: <Inventory2 color="secondary" />,
+          color: 'secondary'
+        }
+      ];
+    } else {
+      // Comprehensive report metrics
+      return [
+        {
+          label: 'Total Transactions',
+          value: summary.total_transactions?.toLocaleString() || '0',
+          icon: <Numbers color="primary" />,
+          color: 'primary'
+        },
+        {
+          label: 'Total Value',
+          value: `₵${(summary.total_value || 0).toLocaleString()}`,
+          icon: <AttachMoney color="success" />,
+          color: 'success'
+        },
+        {
+          label: 'Incoming Stock',
+          value: (summary.incoming_stock?.toLocaleString() || '0'),
+          icon: <TrendingUp color="info" />,
+          color: 'info'
+        },
+        {
+          label: 'Outgoing Stock',
+          value: (summary.outgoing_stock?.toLocaleString() || '0'),
+          icon: <TrendingDown color="warning" />,
+          color: 'warning'
+        },
+        {
+          label: 'Net Stock Movement',
+          value: (summary.net_stock_movement?.toLocaleString() || '0'),
+          icon: <Analytics color="info" />,
+          color: 'info'
+        },
+        {
+          label: 'Avg Transaction Value',
+          value: `₵${(summary.average_transaction_value || 0).toLocaleString()}`,
+          icon: <AttachMoney color="secondary" />,
+          color: 'secondary'
+        }
+      ];
+    }
   };
+
+  const summaryMetrics = getSummaryMetrics();
+
+  return (
+    <Grid container spacing={2} sx={{ mb: 3 }}>
+      {summaryMetrics.map((metric, index) => (
+        <Grid key={index} size={{ xs: 6, md: 4 }}>
+          <Card sx={{ height: '100%', borderLeft: `4px solid` }}>
+            <CardContent>
+              <Box display="flex" alignItems="center" gap={2}>
+                <Avatar sx={{ bgcolor: `${metric.color}.light`, width: 48, height: 48 }}>
+                  {metric.icon}
+                </Avatar>
+                <Box>
+                  <Typography color="textSecondary" gutterBottom variant="overline">
+                    {metric.label}
+                  </Typography>
+                  <Typography variant="h6" fontWeight="bold">
+                    {metric.value}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  );
+};
 
   // Enhanced Data Table Component
   const DataTable = ({ title, data, columns, sx = {} }) => {
@@ -1937,254 +2195,3469 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
   };
 
   // Report Display Component
-  const ReportDisplay = () => {
-    if (!reportData) {
+  // const ReportDisplay = () => {
+  //   if (!reportData) {
+  //     return (
+  //       <Alert severity="info" sx={{ mt: 3 }}>
+  //         Configure your report settings and generate a report to see the results.
+  //       </Alert>
+  //     );
+  //   }
+
+  //   const chartData = reportData.trends || {};
+  //   const summaryData = reportData.summary || {};
+
+  //   return (
+  //     <Box sx={{ mt: 4 }}>
+  //       <Card>
+  //         <CardContent>
+  //           <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+  //             <Box>
+  //               <Typography variant="h4" fontWeight="bold">
+  //                 {reportTypes.find(t => t.value === data.report_type)?.label || 'Generated Report'}
+  //               </Typography>
+  //               <Typography color="textSecondary">
+  //                 Generated on {new Date().toLocaleDateString()} • {data.data_depth} level
+  //               </Typography>
+  //             </Box>
+  //             <Box display="flex" gap={1}>
+  //               <Tooltip title="Print Report">
+  //                 <IconButton onClick={() => window.print()}>
+  //                   <Print />
+  //                 </IconButton>
+  //               </Tooltip>
+  //               <Tooltip title="Preview Report">
+  //                 <IconButton>
+  //                   <Visibility />
+  //                 </IconButton>
+  //               </Tooltip>
+  //               <Button 
+  //                 variant="contained" 
+  //                 startIcon={<Download />}
+  //                 onClick={handleExportReport}
+  //                 disabled={!reportData}
+  //               >
+  //                 Export as {data.export_format.toUpperCase()}
+  //               </Button>
+  //             </Box>
+  //           </Box>
+
+  //           <Tabs 
+  //             value={activeTab} 
+  //             onChange={(e, newValue) => setActiveTab(newValue)} 
+  //             sx={{ mb: 3 }}
+  //             variant="scrollable"
+  //             scrollButtons="auto"
+  //           >
+  //             <Tab label="Summary" icon={<Dashboard />} iconPosition="start" />
+  //             <Tab label="Analytics" icon={<BarChart />} iconPosition="start" />
+  //             <Tab label="Data Tables" icon={<TableChart />} iconPosition="start" />
+  //             <Tab label="Details" icon={<GridView />} iconPosition="start" />
+  //           </Tabs>
+
+  //           {activeTab === 0 && (
+  //             <Box>
+  //               {data.include_summary && <SummaryCards summary={summaryData} />}
+                
+  //               {/* Additional summary sections based on report type */}
+  //               {reportData.stock_level_summary && (
+  //                 <Card sx={{ mb: 2 }}>
+  //                   <CardContent>
+  //                     <Typography variant="h6" gutterBottom>Stock Level Overview</Typography>
+  //                     <Grid container spacing={2}>
+  //                       <Grid size={{ xs: 6, md: 3 }}>
+  //                         <Typography variant="body2" color="textSecondary">Total Inventory Value</Typography>
+  //                         <Typography variant="h6">₵{reportData.stock_level_summary.total_inventory_value?.toLocaleString()}</Typography>
+  //                       </Grid>
+  //                       <Grid size={{ xs: 6, md: 3 }}>
+  //                         <Typography variant="body2" color="textSecondary">Items Tracked</Typography>
+  //                         <Typography variant="h6">{reportData.stock_level_summary.total_items_tracked}</Typography>
+  //                       </Grid>
+  //                     </Grid>
+  //                   </CardContent>
+  //                 </Card>
+  //               )}
+  //             </Box>
+  //           )}
+
+  //           {activeTab === 1 && data.include_charts && (
+  //             <Box>
+  //               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Visual Analytics</Typography>
+                
+  //               {(!chartData || Object.keys(chartData).length === 0) && (
+  //                 <Alert severity="info" sx={{ mb: 2 }}>
+  //                   No chart data available for this report.
+  //                 </Alert>
+  //               )}
+                
+  //               <Grid container spacing={3}>
+  //                 {data.chart_types?.includes('bar') && chartData.monthly_trends && (
+  //                   <Grid size={{ xs: 12, md: 6 }}>
+  //                     <Card>
+  //                       <CardContent>
+  //                         <Typography variant="h6" gutterBottom>Monthly Value Trend</Typography>
+  //                         {renderBarChart(chartData.monthly_trends, 'value', 'Total Value (₵)', 'month', '#0088FE')}
+  //                       </CardContent>
+  //                     </Card>
+  //                   </Grid>
+  //                 )}
+
+  //                 {data.chart_types?.includes('pie') && chartData.category_distribution && (
+  //                   <Grid size={{ xs: 12, md: 6 }}>
+  //                     <Card>
+  //                       <CardContent>
+  //                         <Typography variant="h6" gutterBottom>Category Distribution</Typography>
+  //                         {renderPieChart(chartData.category_distribution, 'value')}
+  //                       </CardContent>
+  //                     </Card>
+  //                   </Grid>
+  //                 )}
+
+  //                 {data.chart_types?.includes('line') && chartData.monthly_trends && (
+  //                   <Grid size={{ xs: 12, md: 6 }}>
+  //                     <Card>
+  //                       <CardContent>
+  //                         <Typography variant="h6" gutterBottom>Transaction Trends</Typography>
+  //                         {renderLineChart(chartData.monthly_trends, 'transactions', 'Transaction Count', 'month', '#00C49F')}
+  //                       </CardContent>
+  //                     </Card>
+  //                   </Grid>
+  //                 )}
+
+  //                 {data.chart_types?.includes('bar') && chartData.transaction_type_distribution && (
+  //                   <Grid size={{ xs: 12, md: 6 }}>
+  //                     <Card>
+  //                       <CardContent>
+  //                         <Typography variant="h6" gutterBottom>Transaction Types</Typography>
+  //                         {renderBarChart(chartData.transaction_type_distribution, 'value', 'Total Value (₵)', 'label', '#FF8042')}
+  //                       </CardContent>
+  //                     </Card>
+  //                   </Grid>
+  //                 )}
+  //               </Grid>
+  //             </Box>
+  //           )}
+
+  //           {activeTab === 2 && data.include_tables && (
+  //             <Box>
+  //               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Detailed Data Tables</Typography>
+                
+  //               <Grid container spacing={3}>
+  //                 {reportData.category_breakdown && (
+  //                   <Grid size={{ xs: 12, md: 6 }}>
+  //                     <DataTable
+  //                       title="Category Breakdown"
+  //                       data={reportData.category_breakdown}
+  //                       columns={[
+  //                         { key: 'category', label: 'Category' },
+  //                         { key: 'transactions', label: 'Transactions' },
+  //                         { key: 'total_quantity', label: 'Quantity' },
+  //                         { 
+  //                           key: 'total_value', 
+  //                           label: 'Total Value', 
+  //                           render: (value) => `₵${Number(value || 0).toLocaleString()}`
+  //                         },
+  //                       ]}
+  //                     />
+  //                   </Grid>
+  //                 )}
+
+  //                 {reportData.department_analysis && (
+  //                   <Grid size={{ xs: 12, md: 6 }}>
+  //                     <DataTable
+  //                       title="Department Analysis"
+  //                       data={reportData.department_analysis}
+  //                       columns={[
+  //                         { key: 'department', label: 'Department' },
+  //                         { key: 'transactions', label: 'Transactions' },
+  //                         { key: 'total_value', label: 'Total Value', render: (value) => `₵${value}` },
+  //                       ]}
+  //                     />
+  //                   </Grid>
+  //                 )}
+
+  //                 {reportData.critical_items && (
+  //                   <Grid size={{ xs: 12 }}>
+  //                     <DataTable
+  //                       title="Critical Stock Items"
+  //                       data={reportData.critical_items}
+  //                       columns={[
+  //                         { key: 'name', label: 'Item Name' },
+  //                         { key: 'category', label: 'Category' },
+  //                         { key: 'current_quantity', label: 'Current Qty' },
+  //                         { key: 'available_quantity', label: 'Available Qty' },
+  //                         { key: 'status', label: 'Status', render: (value) => (
+  //                           <Chip 
+  //                             label={value?.replace(/_/g, ' ') || 'Unknown'} 
+  //                             color={
+  //                               value === 'out_of_stock' ? 'error' : 
+  //                               value === 'low_stock' ? 'warning' : 'success'
+  //                             } 
+  //                             size="small" 
+  //                           />
+  //                         )}
+  //                       ]}
+  //                     />
+  //                   </Grid>
+  //                 )}
+  //               </Grid>
+  //             </Box>
+  //           )}
+
+  //           {activeTab === 3 && (
+  //             <Box>
+  //               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Report Details</Typography>
+                
+  //               {/* Additional report-specific details */}
+  //               {reportData.recent_activities && (
+  //                 <DataTable
+  //                   title="Recent Activities"
+  //                   data={reportData.recent_activities}
+  //                   columns={[
+  //                     { key: 'date', label: 'Date' },
+  //                     { key: 'action', label: 'Action' },
+  //                     { key: 'item', label: 'Item' },
+  //                     { key: 'user', label: 'User' },
+  //                     { key: 'quantity', label: 'Quantity' },
+  //                     { key: 'value', label: 'Value', render: (value) => `₵${value}` },
+  //                   ]}
+  //                 />
+  //               )}
+
+  //               {reportData.transaction_analysis && (
+  //                 <DataTable
+  //                   title="Transaction Analysis"
+  //                   data={reportData.transaction_analysis}
+  //                   columns={[
+  //                     { key: 'label', label: 'Type' },
+  //                     { key: 'count', label: 'Count' },
+  //                     { key: 'total_quantity', label: 'Total Qty' },
+  //                     { key: 'total_value', label: 'Total Value', render: (value) => `₵${value}` },
+  //                   ]}
+  //                 />
+  //               )}
+  //             </Box>
+  //           )}
+  //         </CardContent>
+  //       </Card>
+  //     </Box>
+  //   );
+  // };
+// Report Display Component
+// const ReportDisplay = () => {
+//   if (!reportData) {
+//     return (
+//       <Alert severity="info" sx={{ mt: 3 }}>
+//         Configure your report settings and generate a report to see the results.
+//       </Alert>
+//     );
+//   }
+
+//   const chartData = reportData.trends || {};
+//   const summaryData = reportData.summary || {};
+//   const currentReportType = data.report_type;
+
+//   // Stock level specific data tables
+//   const StockLevelTables = () => {
+//     if (!reportData.stock_levels || !Array.isArray(reportData.stock_levels)) {
+//       return (
+//         <Alert severity="info">
+//           No stock level data available.
+//         </Alert>
+//       );
+//     }
+
+//     return (
+//       <Box>
+//         {/* Stock Levels Table */}
+//         <DataTable
+//           title="Stock Levels Overview"
+//           data={reportData.stock_levels}
+//           columns={[
+//             { key: 'item_name', label: 'Item Name' },
+//             { key: 'category', label: 'Category' },
+//             { key: 'current_quantity', label: 'Current Qty' },
+//             { key: 'available_quantity', label: 'Available Qty' },
+//             { key: 'committed_quantity', label: 'Committed Qty' },
+//             { key: 'on_order_quantity', label: 'On Order Qty' },
+//             { 
+//               key: 'average_cost', 
+//               label: 'Avg Cost', 
+//               render: (value) => `₵${Number(value || 0).toFixed(2)}`
+//             },
+//             { 
+//               key: 'total_value', 
+//               label: 'Total Value', 
+//               render: (value) => `₵${Number(value || 0).toLocaleString()}`
+//             },
+//             { key: 'status', label: 'Status', render: (value) => (
+//               <Chip 
+//                 label={value?.replace(/_/g, ' ') || 'Unknown'} 
+//                 color={
+//                   value === 'out_of_stock' ? 'error' : 
+//                   value === 'low_stock' || value === 'critical_stock' ? 'warning' : 
+//                   value === 'over_stock' ? 'info' : 'success'
+//                 } 
+//                 size="small" 
+//               />
+//             )},
+//             { key: 'needs_reorder', label: 'Needs Reorder', render: (value) => (
+//               <Chip 
+//                 label={value ? 'Yes' : 'No'} 
+//                 color={value ? 'error' : 'default'} 
+//                 size="small" 
+//               />
+//             )}
+//           ]}
+//         />
+
+//         {/* Critical Items Table */}
+//         {reportData.critical_items && (
+//           <DataTable
+//             title="Critical Stock Items"
+//             data={reportData.critical_items}
+//             columns={[
+//               { key: 'name', label: 'Item Name' },
+//               { key: 'category', label: 'Category' },
+//               { key: 'current_quantity', label: 'Current Qty' },
+//               { key: 'available_quantity', label: 'Available Qty' },
+//               { key: 'reorder_level', label: 'Reorder Level', render: (value) => Number(value || 0).toFixed(2) },
+//               { key: 'safety_stock', label: 'Safety Stock', render: (value) => Number(value || 0).toFixed(2) },
+//               { key: 'status', label: 'Status', render: (value) => (
+//                 <Chip 
+//                   label={value?.replace(/_/g, ' ') || 'Unknown'} 
+//                   color={
+//                     value === 'out_of_stock' ? 'error' : 
+//                     value === 'low_stock' ? 'warning' : 'success'
+//                   } 
+//                   size="small" 
+//                 />
+//               )}
+//             ]}
+//           />
+//         )}
+//       </Box>
+//     );
+//   };
+
+//   // Stock level specific analytics
+//   const StockLevelAnalytics = () => {
+//     if (!reportData.stock_levels || !Array.isArray(reportData.stock_levels)) {
+//       return (
+//         <Alert severity="info">
+//           No analytics data available for stock level report.
+//         </Alert>
+//       );
+//     }
+
+//     // Generate chart data from stock levels
+//     const categoryDistribution = reportData.stock_levels.reduce((acc, item) => {
+//       const category = item.category || 'Uncategorized';
+//       if (!acc[category]) {
+//         acc[category] = { name: category, value: 0, count: 0 };
+//       }
+//       acc[category].value += Number(item.total_value || 0);
+//       acc[category].count += 1;
+//       return acc;
+//     }, {});
+
+//     const statusDistribution = reportData.stock_levels.reduce((acc, item) => {
+//       const status = item.status || 'unknown';
+//       if (!acc[status]) {
+//         acc[status] = { name: status, value: 0 };
+//       }
+//       acc[status].value += 1;
+//       return acc;
+//     }, {});
+
+//     return (
+//       <Grid container spacing={3}>
+//         {data.chart_types?.includes('pie') && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Inventory Value by Category</Typography>
+//                 {renderPieChart(Object.values(categoryDistribution), 'value')}
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+
+//         {data.chart_types?.includes('bar') && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Stock Status Distribution</Typography>
+//                 {renderBarChart(Object.values(statusDistribution), 'value', 'Item Count', 'name', '#FF8042')}
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+
+//         {data.chart_types?.includes('bar') && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Items by Category</Typography>
+//                 {renderBarChart(Object.values(categoryDistribution), 'count', 'Item Count', 'name', '#0088FE')}
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+//       </Grid>
+//     );
+//   };
+
+//   return (
+//     <Box sx={{ mt: 4 }}>
+//       <Card>
+//         <CardContent>
+//           <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+//             <Box>
+//               <Typography variant="h4" fontWeight="bold">
+//                 {reportTypes.find(t => t.value === currentReportType)?.label || 'Generated Report'}
+//               </Typography>
+//               <Typography color="textSecondary">
+//                 Generated on {new Date().toLocaleDateString()} • {data.data_depth} level
+//               </Typography>
+//             </Box>
+//             <Box display="flex" gap={1}>
+//               <Tooltip title="Print Report">
+//                 <IconButton onClick={() => window.print()}>
+//                   <Print />
+//                 </IconButton>
+//               </Tooltip>
+//               <Tooltip title="Preview Report">
+//                 <IconButton>
+//                   <Visibility />
+//                 </IconButton>
+//               </Tooltip>
+//               <Button 
+//                 variant="contained" 
+//                 startIcon={<Download />}
+//                 onClick={handleExportReport}
+//                 disabled={!reportData}
+//               >
+//                 Export as {data.export_format.toUpperCase()}
+//               </Button>
+//             </Box>
+//           </Box>
+
+//           <Tabs 
+//             value={activeTab} 
+//             onChange={(e, newValue) => setActiveTab(newValue)} 
+//             sx={{ mb: 3 }}
+//             variant="scrollable"
+//             scrollButtons="auto"
+//           >
+//             <Tab label="Summary" icon={<Dashboard />} iconPosition="start" />
+//             <Tab label="Analytics" icon={<BarChart />} iconPosition="start" />
+//             <Tab label="Data Tables" icon={<TableChart />} iconPosition="start" />
+//             <Tab label="Details" icon={<GridView />} iconPosition="start" />
+//           </Tabs>
+
+//           {activeTab === 0 && (
+//             <Box>
+//               {data.include_summary && (
+//                 <SummaryCards summary={summaryData} reportType={currentReportType} />
+//               )}
+              
+//               {/* Additional summary sections based on report type */}
+//               {currentReportType === 'stock-level' && reportData.stock_level_summary && (
+//                 <Card sx={{ mb: 2 }}>
+//                   <CardContent>
+//                     <Typography variant="h6" gutterBottom>Stock Level Overview</Typography>
+//                     <Grid container spacing={2}>
+//                       <Grid size={{ xs: 6, md: 3 }}>
+//                         <Typography variant="body2" color="textSecondary">Total Committed Quantity</Typography>
+//                         <Typography variant="h6">{reportData.stock_level_summary.total_committed_quantity?.toLocaleString()}</Typography>
+//                       </Grid>
+//                       <Grid size={{ xs: 6, md: 3 }}>
+//                         <Typography variant="body2" color="textSecondary">Total On Order Quantity</Typography>
+//                         <Typography variant="h6">{reportData.stock_level_summary.total_on_order_quantity?.toLocaleString()}</Typography>
+//                       </Grid>
+//                       <Grid size={{ xs: 6, md: 3 }}>
+//                         <Typography variant="body2" color="textSecondary">Low Stock Items</Typography>
+//                         <Typography variant="h6">{reportData.stock_level_summary.low_stock_items?.toLocaleString()}</Typography>
+//                       </Grid>
+//                       <Grid size={{ xs: 6, md: 3 }}>
+//                         <Typography variant="body2" color="textSecondary">Items Need Reorder</Typography>
+//                         <Typography variant="h6">{reportData.stock_level_summary.items_need_reorder?.toLocaleString()}</Typography>
+//                       </Grid>
+//                     </Grid>
+//                   </CardContent>
+//                 </Card>
+//               )}
+//             </Box>
+//           )}
+
+//           {activeTab === 1 && data.include_charts && (
+//             <Box>
+//               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Visual Analytics</Typography>
+              
+//               {currentReportType === 'stock-level' ? (
+//                 <StockLevelAnalytics />
+//               ) : (
+//                 <>
+//                   {(!chartData || Object.keys(chartData).length === 0) && (
+//                     <Alert severity="info" sx={{ mb: 2 }}>
+//                       No chart data available for this report.
+//                     </Alert>
+//                   )}
+                  
+//                   <Grid container spacing={3}>
+//                     {data.chart_types?.includes('bar') && chartData.monthly_trends && (
+//                       <Grid size={{ xs: 12, md: 6 }}>
+//                         <Card>
+//                           <CardContent>
+//                             <Typography variant="h6" gutterBottom>Monthly Value Trend</Typography>
+//                             {renderBarChart(chartData.monthly_trends, 'value', 'Total Value (₵)', 'month', '#0088FE')}
+//                           </CardContent>
+//                         </Card>
+//                       </Grid>
+//                     )}
+
+//                     {/* Other chart types for non-stock reports */}
+//                   </Grid>
+//                 </>
+//               )}
+//             </Box>
+//           )}
+
+//           {activeTab === 2 && data.include_tables && (
+//             <Box>
+//               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Detailed Data Tables</Typography>
+              
+//               {currentReportType === 'stock-level' ? (
+//                 <StockLevelTables />
+//               ) : (
+//                 <Grid container spacing={3}>
+//                   {/* Tables for other report types */}
+//                   {reportData.category_breakdown && (
+//                     <Grid size={{ xs: 12, md: 6 }}>
+//                       <DataTable
+//                         title="Category Breakdown"
+//                         data={reportData.category_breakdown}
+//                         columns={[
+//                           { key: 'category', label: 'Category' },
+//                           { key: 'transactions', label: 'Transactions' },
+//                           { key: 'total_quantity', label: 'Quantity' },
+//                           { 
+//                             key: 'total_value', 
+//                             label: 'Total Value', 
+//                             render: (value) => `₵${Number(value || 0).toLocaleString()}`
+//                           },
+//                         ]}
+//                       />
+//                     </Grid>
+//                   )}
+//                   {/* Other tables */}
+//                 </Grid>
+//               )}
+//             </Box>
+//           )}
+
+//           {activeTab === 3 && (
+//             <Box>
+//               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Report Details</Typography>
+              
+//               {/* Show appropriate details based on report type */}
+//               {currentReportType === 'stock-level' ? (
+//                 <Box>
+//                   {reportData.stock_levels && (
+//                     <Typography variant="body1" sx={{ mb: 2 }}>
+//                       Total items in inventory: {reportData.stock_levels.length}
+//                     </Typography>
+//                   )}
+//                   {reportData.critical_items && (
+//                     <Typography variant="body1">
+//                       Critical items requiring attention: {reportData.critical_items.length}
+//                     </Typography>
+//                   )}
+//                 </Box>
+//               ) : (
+//                 /* Details for other report types */
+//                 <Box>
+//                   {reportData.recent_activities && (
+//                     <DataTable
+//                       title="Recent Activities"
+//                       data={reportData.recent_activities}
+//                       columns={[
+//                         { key: 'date', label: 'Date' },
+//                         { key: 'action', label: 'Action' },
+//                         { key: 'item', label: 'Item' },
+//                         { key: 'user', label: 'User' },
+//                         { key: 'quantity', label: 'Quantity' },
+//                         { key: 'value', label: 'Value', render: (value) => `₵${value}` },
+//                       ]}
+//                     />
+//                   )}
+//                 </Box>
+//               )}
+//             </Box>
+//           )}
+//         </CardContent>
+//       </Card>
+//     </Box>
+//   );
+// };
+// Report Display Component
+// const ReportDisplay = () => {
+//   if (!reportData) {
+//     return (
+//       <Alert severity="info" sx={{ mt: 3 }}>
+//         Configure your report settings and generate a report to see the results.
+//       </Alert>
+//     );
+//   }
+
+//   const chartData = reportData.trends || {};
+//   const summaryData = reportData.summary || {};
+//   const currentReportType = data.report_type;
+
+//   // Stock level specific data tables
+//   const StockLevelTables = () => {
+//     if (!reportData.stock_levels || !Array.isArray(reportData.stock_levels)) {
+//       return (
+//         <Alert severity="info">
+//           No stock level data available.
+//         </Alert>
+//       );
+//     }
+
+//     return (
+//       <Box>
+//         {/* Stock Levels Table */}
+//         <DataTable
+//           title="Stock Levels Overview"
+//           data={reportData.stock_levels}
+//           columns={[
+//             { key: 'item_name', label: 'Item Name' },
+//             { key: 'category', label: 'Category' },
+//             { key: 'current_quantity', label: 'Current Qty' },
+//             { key: 'available_quantity', label: 'Available Qty' },
+//             { key: 'committed_quantity', label: 'Committed Qty' },
+//             { key: 'on_order_quantity', label: 'On Order Qty' },
+//             { 
+//               key: 'average_cost', 
+//               label: 'Avg Cost', 
+//               render: (value) => `₵${Number(value || 0).toFixed(2)}`
+//             },
+//             { 
+//               key: 'total_value', 
+//               label: 'Total Value', 
+//               render: (value) => `₵${Number(value || 0).toLocaleString()}`
+//             },
+//             { key: 'status', label: 'Status', render: (value) => (
+//               <Chip 
+//                 label={value?.replace(/_/g, ' ') || 'Unknown'} 
+//                 color={
+//                   value === 'out_of_stock' ? 'error' : 
+//                   value === 'low_stock' || value === 'critical_stock' ? 'warning' : 
+//                   value === 'over_stock' ? 'info' : 'success'
+//                 } 
+//                 size="small" 
+//               />
+//             )},
+//             { key: 'needs_reorder', label: 'Needs Reorder', render: (value) => (
+//               <Chip 
+//                 label={value ? 'Yes' : 'No'} 
+//                 color={value ? 'error' : 'default'} 
+//                 size="small" 
+//               />
+//             )}
+//           ]}
+//         />
+
+//         {/* Critical Items Table */}
+//         {reportData.critical_items && (
+//           <DataTable
+//             title="Critical Stock Items"
+//             data={reportData.critical_items}
+//             columns={[
+//               { key: 'name', label: 'Item Name' },
+//               { key: 'category', label: 'Category' },
+//               { key: 'current_quantity', label: 'Current Qty' },
+//               { key: 'available_quantity', label: 'Available Qty' },
+//               { key: 'reorder_level', label: 'Reorder Level', render: (value) => Number(value || 0).toFixed(2) },
+//               { key: 'safety_stock', label: 'Safety Stock', render: (value) => Number(value || 0).toFixed(2) },
+//               { key: 'status', label: 'Status', render: (value) => (
+//                 <Chip 
+//                   label={value?.replace(/_/g, ' ') || 'Unknown'} 
+//                   color={
+//                     value === 'out_of_stock' ? 'error' : 
+//                     value === 'low_stock' ? 'warning' : 'success'
+//                   } 
+//                   size="small" 
+//                 />
+//               )}
+//             ]}
+//           />
+//         )}
+//       </Box>
+//     );
+//   };
+
+//   // Stock level specific analytics
+//   const StockLevelAnalytics = () => {
+//     if (!reportData.stock_levels || !Array.isArray(reportData.stock_levels)) {
+//       return (
+//         <Alert severity="info">
+//           No analytics data available for stock level report.
+//         </Alert>
+//       );
+//     }
+
+//     // Generate chart data from stock levels
+//     const categoryDistribution = reportData.stock_levels.reduce((acc, item) => {
+//       const category = item.category || 'Uncategorized';
+//       if (!acc[category]) {
+//         acc[category] = { name: category, value: 0, count: 0 };
+//       }
+//       acc[category].value += Number(item.total_value || 0);
+//       acc[category].count += 1;
+//       return acc;
+//     }, {});
+
+//     const statusDistribution = reportData.stock_levels.reduce((acc, item) => {
+//       const status = item.status || 'unknown';
+//       if (!acc[status]) {
+//         acc[status] = { name: status, value: 0 };
+//       }
+//       acc[status].value += 1;
+//       return acc;
+//     }, {});
+
+//     return (
+//       <Grid container spacing={3}>
+//         {data.chart_types?.includes('pie') && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Inventory Value by Category</Typography>
+//                 {renderPieChart(Object.values(categoryDistribution), 'value')}
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+
+//         {data.chart_types?.includes('bar') && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Stock Status Distribution</Typography>
+//                 {renderBarChart(Object.values(statusDistribution), 'value', 'Item Count', 'name', '#FF8042')}
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+
+//         {data.chart_types?.includes('bar') && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Items by Category</Typography>
+//                 {renderBarChart(Object.values(categoryDistribution), 'count', 'Item Count', 'name', '#0088FE')}
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+//       </Grid>
+//     );
+//   };
+
+//   return (
+//     <Box sx={{ mt: 4 }}>
+//       <Card>
+//         <CardContent>
+//           <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+//             <Box>
+//               <Typography variant="h4" fontWeight="bold">
+//                 {reportTypes.find(t => t.value === currentReportType)?.label || 'Generated Report'}
+//               </Typography>
+//               <Typography color="textSecondary">
+//                 Generated on {new Date().toLocaleDateString()} • {data.data_depth} level
+//               </Typography>
+//             </Box>
+//             <Box display="flex" gap={1}>
+//               <Tooltip title="Print Report">
+//                 <IconButton onClick={() => window.print()}>
+//                   <Print />
+//                 </IconButton>
+//               </Tooltip>
+//               <Tooltip title="Preview Report">
+//                 <IconButton>
+//                   <Visibility />
+//                 </IconButton>
+//               </Tooltip>
+//               <Button 
+//                 variant="contained" 
+//                 startIcon={<Download />}
+//                 onClick={handleExportReport}
+//                 disabled={!reportData}
+//               >
+//                 Export as {data.export_format.toUpperCase()}
+//               </Button>
+//             </Box>
+//           </Box>
+
+//           <Tabs 
+//             value={activeTab} 
+//             onChange={(e, newValue) => setActiveTab(newValue)} 
+//             sx={{ mb: 3 }}
+//             variant="scrollable"
+//             scrollButtons="auto"
+//           >
+//             <Tab label="Summary" icon={<Dashboard />} iconPosition="start" />
+//             <Tab label="Analytics" icon={<BarChart />} iconPosition="start" />
+//             <Tab label="Data Tables" icon={<TableChart />} iconPosition="start" />
+//             <Tab label="Details" icon={<GridView />} iconPosition="start" />
+//           </Tabs>
+
+//           {activeTab === 0 && (
+//             <Box>
+//               {data.include_summary && (
+//                 <SummaryCards summary={summaryData} reportType={currentReportType} />
+//               )}
+              
+//               {/* Additional summary sections based on report type */}
+//               {currentReportType === 'stock-level' && reportData.stock_level_summary && (
+//                 <Card sx={{ mb: 2 }}>
+//                   <CardContent>
+//                     <Typography variant="h6" gutterBottom>Stock Level Overview</Typography>
+//                     <Grid container spacing={2}>
+//                       <Grid size={{ xs: 6, md: 3 }}>
+//                         <Typography variant="body2" color="textSecondary">Total Committed Quantity</Typography>
+//                         <Typography variant="h6">{reportData.stock_level_summary.total_committed_quantity?.toLocaleString()}</Typography>
+//                       </Grid>
+//                       <Grid size={{ xs: 6, md: 3 }}>
+//                         <Typography variant="body2" color="textSecondary">Total On Order Quantity</Typography>
+//                         <Typography variant="h6">{reportData.stock_level_summary.total_on_order_quantity?.toLocaleString()}</Typography>
+//                       </Grid>
+//                       <Grid size={{ xs: 6, md: 3 }}>
+//                         <Typography variant="body2" color="textSecondary">Low Stock Items</Typography>
+//                         <Typography variant="h6">{reportData.stock_level_summary.low_stock_items?.toLocaleString()}</Typography>
+//                       </Grid>
+//                       <Grid size={{ xs: 6, md: 3 }}>
+//                         <Typography variant="body2" color="textSecondary">Items Need Reorder</Typography>
+//                         <Typography variant="h6">{reportData.stock_level_summary.items_need_reorder?.toLocaleString()}</Typography>
+//                       </Grid>
+//                     </Grid>
+//                   </CardContent>
+//                 </Card>
+//               )}
+//             </Box>
+//           )}
+
+//           {activeTab === 1 && data.include_charts && (
+//             <Box>
+//               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Visual Analytics</Typography>
+              
+//               {currentReportType === 'stock-level' ? (
+//                 <StockLevelAnalytics />
+//               ) : (
+//                 <>
+//                   {(!chartData || Object.keys(chartData).length === 0) && (
+//                     <Alert severity="info" sx={{ mb: 2 }}>
+//                       No chart data available for this report.
+//                     </Alert>
+//                   )}
+                  
+//                   <Grid container spacing={3}>
+//                     {data.chart_types?.includes('bar') && chartData.monthly_trends && (
+//                       <Grid size={{ xs: 12, md: 6 }}>
+//                         <Card>
+//                           <CardContent>
+//                             <Typography variant="h6" gutterBottom>Monthly Value Trend</Typography>
+//                             {renderBarChart(chartData.monthly_trends, 'value', 'Total Value (₵)', 'month', '#0088FE')}
+//                           </CardContent>
+//                         </Card>
+//                       </Grid>
+//                     )}
+
+//                     {/* Other chart types for non-stock reports */}
+//                   </Grid>
+//                 </>
+//               )}
+//             </Box>
+//           )}
+
+//           {activeTab === 2 && data.include_tables && (
+//             <Box>
+//               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Detailed Data Tables</Typography>
+              
+//               {currentReportType === 'stock-level' ? (
+//                 <StockLevelTables />
+//               ) : (
+//                 <Grid container spacing={3}>
+//                   {/* Tables for other report types */}
+//                   {reportData.category_breakdown && (
+//                     <Grid size={{ xs: 12, md: 6 }}>
+//                       <DataTable
+//                         title="Category Breakdown"
+//                         data={reportData.category_breakdown}
+//                         columns={[
+//                           { key: 'category', label: 'Category' },
+//                           { key: 'transactions', label: 'Transactions' },
+//                           { key: 'total_quantity', label: 'Quantity' },
+//                           { 
+//                             key: 'total_value', 
+//                             label: 'Total Value', 
+//                             render: (value) => `₵${Number(value || 0).toLocaleString()}`
+//                           },
+//                         ]}
+//                       />
+//                     </Grid>
+//                   )}
+//                   {/* Other tables */}
+//                 </Grid>
+//               )}
+//             </Box>
+//           )}
+// {/* 
+//           {activeTab === 3 && (
+//             <Box>
+//               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Report Details</Typography>
+              
+//               {/* Show appropriate details based on report type */}
+//               {/* {currentReportType === 'stock-level' ? (
+//                 <Box>
+//                   {reportData.stock_levels && (
+//                     <Typography variant="body1" sx={{ mb: 2 }}>
+//                       Total items in inventory: {reportData.stock_levels.length}
+//                     </Typography>
+//                   )}
+//                   {reportData.critical_items && (
+//                     <Typography variant="body1">
+//                       Critical items requiring attention: {reportData.critical_items.length}
+//                     </Typography>
+//                   )}
+//                 </Box>
+//               ) : ( */}
+//                 {/* /* /* Details for other report types */  }
+//                 {/* <Box>
+//                   {reportData.recent_activities && (
+//                     <DataTable
+//                       title="Recent Activities"
+//                       data={reportData.recent_activities}
+//                       columns={[
+//                         { key: 'date', label: 'Date' },
+//                         { key: 'action', label: 'Action' },
+//                         { key: 'item', label: 'Item' },
+//                         { key: 'user', label: 'User' },
+//                         { key: 'quantity', label: 'Quantity' },
+//                         { key: 'value', label: 'Value', render: (value) => `₵${value}` },
+//                       ]}
+//                     />
+//                   )}
+//                 </Box>
+//               )} */}
+//             {/* </Box> */}
+//           {/* )} */}
+//           {activeTab === 3 && (
+//   <Box>
+//     <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Report Details</Typography>
+    
+//     {/* Show appropriate details based on report type */}
+//     {currentReportType === 'stock-level' ? (
+//       <Box>
+//         <Grid container spacing={3}>
+//           {/* Stock Level Statistics */}
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Inventory Statistics</Typography>
+//                 <List>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Items in Inventory" 
+//                       secondary={reportData.stock_levels?.length || 0}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Inventory Value" 
+//                       secondary={`₵${(summaryData.total_inventory_value || 0).toLocaleString()}`}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Current Quantity" 
+//                       secondary={(summaryData.total_current_quantity || 0).toLocaleString()}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Available Quantity" 
+//                       secondary={(summaryData.total_available_quantity || 0).toLocaleString()}
+//                     />
+//                   </ListItem>
+//                 </List>
+//               </CardContent>
+//             </Card>
+//           </Grid>
+
+//           {/* Stock Alert Summary */}
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Stock Alerts Summary</Typography>
+//                 <List>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Items Need Reorder" 
+//                       secondary={
+//                         <Box display="flex" alignItems="center" gap={1}>
+//                           <Chip 
+//                             label={summaryData.items_need_reorder || 0} 
+//                             color="error" 
+//                             size="small" 
+//                           />
+//                           <Typography variant="body2" color="textSecondary">
+//                             ({Math.round(((summaryData.items_need_reorder || 0) / (reportData.stock_levels?.length || 1)) * 100)}% of inventory)
+//                           </Typography>
+//                         </Box>
+//                       }
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Low Stock Items" 
+//                       secondary={
+//                         <Box display="flex" alignItems="center" gap={1}>
+//                           <Chip 
+//                             label={summaryData.low_stock_items || 0} 
+//                             color="warning" 
+//                             size="small" 
+//                           />
+//                         </Box>
+//                       }
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Out of Stock Items" 
+//                       secondary={
+//                         <Box display="flex" alignItems="center" gap={1}>
+//                           <Chip 
+//                             label={summaryData.out_of_stock_items || 0} 
+//                             color="error" 
+//                             size="small" 
+//                             variant="outlined"
+//                           />
+//                         </Box>
+//                       }
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Committed Quantity" 
+//                       secondary={(summaryData.total_committed_quantity || 0).toLocaleString()}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="On Order Quantity" 
+//                       secondary={(summaryData.total_on_order_quantity || 0).toLocaleString()}
+//                     />
+//                   </ListItem>
+//                 </List>
+//               </CardContent>
+//             </Card>
+//           </Grid>
+
+//           {/* Category Distribution */}
+//           {reportData.stock_levels && (
+//             <Grid size={{ xs: 12, md: 6 }}>
+//               <Card>
+//                 <CardContent>
+//                   <Typography variant="h6" gutterBottom>Category Distribution</Typography>
+//                   <List dense>
+//                     {Object.entries(
+//                       reportData.stock_levels.reduce((acc, item) => {
+//                         const category = item.category || 'Uncategorized';
+//                         acc[category] = (acc[category] || 0) + 1;
+//                         return acc;
+//                       }, {})
+//                     )
+//                     .sort(([,a], [,b]) => b - a)
+//                     .map(([category, count]) => (
+//                       <ListItem key={category}>
+//                         <ListItemText 
+//                           primary={category} 
+//                           secondary={`${count} items (${Math.round((count / reportData.stock_levels.length) * 100)}%)`}
+//                         />
+//                       </ListItem>
+//                     ))}
+//                   </List>
+//                 </CardContent>
+//               </Card>
+//             </Grid>
+//           )}
+
+//           {/* Status Distribution */}
+//           {reportData.stock_levels && (
+//             <Grid size={{ xs: 12, md: 6 }}>
+//               <Card>
+//                 <CardContent>
+//                   <Typography variant="h6" gutterBottom>Stock Status Distribution</Typography>
+//                   <List dense>
+//                     {Object.entries(
+//                       reportData.stock_levels.reduce((acc, item) => {
+//                         const status = item.status ? item.status.replace(/_/g, ' ') : 'Unknown';
+//                         acc[status] = (acc[status] || 0) + 1;
+//                         return acc;
+//                       }, {})
+//                     )
+//                     .sort(([,a], [,b]) => b - a)
+//                     .map(([status, count]) => (
+//                       <ListItem key={status}>
+//                         <ListItemText 
+//                           primary={
+//                             <Box display="flex" alignItems="center" gap={1}>
+//                               <Chip 
+//                                 label={status} 
+//                                 color={
+//                                   status === 'out of stock' ? 'error' : 
+//                                   status === 'low stock' || status === 'critical stock' ? 'warning' : 
+//                                   status === 'over stock' ? 'info' : 'success'
+//                                 } 
+//                                 size="small" 
+//                               />
+//                             </Box>
+//                           } 
+//                           secondary={`${count} items`}
+//                         />
+//                       </ListItem>
+//                     ))}
+//                   </List>
+//                 </CardContent>
+//               </Card>
+//             </Grid>
+//           )}
+
+//           {/* Top 10 Most Valuable Items */}
+//           {reportData.stock_levels && (
+//             <Grid size={{ xs: 12 }}>
+//               <Card>
+//                 <CardContent>
+//                   <Typography variant="h6" gutterBottom>Top 10 Most Valuable Items</Typography>
+//                   <TableContainer>
+//                     <Table size="small">
+//                       <TableHead>
+//                         <TableRow>
+//                           <TableCell><strong>Item Name</strong></TableCell>
+//                           <TableCell><strong>Category</strong></TableCell>
+//                           <TableCell><strong>Current Quantity</strong></TableCell>
+//                           <TableCell><strong>Unit Cost</strong></TableCell>
+//                           <TableCell><strong>Total Value</strong></TableCell>
+//                           <TableCell><strong>Status</strong></TableCell>
+//                         </TableRow>
+//                       </TableHead>
+//                       <TableBody>
+//                         {reportData.stock_levels
+//                           .sort((a, b) => (b.total_value || 0) - (a.total_value || 0))
+//                           .slice(0, 10)
+//                           .map((item, index) => (
+//                             <TableRow key={index} hover>
+//                               <TableCell>{item.item_name}</TableCell>
+//                               <TableCell>{item.category}</TableCell>
+//                               <TableCell>{item.current_quantity?.toLocaleString()}</TableCell>
+//                               <TableCell>₵{Number(item.average_cost || 0).toFixed(2)}</TableCell>
+//                               <TableCell>
+//                                 <strong>₵{Number(item.total_value || 0).toLocaleString()}</strong>
+//                               </TableCell>
+//                               <TableCell>
+//                                 <Chip 
+//                                   label={item.status?.replace(/_/g, ' ') || 'Unknown'} 
+//                                   color={
+//                                     item.status === 'out_of_stock' ? 'error' : 
+//                                     item.status === 'low_stock' ? 'warning' : 'success'
+//                                   } 
+//                                   size="small" 
+//                                 />
+//                               </TableCell>
+//                             </TableRow>
+//                           ))}
+//                       </TableBody>
+//                     </Table>
+//                   </TableContainer>
+//                 </CardContent>
+//               </Card>
+//             </Grid>
+//           )}
+
+//           {/* Critical Items Requiring Attention */}
+//           {reportData.critical_items && reportData.critical_items.length > 0 && (
+//             <Grid size={{ xs: 12 }}>
+//               <Card>
+//                 <CardContent>
+//                   <Typography variant="h6" gutterBottom color="error">
+//                     Critical Items Requiring Immediate Attention
+//                   </Typography>
+//                   <Alert severity="warning" sx={{ mb: 2 }}>
+//                     {reportData.critical_items.length} items require immediate attention due to stock levels.
+//                   </Alert>
+//                   <TableContainer>
+//                     <Table size="small">
+//                       <TableHead>
+//                         <TableRow>
+//                           <TableCell><strong>Item Name</strong></TableCell>
+//                           <TableCell><strong>Category</strong></TableCell>
+//                           <TableCell><strong>Available Quantity</strong></TableCell>
+//                           <TableCell><strong>Reorder Level</strong></TableCell>
+//                           <TableCell><strong>Safety Stock</strong></TableCell>
+//                           <TableCell><strong>Status</strong></TableCell>
+//                           <TableCell><strong>Action Required</strong></TableCell>
+//                         </TableRow>
+//                       </TableHead>
+//                       <TableBody>
+//                         {reportData.critical_items.map((item, index) => (
+//                           <TableRow key={index} hover sx={{ bgcolor: 'error.light' }}>
+//                             <TableCell>
+//                               <Typography fontWeight="bold">{item.name}</Typography>
+//                             </TableCell>
+//                             <TableCell>{item.category}</TableCell>
+//                             <TableCell>
+//                               <Typography color="error" fontWeight="bold">
+//                                 {item.available_quantity?.toLocaleString()}
+//                               </Typography>
+//                             </TableCell>
+//                             <TableCell>{Number(item.reorder_level || 0).toFixed(2)}</TableCell>
+//                             <TableCell>{Number(item.safety_stock || 0).toFixed(2)}</TableCell>
+//                             <TableCell>
+//                               <Chip 
+//                                 label={item.status?.replace(/_/g, ' ') || 'Critical'} 
+//                                 color="error" 
+//                                 size="small" 
+//                               />
+//                             </TableCell>
+//                             <TableCell>
+//                               <Button 
+//                                 variant="outlined" 
+//                                 color="error" 
+//                                 size="small"
+//                                 startIcon={<Warning />}
+//                               >
+//                                 Reorder Now
+//                               </Button>
+//                             </TableCell>
+//                           </TableRow>
+//                         ))}
+//                       </TableBody>
+//                     </Table>
+//                   </TableContainer>
+//                 </CardContent>
+//               </Card>
+//             </Grid>
+//           )}
+//         </Grid>
+//       </Box>
+//     ) : (
+//       /* Details for other report types */
+//       <Box>
+//         {reportData.recent_activities && (
+//           <DataTable
+//             title="Recent Activities"
+//             data={reportData.recent_activities}
+//             columns={[
+//               { key: 'date', label: 'Date' },
+//               { key: 'action', label: 'Action' },
+//               { key: 'item', label: 'Item' },
+//               { key: 'user', label: 'User' },
+//               { key: 'quantity', label: 'Quantity' },
+//               { key: 'value', label: 'Value', render: (value) => `₵${value}` },
+//             ]}
+//           />
+//         )}
+
+//         {reportData.transaction_analysis && (
+//           <DataTable
+//             title="Transaction Analysis"
+//             data={reportData.transaction_analysis}
+//             columns={[
+//               { key: 'label', label: 'Type' },
+//               { key: 'count', label: 'Count' },
+//               { key: 'total_quantity', label: 'Total Qty' },
+//               { key: 'total_value', label: 'Total Value', render: (value) => `₵${value}` },
+//             ]}
+//           />
+//         )}
+//       </Box>
+//     )}
+//   </Box>
+// )}
+//         </CardContent>
+//       </Card>
+//     </Box>
+//   );
+// };
+// Enhanced Report Display for Comprehensive Data
+// const ReportDisplay = () => {
+//   if (!reportData) {
+//     return (
+//       <Alert severity="info" sx={{ mt: 3 }}>
+//         Configure your report settings and generate a report to see the results.
+//       </Alert>
+//     );
+//   }
+
+//   const chartData = reportData.trends || {};
+//   const summaryData = reportData.summary || {};
+//   const currentReportType = data.report_type;
+
+//   // Comprehensive report specific sections
+//   const ComprehensiveAnalytics = () => {
+//     return (
+//       <Grid container spacing={3}>
+//         {/* Monthly Trends */}
+//         {data.chart_types?.includes('bar') && chartData.monthly_trends && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Monthly Transaction Trends</Typography>
+//                 {renderBarChart(chartData.monthly_trends, 'value', 'Total Value (₵)', 'month', '#0088FE')}
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+
+//         {data.chart_types?.includes('line') && chartData.monthly_trends && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Monthly Quantity Trends</Typography>
+//                 {renderLineChart(chartData.monthly_trends, 'quantity', 'Total Quantity', 'month', '#00C49F')}
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+
+//         {/* Category Distribution */}
+//         {data.chart_types?.includes('pie') && chartData.category_distribution && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Category Value Distribution</Typography>
+//                 {renderPieChart(chartData.category_distribution, 'value')}
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+
+//         {/* Transaction Type Analysis */}
+//         {data.chart_types?.includes('bar') && reportData.transaction_analysis && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Transaction Type Analysis</Typography>
+//                 {renderBarChart(reportData.transaction_analysis, 'total_value', 'Total Value (₵)', 'label', '#FF8042')}
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+//       </Grid>
+//     );
+//   };
+
+//   const ComprehensiveTables = () => {
+//     return (
+//       <Grid container spacing={3}>
+//         {/* Category Breakdown */}
+//         {reportData.category_breakdown && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <DataTable
+//               title="Category Breakdown"
+//               data={reportData.category_breakdown}
+//               columns={[
+//                 { key: 'category', label: 'Category' },
+//                 { key: 'transactions', label: 'Transactions' },
+//                 { key: 'quantity', label: 'Quantity' },
+//                 { 
+//                   key: 'total_value', 
+//                   label: 'Total Value', 
+//                   render: (value) => `₵${Number(value || 0).toLocaleString()}`
+//                 },
+//               ]}
+//             />
+//           </Grid>
+//         )}
+
+//         {/* Department Analysis */}
+//         {reportData.department_analysis && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <DataTable
+//               title="Department Analysis"
+//               data={reportData.department_analysis}
+//               columns={[
+//                 { key: 'department', label: 'Department' },
+//                 { key: 'transactions', label: 'Transactions' },
+//                 { key: 'total_quantity', label: 'Total Quantity' },
+//                 { 
+//                   key: 'total_value', 
+//                   label: 'Total Value', 
+//                   render: (value) => `₵${Number(value || 0).toLocaleString()}`
+//                 },
+//               ]}
+//             />
+//           </Grid>
+//         )}
+
+//         {/* Transaction Analysis */}
+//         {reportData.transaction_analysis && (
+//           <Grid size={{ xs: 12 }}>
+//             <DataTable
+//               title="Transaction Type Analysis"
+//               data={reportData.transaction_analysis}
+//               columns={[
+//                 { key: 'label', label: 'Transaction Type' },
+//                 { key: 'count', label: 'Count' },
+//                 { key: 'total_quantity', label: 'Total Quantity' },
+//                 { 
+//                   key: 'total_value', 
+//                   label: 'Total Value', 
+//                   render: (value) => `₵${Number(value || 0).toLocaleString()}`
+//                 },
+//                 { 
+//                   key: 'average_value', 
+//                   label: 'Average Value', 
+//                   render: (value) => `₵${Number(value || 0).toLocaleString()}`
+//                 },
+//               ]}
+//             />
+//           </Grid>
+//         )}
+
+//         {/* Critical Items */}
+//         {reportData.critical_items && (
+//           <Grid size={{ xs: 12 }}>
+//             <DataTable
+//               title="Critical Stock Items"
+//               data={reportData.critical_items}
+//               columns={[
+//                 { key: 'name', label: 'Item Name' },
+//                 { key: 'item_code', label: 'Item Code' },
+//                 { key: 'category', label: 'Category' },
+//                 { key: 'current_quantity', label: 'Current Qty' },
+//                 { key: 'available_quantity', label: 'Available Qty' },
+//                 { key: 'status', label: 'Status', render: (value) => (
+//                   <Chip 
+//                     label={value?.replace(/_/g, ' ') || 'Unknown'} 
+//                     color={
+//                       value === 'out_of_stock' ? 'error' : 
+//                       value === 'low_stock' ? 'warning' : 'success'
+//                     } 
+//                     size="small" 
+//                   />
+//                 )}
+//               ]}
+//             />
+//           </Grid>
+//         )}
+//       </Grid>
+//     );
+//   };
+
+//   const ComprehensiveDetails = () => {
+//     return (
+//       <Grid container spacing={3}>
+//         {/* Recent Activities */}
+//         {reportData.recent_activities && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <DataTable
+//               title="Recent Activities"
+//               data={reportData.recent_activities.slice(0, 10)} // Show only last 10
+//               columns={[
+//                 { key: 'date', label: 'Date' },
+//                 { key: 'action', label: 'Action' },
+//                 { key: 'item', label: 'Item' },
+//                 { key: 'user', label: 'User' },
+//                 { key: 'quantity', label: 'Quantity' },
+//                 { 
+//                   key: 'value', 
+//                   label: 'Value', 
+//                   render: (value) => value ? `₵${Number(value).toLocaleString()}` : '-'
+//                 },
+//               ]}
+//             />
+//           </Grid>
+//         )}
+
+//         {/* Purchase Analysis */}
+//         {reportData.purchase_analysis && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Purchase Analysis Summary</Typography>
+//                 <List dense>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Orders" 
+//                       secondary={reportData.purchase_analysis.summary?.total_orders || 0}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Amount" 
+//                       secondary={`₵${(reportData.purchase_analysis.summary?.total_amount || 0).toLocaleString()}`}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Average Order Value" 
+//                       secondary={`₵${(reportData.purchase_analysis.summary?.average_order_value || 0).toLocaleString()}`}
+//                     />
+//                   </ListItem>
+//                 </List>
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+
+//         {/* Maintenance Analysis */}
+//         {reportData.maintenance_analysis && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Maintenance Analysis Summary</Typography>
+//                 <List dense>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Maintenance" 
+//                       secondary={reportData.maintenance_analysis.summary?.total_maintenance || 0}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Cost" 
+//                       secondary={`₵${(reportData.maintenance_analysis.summary?.total_cost || 0).toLocaleString()}`}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Downtime Hours" 
+//                       secondary={reportData.maintenance_analysis.summary?.total_downtime_hours || 0}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Average Cost per Maintenance" 
+//                       secondary={`₵${(reportData.maintenance_analysis.summary?.average_cost_per_maintenance || 0).toLocaleString()}`}
+//                     />
+//                   </ListItem>
+//                 </List>
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+
+//         {/* Stock Level Summary */}
+//         {reportData.stock_level_summary && (
+//           <Grid size={{ xs: 12, md: 6 }}>
+//             <Card>
+//               <CardContent>
+//                 <Typography variant="h6" gutterBottom>Stock Level Summary</Typography>
+//                 <List dense>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Inventory Value" 
+//                       secondary={`₵${(reportData.stock_level_summary.total_inventory_value || 0).toLocaleString()}`}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Total Items Tracked" 
+//                       secondary={reportData.stock_level_summary.total_items_tracked || 0}
+//                     />
+//                   </ListItem>
+//                   <ListItem>
+//                     <ListItemText 
+//                       primary="Average Item Value" 
+//                       secondary={`₵${(reportData.stock_level_summary.average_item_value || 0).toLocaleString()}`}
+//                     />
+//                   </ListItem>
+//                 </List>
+                
+//                 {/* Status Breakdown */}
+//                 <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Stock Status Breakdown</Typography>
+//                 <Grid container spacing={1}>
+//                   {reportData.stock_level_summary.status_breakdown && 
+//                     Object.entries(reportData.stock_level_summary.status_breakdown).map(([status, count]) => (
+//                       <Grid size={{ xs: 6 }} key={status}>
+//                         <Chip 
+//                           label={`${status.replace(/_/g, ' ')}: ${count}`}
+//                           color={
+//                             status === 'out_of_stock' ? 'error' : 
+//                             status === 'low_stock' || status === 'critical_stock' ? 'warning' : 
+//                             status === 'over_stock' ? 'info' : 'success'
+//                           }
+//                           size="small"
+//                           variant="outlined"
+//                         />
+//                       </Grid>
+//                     ))
+//                   }
+//                 </Grid>
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         )}
+//       </Grid>
+//     );
+//   };
+
+//   return (
+//     <Box sx={{ mt: 4 }}>
+//       <Card>
+//         <CardContent>
+//           <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+//             <Box>
+//               <Typography variant="h4" fontWeight="bold">
+//                 {reportTypes.find(t => t.value === currentReportType)?.label || 'Generated Report'}
+//               </Typography>
+//               <Typography color="textSecondary">
+//                 Generated on {new Date(reportData.reportGeneratedAt).toLocaleDateString()} • {data.data_depth} level
+//               </Typography>
+//             </Box>
+//             <Box display="flex" gap={1}>
+//               <Tooltip title="Print Report">
+//                 <IconButton onClick={() => window.print()}>
+//                   <Print />
+//                 </IconButton>
+//               </Tooltip>
+//               <Button 
+//                 variant="contained" 
+//                 startIcon={<Download />}
+//                 onClick={handleExportReport}
+//                 disabled={!reportData}
+//               >
+//                 Export as {data.export_format.toUpperCase()}
+//               </Button>
+//             </Box>
+//           </Box>
+
+//           <Tabs 
+//             value={activeTab} 
+//             onChange={(e, newValue) => setActiveTab(newValue)} 
+//             sx={{ mb: 3 }}
+//             variant="scrollable"
+//             scrollButtons="auto"
+//           >
+//             <Tab label="Summary" icon={<Dashboard />} iconPosition="start" />
+//             <Tab label="Analytics" icon={<BarChart />} iconPosition="start" />
+//             <Tab label="Data Tables" icon={<TableChart />} iconPosition="start" />
+//             <Tab label="Details" icon={<GridView />} iconPosition="start" />
+//           </Tabs>
+
+//           {activeTab === 0 && (
+//             <Box>
+//               {data.include_summary && (
+//                 <SummaryCards summary={summaryData} reportType={currentReportType} />
+//               )}
+              
+//               {/* Additional comprehensive summary sections */}
+//               <Grid container spacing={2}>
+//                 {/* Transaction Type Breakdown */}
+//                 {summaryData.purchase_count !== undefined && (
+//                   <Grid size={{ xs: 12, md: 6 }}>
+//                     <Card>
+//                       <CardContent>
+//                         <Typography variant="h6" gutterBottom>Transaction Type Breakdown</Typography>
+//                         <Grid container spacing={1}>
+//                           <Grid size={{ xs: 6 }}>
+//                             <Typography variant="body2" color="textSecondary">Purchases</Typography>
+//                             <Typography variant="h6">{summaryData.purchase_count || 0}</Typography>
+//                           </Grid>
+//                           <Grid size={{ xs: 6 }}>
+//                             <Typography variant="body2" color="textSecondary">Sales</Typography>
+//                             <Typography variant="h6">{summaryData.sale_count || 0}</Typography>
+//                           </Grid>
+//                           <Grid size={{ xs: 6 }}>
+//                             <Typography variant="body2" color="textSecondary">Transfers</Typography>
+//                             <Typography variant="h6">{summaryData.transfer_count || 0}</Typography>
+//                           </Grid>
+//                           <Grid size={{ xs: 6 }}>
+//                             <Typography variant="body2" color="textSecondary">Adjustments</Typography>
+//                             <Typography variant="h6">{summaryData.adjustment_count || 0}</Typography>
+//                           </Grid>
+//                           <Grid size={{ xs: 6 }}>
+//                             <Typography variant="body2" color="textSecondary">Returns</Typography>
+//                             <Typography variant="h6">{summaryData.return_count || 0}</Typography>
+//                           </Grid>
+//                           <Grid size={{ xs: 6 }}>
+//                             <Typography variant="body2" color="textSecondary">Consumptions</Typography>
+//                             <Typography variant="h6">{summaryData.consumption_count || 0}</Typography>
+//                           </Grid>
+//                         </Grid>
+//                       </CardContent>
+//                     </Card>
+//                   </Grid>
+//                 )}
+
+//                 {/* Stock Level Overview */}
+//                 {reportData.stock_level_summary && (
+//                   <Grid size={{ xs: 12, md: 6 }}>
+//                     <Card>
+//                       <CardContent>
+//                         <Typography variant="h6" gutterBottom>Inventory Overview</Typography>
+//                         <Grid container spacing={1}>
+//                           <Grid size={{ xs: 6 }}>
+//                             <Typography variant="body2" color="textSecondary">Total Items</Typography>
+//                             <Typography variant="h6">{reportData.stock_level_summary.total_items_tracked || 0}</Typography>
+//                           </Grid>
+//                           <Grid size={{ xs: 6 }}>
+//                             <Typography variant="body2" color="textSecondary">Total Value</Typography>
+//                             <Typography variant="h6">₵{(reportData.stock_level_summary.total_inventory_value || 0).toLocaleString()}</Typography>
+//                           </Grid>
+//                           <Grid size={{ xs: 12 }}>
+//                             <Typography variant="body2" color="textSecondary">Average Item Value</Typography>
+//                             <Typography variant="h6">₵{(reportData.stock_level_summary.average_item_value || 0).toLocaleString()}</Typography>
+//                           </Grid>
+//                         </Grid>
+//                       </CardContent>
+//                     </Card>
+//                   </Grid>
+//                 )}
+//               </Grid>
+//             </Box>
+//           )}
+
+//           {activeTab === 1 && data.include_charts && (
+//             <Box>
+//               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Visual Analytics</Typography>
+//               <ComprehensiveAnalytics />
+//             </Box>
+//           )}
+
+//           {activeTab === 2 && data.include_tables && (
+//             <Box>
+//               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Detailed Data Tables</Typography>
+//               <ComprehensiveTables />
+//             </Box>
+//           )}
+
+//           {activeTab === 3 && (
+//             <Box>
+//               <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Comprehensive Details</Typography>
+//               <ComprehensiveDetails />
+//             </Box>
+//           )}
+//         </CardContent>
+//       </Card>
+//     </Box>
+//   );
+// };
+// Enhanced Report Display Component that handles both comprehensive and stock-level reports
+const ReportDisplay = () => {
+  if (!reportData) {
+    return (
+      <Alert severity="info" sx={{ mt: 3 }}>
+        Configure your report settings and generate a report to see the results.
+      </Alert>
+    );
+  }
+
+  const chartData = reportData.trends || {};
+  const summaryData = reportData.summary || {};
+  const currentReportType = data.report_type;
+
+  // Stock level specific data tables
+  const StockLevelTables = () => {
+    if (!reportData.stock_levels || !Array.isArray(reportData.stock_levels)) {
       return (
-        <Alert severity="info" sx={{ mt: 3 }}>
-          Configure your report settings and generate a report to see the results.
+        <Alert severity="info">
+          No stock level data available.
         </Alert>
       );
     }
 
-    const chartData = reportData.trends || {};
-    const summaryData = reportData.summary || {};
-
     return (
-      <Box sx={{ mt: 4 }}>
-        <Card>
-          <CardContent>
-            <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-              <Box>
-                <Typography variant="h4" fontWeight="bold">
-                  {reportTypes.find(t => t.value === data.report_type)?.label || 'Generated Report'}
-                </Typography>
-                <Typography color="textSecondary">
-                  Generated on {new Date().toLocaleDateString()} • {data.data_depth} level
-                </Typography>
-              </Box>
-              <Box display="flex" gap={1}>
-                <Tooltip title="Print Report">
-                  <IconButton onClick={() => window.print()}>
-                    <Print />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Preview Report">
-                  <IconButton>
-                    <Visibility />
-                  </IconButton>
-                </Tooltip>
-                <Button 
-                  variant="contained" 
-                  startIcon={<Download />}
-                  onClick={handleExportReport}
-                  disabled={!reportData}
-                >
-                  Export as {data.export_format.toUpperCase()}
-                </Button>
-              </Box>
-            </Box>
-
-            <Tabs 
-              value={activeTab} 
-              onChange={(e, newValue) => setActiveTab(newValue)} 
-              sx={{ mb: 3 }}
-              variant="scrollable"
-              scrollButtons="auto"
-            >
-              <Tab label="Summary" icon={<Dashboard />} iconPosition="start" />
-              <Tab label="Analytics" icon={<BarChart />} iconPosition="start" />
-              <Tab label="Data Tables" icon={<TableChart />} iconPosition="start" />
-              <Tab label="Details" icon={<GridView />} iconPosition="start" />
-            </Tabs>
-
-            {activeTab === 0 && (
-              <Box>
-                {data.include_summary && <SummaryCards summary={summaryData} />}
-                
-                {/* Additional summary sections based on report type */}
-                {reportData.stock_level_summary && (
-                  <Card sx={{ mb: 2 }}>
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>Stock Level Overview</Typography>
-                      <Grid container spacing={2}>
-                        <Grid size={{ xs: 6, md: 3 }}>
-                          <Typography variant="body2" color="textSecondary">Total Inventory Value</Typography>
-                          <Typography variant="h6">₵{reportData.stock_level_summary.total_inventory_value?.toLocaleString()}</Typography>
-                        </Grid>
-                        <Grid size={{ xs: 6, md: 3 }}>
-                          <Typography variant="body2" color="textSecondary">Items Tracked</Typography>
-                          <Typography variant="h6">{reportData.stock_level_summary.total_items_tracked}</Typography>
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                )}
-              </Box>
+      <Box>
+        {/* Stock Levels Table */}
+        <DataTable
+          title="Stock Levels Overview"
+          data={reportData.stock_levels}
+          columns={[
+            { key: 'item_name', label: 'Item Name' },
+            { key: 'category', label: 'Category' },
+            { key: 'current_quantity', label: 'Current Qty' },
+            { key: 'available_quantity', label: 'Available Qty' },
+            { key: 'committed_quantity', label: 'Committed Qty' },
+            { key: 'on_order_quantity', label: 'On Order Qty' },
+            { 
+              key: 'average_cost', 
+              label: 'Avg Cost', 
+              render: (value) => `₵${Number(value || 0).toFixed(2)}`
+            },
+            { 
+              key: 'total_value', 
+              label: 'Total Value', 
+              render: (value) => `₵${Number(value || 0).toLocaleString()}`
+            },
+            { key: 'status', label: 'Status', render: (value) => (
+              <Chip 
+                label={value?.replace(/_/g, ' ') || 'Unknown'} 
+                color={
+                  value === 'out_of_stock' ? 'error' : 
+                  value === 'low_stock' || value === 'critical_stock' ? 'warning' : 
+                  value === 'over_stock' ? 'info' : 'success'
+                } 
+                size="small" 
+              />
+            )},
+            { key: 'needs_reorder', label: 'Needs Reorder', render: (value) => (
+              <Chip 
+                label={value ? 'Yes' : 'No'} 
+                color={value ? 'error' : 'default'} 
+                size="small" 
+              />
             )}
+          ]}
+        />
 
-            {activeTab === 1 && data.include_charts && (
-              <Box>
-                <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Visual Analytics</Typography>
-                
-                {(!chartData || Object.keys(chartData).length === 0) && (
-                  <Alert severity="info" sx={{ mb: 2 }}>
-                    No chart data available for this report.
-                  </Alert>
-                )}
-                
-                <Grid container spacing={3}>
-                  {data.chart_types?.includes('bar') && chartData.monthly_trends && (
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Card>
-                        <CardContent>
-                          <Typography variant="h6" gutterBottom>Monthly Value Trend</Typography>
-                          {renderBarChart(chartData.monthly_trends, 'value', 'Total Value (₵)', 'month', '#0088FE')}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  )}
-
-                  {data.chart_types?.includes('pie') && chartData.category_distribution && (
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Card>
-                        <CardContent>
-                          <Typography variant="h6" gutterBottom>Category Distribution</Typography>
-                          {renderPieChart(chartData.category_distribution, 'value')}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  )}
-
-                  {data.chart_types?.includes('line') && chartData.monthly_trends && (
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Card>
-                        <CardContent>
-                          <Typography variant="h6" gutterBottom>Transaction Trends</Typography>
-                          {renderLineChart(chartData.monthly_trends, 'transactions', 'Transaction Count', 'month', '#00C49F')}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  )}
-
-                  {data.chart_types?.includes('bar') && chartData.transaction_type_distribution && (
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Card>
-                        <CardContent>
-                          <Typography variant="h6" gutterBottom>Transaction Types</Typography>
-                          {renderBarChart(chartData.transaction_type_distribution, 'value', 'Total Value (₵)', 'label', '#FF8042')}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-            )}
-
-            {activeTab === 2 && data.include_tables && (
-              <Box>
-                <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Detailed Data Tables</Typography>
-                
-                <Grid container spacing={3}>
-                  {reportData.category_breakdown && (
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <DataTable
-                        title="Category Breakdown"
-                        data={reportData.category_breakdown}
-                        columns={[
-                          { key: 'category', label: 'Category' },
-                          { key: 'transactions', label: 'Transactions' },
-                          { key: 'total_quantity', label: 'Quantity' },
-                          { 
-                            key: 'total_value', 
-                            label: 'Total Value', 
-                            render: (value) => `₵${Number(value || 0).toLocaleString()}`
-                          },
-                        ]}
-                      />
-                    </Grid>
-                  )}
-
-                  {reportData.department_analysis && (
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <DataTable
-                        title="Department Analysis"
-                        data={reportData.department_analysis}
-                        columns={[
-                          { key: 'department', label: 'Department' },
-                          { key: 'transactions', label: 'Transactions' },
-                          { key: 'total_value', label: 'Total Value', render: (value) => `₵${value}` },
-                        ]}
-                      />
-                    </Grid>
-                  )}
-
-                  {reportData.critical_items && (
-                    <Grid size={{ xs: 12 }}>
-                      <DataTable
-                        title="Critical Stock Items"
-                        data={reportData.critical_items}
-                        columns={[
-                          { key: 'name', label: 'Item Name' },
-                          { key: 'category', label: 'Category' },
-                          { key: 'current_quantity', label: 'Current Qty' },
-                          { key: 'available_quantity', label: 'Available Qty' },
-                          { key: 'status', label: 'Status', render: (value) => (
-                            <Chip 
-                              label={value?.replace(/_/g, ' ') || 'Unknown'} 
-                              color={
-                                value === 'out_of_stock' ? 'error' : 
-                                value === 'low_stock' ? 'warning' : 'success'
-                              } 
-                              size="small" 
-                            />
-                          )}
-                        ]}
-                      />
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-            )}
-
-            {activeTab === 3 && (
-              <Box>
-                <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Report Details</Typography>
-                
-                {/* Additional report-specific details */}
-                {reportData.recent_activities && (
-                  <DataTable
-                    title="Recent Activities"
-                    data={reportData.recent_activities}
-                    columns={[
-                      { key: 'date', label: 'Date' },
-                      { key: 'action', label: 'Action' },
-                      { key: 'item', label: 'Item' },
-                      { key: 'user', label: 'User' },
-                      { key: 'quantity', label: 'Quantity' },
-                      { key: 'value', label: 'Value', render: (value) => `₵${value}` },
-                    ]}
-                  />
-                )}
-
-                {reportData.transaction_analysis && (
-                  <DataTable
-                    title="Transaction Analysis"
-                    data={reportData.transaction_analysis}
-                    columns={[
-                      { key: 'label', label: 'Type' },
-                      { key: 'count', label: 'Count' },
-                      { key: 'total_quantity', label: 'Total Qty' },
-                      { key: 'total_value', label: 'Total Value', render: (value) => `₵${value}` },
-                    ]}
-                  />
-                )}
-              </Box>
-            )}
-          </CardContent>
-        </Card>
+        {/* Critical Items Table */}
+        {reportData.critical_items && (
+          <DataTable
+            title="Critical Stock Items"
+            data={reportData.critical_items}
+            columns={[
+              { key: 'name', label: 'Item Name' },
+              { key: 'category', label: 'Category' },
+              { key: 'current_quantity', label: 'Current Qty' },
+              { key: 'available_quantity', label: 'Available Qty' },
+              { key: 'reorder_level', label: 'Reorder Level', render: (value) => Number(value || 0).toFixed(2) },
+              { key: 'safety_stock', label: 'Safety Stock', render: (value) => Number(value || 0).toFixed(2) },
+              { key: 'status', label: 'Status', render: (value) => (
+                <Chip 
+                  label={value?.replace(/_/g, ' ') || 'Unknown'} 
+                  color={
+                    value === 'out_of_stock' ? 'error' : 
+                    value === 'low_stock' ? 'warning' : 'success'
+                  } 
+                  size="small" 
+                />
+              )}
+            ]}
+          />
+        )}
       </Box>
     );
   };
+
+  // Stock level specific analytics
+  const StockLevelAnalytics = () => {
+    if (!reportData.stock_levels || !Array.isArray(reportData.stock_levels)) {
+      return (
+        <Alert severity="info">
+          No analytics data available for stock level report.
+        </Alert>
+      );
+    }
+
+    // Generate chart data from stock levels
+    const categoryDistribution = reportData.stock_levels.reduce((acc, item) => {
+      const category = item.category || 'Uncategorized';
+      if (!acc[category]) {
+        acc[category] = { name: category, value: 0, count: 0 };
+      }
+      acc[category].value += Number(item.total_value || 0);
+      acc[category].count += 1;
+      return acc;
+    }, {});
+
+    const statusDistribution = reportData.stock_levels.reduce((acc, item) => {
+      const status = item.status || 'unknown';
+      if (!acc[status]) {
+        acc[status] = { name: status, value: 0 };
+      }
+      acc[status].value += 1;
+      return acc;
+    }, {});
+
+    return (
+      <Grid container spacing={3}>
+        {data.chart_types?.includes('pie') && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Inventory Value by Category</Typography>
+                {renderPieChart(Object.values(categoryDistribution), 'value')}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {data.chart_types?.includes('bar') && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Stock Status Distribution</Typography>
+                {renderBarChart(Object.values(statusDistribution), 'value', 'Item Count', 'name', '#FF8042')}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {data.chart_types?.includes('bar') && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Items by Category</Typography>
+                {renderBarChart(Object.values(categoryDistribution), 'count', 'Item Count', 'name', '#0088FE')}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+      </Grid>
+    );
+  };
+
+  // Stock level specific details
+  // const StockLevelDetails = () => {
+  //   return (
+  //     <Box>
+  //       <Grid container spacing={3}>
+  //         {/* Stock Level Statistics */}
+  //         <Grid size={{ xs: 12, md: 6 }}>
+  //           <Card>
+  //             <CardContent>
+  //               <Typography variant="h6" gutterBottom>Inventory Statistics</Typography>
+  //               <List>
+  //                 <ListItem>
+  //                   <ListItemText 
+  //                     primary="Total Items in Inventory" 
+  //                     secondary={reportData.stock_levels?.length || 0}
+  //                   />
+  //                 </ListItem>
+  //                 <ListItem>
+  //                   <ListItemText 
+  //                     primary="Total Inventory Value" 
+  //                     secondary={`₵${(reportData.stock_level_summary?.total_inventory_value || 0).toLocaleString()}`}
+  //                   />
+  //                 </ListItem>
+  //                 <ListItem>
+  //                   <ListItemText 
+  //                     primary="Total Current Quantity" 
+  //                     secondary={(reportData.stock_level_summary?.total_current_quantity || 0).toLocaleString()}
+  //                   />
+  //                 </ListItem>
+  //                 <ListItem>
+  //                   <ListItemText 
+  //                     primary="Total Available Quantity" 
+  //                     secondary={(reportData.stock_level_summary?.total_available_quantity || 0).toLocaleString()}
+  //                   />
+  //                 </ListItem>
+  //               </List>
+  //             </CardContent>
+  //           </Card>
+  //         </Grid>
+
+  //         {/* Stock Alert Summary */}
+  //         <Grid size={{ xs: 12, md: 6 }}>
+  //           <Card>
+  //             <CardContent>
+  //               <Typography variant="h6" gutterBottom>Stock Alerts Summary</Typography>
+  //               <List>
+  //                 <ListItem>
+  //                   <ListItemText 
+  //                     primary="Items Need Reorder" 
+  //                     secondary={
+  //                       <Box display="flex" alignItems="center" gap={1}>
+  //                         <Chip 
+  //                           label={reportData.stock_level_summary?.items_need_reorder || 0} 
+  //                           color="error" 
+  //                           size="small" 
+  //                         />
+  //                         <Typography variant="body2" color="textSecondary">
+  //                           ({Math.round(((reportData.stock_level_summary?.items_need_reorder || 0) / (reportData.stock_levels?.length || 1)) * 100)}% of inventory)
+  //                         </Typography>
+  //                       </Box>
+  //                     }
+  //                   />
+  //                 </ListItem>
+  //                 <ListItem>
+  //                   <ListItemText 
+  //                     primary="Low Stock Items" 
+  //                     secondary={
+  //                       <Box display="flex" alignItems="center" gap={1}>
+  //                         <Chip 
+  //                           label={reportData.stock_level_summary?.low_stock_items || 0} 
+  //                           color="warning" 
+  //                           size="small" 
+  //                         />
+  //                       </Box>
+  //                     }
+  //                   />
+  //                 </ListItem>
+  //                 <ListItem>
+  //                   <ListItemText 
+  //                     primary="Out of Stock Items" 
+  //                     secondary={
+  //                       <Box display="flex" alignItems="center" gap={1}>
+  //                         <Chip 
+  //                           label={reportData.stock_level_summary?.out_of_stock_items || 0} 
+  //                           color="error" 
+  //                           size="small" 
+  //                           variant="outlined"
+  //                         />
+  //                       </Box>
+  //                     }
+  //                   />
+  //                 </ListItem>
+  //               </List>
+  //             </CardContent>
+  //           </Card>
+  //         </Grid>
+  //       </Grid>
+  //     </Box>
+  //   );
+  // };
+// Updated StockLevelDetails component that works with stock-level report data
+const StockLevelDetails = () => {
+  // For stock-level report, the data structure is different
+  // The main data is in reportData itself, not in stock_level_summary
+  const getStockLevelData = () => {
+    if (reportData.stock_level_summary) {
+      // Comprehensive report structure
+      return {
+        totalItems: reportData.stock_level_summary.total_items_tracked || reportData.stock_levels?.length || 0,
+        totalValue: reportData.stock_level_summary.total_inventory_value || 0,
+        averageValue: reportData.stock_level_summary.average_item_value || 0,
+        currentQuantity: reportData.stock_level_summary.total_current_quantity,
+        availableQuantity: reportData.stock_level_summary.total_available_quantity,
+        committedQuantity: reportData.stock_level_summary.total_committed_quantity,
+        onOrderQuantity: reportData.stock_level_summary.total_on_order_quantity,
+        statusBreakdown: reportData.stock_level_summary.status_breakdown
+      };
+    } else {
+      // Stock-level report structure - calculate from the main data
+      const totalValue = reportData.total_inventory_value || 
+                        (reportData.stock_levels ? reportData.stock_levels.reduce((sum, item) => sum + (item.total_value || 0), 0) : 0);
+      
+      const totalItems = reportData.total_items_tracked || reportData.stock_levels?.length || 0;
+      
+      return {
+        totalItems: totalItems,
+        totalValue: totalValue,
+        averageValue: totalItems > 0 ? totalValue / totalItems : 0,
+        currentQuantity: reportData.total_current_quantity,
+        availableQuantity: reportData.total_available_quantity,
+        committedQuantity: reportData.total_committed_quantity,
+        onOrderQuantity: reportData.total_on_order_quantity,
+        statusBreakdown: reportData.status_breakdown
+      };
+    }
+  };
+
+  const stockData = getStockLevelData();
+  const totalItems = stockData.totalItems;
+
+  // Calculate stock alerts from the actual data structure
+  const calculateStockAlerts = () => {
+    if (!reportData.stock_levels || !Array.isArray(reportData.stock_levels)) {
+      return {
+        itemsNeedReorder: 0,
+        lowStockItems: 0,
+        outOfStockItems: 0
+      };
+    }
+
+    const itemsNeedReorder = reportData.stock_levels.filter(item => 
+      item.needs_reorder === true || item.status === 'low_stock' || item.status === 'critical_stock'
+    ).length;
+
+    const lowStockItems = reportData.stock_levels.filter(item => 
+      item.status === 'low_stock'
+    ).length;
+
+    const outOfStockItems = reportData.stock_levels.filter(item => 
+      item.status === 'out_of_stock'
+    ).length;
+
+    return {
+      itemsNeedReorder,
+      lowStockItems,
+      outOfStockItems
+    };
+  };
+
+  const stockAlerts = calculateStockAlerts();
+
+  // Get status breakdown from available data
+  const getStatusBreakdown = () => {
+    if (stockData.statusBreakdown) {
+      return stockData.statusBreakdown;
+    }
+    
+    // Calculate from stock_levels if not available in summary
+    if (reportData.stock_levels) {
+      return reportData.stock_levels.reduce((acc, item) => {
+        const status = item.status || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+    }
+    
+    return {};
+  };
+
+  const statusBreakdown = getStatusBreakdown();
+
+  return (
+    <Box>
+      <Grid container spacing={3}>
+        {/* Stock Level Statistics */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>Inventory Statistics</Typography>
+              <List>
+                <ListItem>
+                  <ListItemText 
+                    primary="Total Items in Inventory" 
+                    secondary={stockData.totalItems.toLocaleString()}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Total Inventory Value" 
+                    secondary={`₵${stockData.totalValue.toLocaleString()}`}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Average Item Value" 
+                    secondary={`₵${stockData.averageValue.toLocaleString()}`}
+                  />
+                </ListItem>
+                {stockData.currentQuantity !== undefined && (
+                  <ListItem>
+                    <ListItemText 
+                      primary="Total Current Quantity" 
+                      secondary={stockData.currentQuantity.toLocaleString()}
+                    />
+                  </ListItem>
+                )}
+                {stockData.availableQuantity !== undefined && (
+                  <ListItem>
+                    <ListItemText 
+                      primary="Total Available Quantity" 
+                      secondary={stockData.availableQuantity.toLocaleString()}
+                    />
+                  </ListItem>
+                )}
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Stock Alert Summary */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>Stock Alerts Summary</Typography>
+              <List>
+                <ListItem>
+                  <ListItemText 
+                    primary="Items Need Reorder" 
+                    secondary={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Chip 
+                          label={stockAlerts.itemsNeedReorder} 
+                          color="error" 
+                          size="small" 
+                        />
+                        <Typography variant="body2" color="textSecondary">
+                          ({totalItems > 0 ? Math.round((stockAlerts.itemsNeedReorder / totalItems) * 100) : 0}% of inventory)
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Low Stock Items" 
+                    secondary={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Chip 
+                          label={stockAlerts.lowStockItems} 
+                          color="warning" 
+                          size="small" 
+                        />
+                        <Typography variant="body2" color="textSecondary">
+                          ({totalItems > 0 ? Math.round((stockAlerts.lowStockItems / totalItems) * 100) : 0}% of inventory)
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Out of Stock Items" 
+                    secondary={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Chip 
+                          label={stockAlerts.outOfStockItems} 
+                          color="error" 
+                          size="small" 
+                          variant="outlined"
+                        />
+                        <Typography variant="body2" color="textSecondary">
+                          ({totalItems > 0 ? Math.round((stockAlerts.outOfStockItems / totalItems) * 100) : 0}% of inventory)
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+                {stockData.committedQuantity !== undefined && (
+                  <ListItem>
+                    <ListItemText 
+                      primary="Total Committed Quantity" 
+                      secondary={stockData.committedQuantity.toLocaleString()}
+                    />
+                  </ListItem>
+                )}
+                {stockData.onOrderQuantity !== undefined && (
+                  <ListItem>
+                    <ListItemText 
+                      primary="Total On Order Quantity" 
+                      secondary={stockData.onOrderQuantity.toLocaleString()}
+                    />
+                  </ListItem>
+                )}
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Status Distribution */}
+        {Object.keys(statusBreakdown).length > 0 && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Stock Status Distribution</Typography>
+                <List dense>
+                  {Object.entries(statusBreakdown)
+                    .sort(([,a], [,b]) => b - a)
+                    .map(([status, count]) => (
+                      <ListItem key={status}>
+                        <ListItemText 
+                          primary={
+                            <Box display="flex" alignItems="center" gap={1}>
+                              <Chip 
+                                label={status.replace(/_/g, ' ')} 
+                                color={
+                                  status === 'out_of_stock' ? 'error' : 
+                                  status === 'low_stock' || status === 'critical_stock' ? 'warning' : 
+                                  status === 'over_stock' ? 'info' : 'success'
+                                } 
+                                size="small" 
+                              />
+                            </Box>
+                          } 
+                          secondary={`${count} items (${totalItems > 0 ? Math.round((count / totalItems) * 100) : 0}%)`}
+                        />
+                      </ListItem>
+                    ))}
+                </List>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Category Distribution */}
+        {reportData.stock_levels && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Category Distribution</Typography>
+                <List dense>
+                  {Object.entries(
+                    reportData.stock_levels.reduce((acc, item) => {
+                      const category = item.category || 'Uncategorized';
+                      acc[category] = (acc[category] || 0) + 1;
+                      return acc;
+                    }, {})
+                  )
+                  .sort(([,a], [,b]) => b - a)
+                  .map(([category, count]) => (
+                    <ListItem key={category}>
+                      <ListItemText 
+                        primary={category} 
+                        secondary={`${count} items (${Math.round((count / totalItems) * 100)}%)`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Critical Items Requiring Attention */}
+        {reportData.critical_items && reportData.critical_items.length > 0 && (
+          <Grid size={{ xs: 12 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom color="error">
+                  Critical Items Requiring Immediate Attention
+                </Typography>
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {reportData.critical_items.length} items require immediate attention due to stock levels.
+                </Alert>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell><strong>Item Name</strong></TableCell>
+                        <TableCell><strong>Category</strong></TableCell>
+                        <TableCell><strong>Current Quantity</strong></TableCell>
+                        <TableCell><strong>Available Quantity</strong></TableCell>
+                        <TableCell><strong>Status</strong></TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {reportData.critical_items.map((item, index) => (
+                        <TableRow key={index} hover sx={{ bgcolor: 'error.light' }}>
+                          <TableCell>
+                            <Typography fontWeight="bold">{item.name}</Typography>
+                          </TableCell>
+                          <TableCell>{item.category}</TableCell>
+                          <TableCell>
+                            <Typography color="error" fontWeight="bold">
+                              {item.current_quantity?.toLocaleString()}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography color="error" fontWeight="bold">
+                              {item.available_quantity?.toLocaleString()}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={item.status?.replace(/_/g, ' ') || 'Critical'} 
+                              color="error" 
+                              size="small" 
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+      </Grid>
+    </Box>
+  );
+};
+
+  // Comprehensive report specific sections
+  const ComprehensiveAnalytics = () => {
+    return (
+      <Grid container spacing={3}>
+        {/* Monthly Trends */}
+        {data.chart_types?.includes('bar') && chartData.monthly_trends && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Monthly Transaction Trends</Typography>
+                {renderBarChart(chartData.monthly_trends, 'value', 'Total Value (₵)', 'month', '#0088FE')}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {data.chart_types?.includes('line') && chartData.monthly_trends && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Monthly Quantity Trends</Typography>
+                {renderLineChart(chartData.monthly_trends, 'quantity', 'Total Quantity', 'month', '#00C49F')}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Category Distribution */}
+        {data.chart_types?.includes('pie') && chartData.category_distribution && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Category Value Distribution</Typography>
+                {renderPieChart(chartData.category_distribution, 'value')}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Transaction Type Analysis */}
+        {data.chart_types?.includes('bar') && reportData.transaction_analysis && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>Transaction Type Analysis</Typography>
+                {renderBarChart(reportData.transaction_analysis, 'total_value', 'Total Value (₵)', 'label', '#FF8042')}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+      </Grid>
+    );
+  };
+
+  const ComprehensiveTables = () => {
+  return (
+    <Grid container spacing={3}>
+      {/* Category Breakdown */}
+      {reportData.category_breakdown && (
+        <Grid size={{ xs: 12, md: 6 }}>
+          <DataTable
+            title="Category Breakdown"
+            data={reportData.category_breakdown}
+            columns={[
+              { key: 'category', label: 'Category' },
+              { key: 'transactions', label: 'Transactions' },
+              { key: 'quantity', label: 'Quantity' },
+              { 
+                key: 'total_value', 
+                label: 'Total Value', 
+                render: (value) => `₵${Number(value || 0).toLocaleString()}`
+              },
+            ]}
+          />
+        </Grid>
+      )}
+
+      {/* Department Analysis */}
+      {reportData.department_analysis && (
+        <Grid size={{ xs: 12, md: 6 }}>
+          <DataTable
+            title="Department Analysis"
+            data={reportData.department_analysis}
+            columns={[
+              { key: 'department', label: 'Department' },
+              { key: 'transactions', label: 'Transactions' },
+              { key: 'total_quantity', label: 'Total Quantity' },
+              { 
+                key: 'total_value', 
+                label: 'Total Value', 
+                render: (value) => `₵${Number(value || 0).toLocaleString()}`
+              },
+            ]}
+          />
+        </Grid>
+      )}
+
+      {/* Transaction Analysis */}
+      {reportData.transaction_analysis && (
+        <Grid size={{ xs: 12 }}>
+          <DataTable
+            title="Transaction Type Analysis"
+            data={reportData.transaction_analysis}
+            columns={[
+              { key: 'label', label: 'Transaction Type' },
+              { key: 'count', label: 'Count' },
+              { key: 'total_quantity', label: 'Total Quantity' },
+              { 
+                key: 'total_value', 
+                label: 'Total Value', 
+                render: (value) => `₵${Number(value || 0).toLocaleString()}`
+              },
+              { 
+                key: 'avg_transaction_value', 
+                label: 'Avg Transaction Value', 
+                render: (value) => `₵${Number(value || 0).toLocaleString()}`
+              },
+              { 
+                key: 'avg_unit_cost', 
+                label: 'Avg Unit Cost', 
+                render: (value) => `₵${Number(value || 0).toFixed(2)}`
+              },
+            ]}
+          />
+        </Grid>
+      )}
+
+      {/* Maintenance Analysis - Equipment Reliability */}
+      {reportData.maintenance_analysis?.equipment_reliability && (
+        <Grid size={{ xs: 12, md: 6 }}>
+          <DataTable
+            title="Equipment Reliability"
+            data={reportData.maintenance_analysis.equipment_reliability}
+            columns={[
+              { key: 'item_name', label: 'Equipment Name' },
+              { key: 'maintenance_count', label: 'Maintenance Count' },
+              { key: 'completed_count', label: 'Completed' },
+              { 
+                key: 'completion_rate', 
+                label: 'Completion Rate', 
+                render: (value, row) => {
+                  const rate = row.maintenance_count > 0 ? 
+                    (row.completed_count / row.maintenance_count) * 100 : 0;
+                  return `${rate.toFixed(1)}%`;
+                }
+              },
+              { key: 'total_downtime', label: 'Total Downtime (hrs)' },
+            ]}
+          />
+        </Grid>
+      )}
+
+      {/* Maintenance Analysis - By Category */}
+      {reportData.maintenance_analysis?.maintenance_by_category && (
+        <Grid size={{ xs: 12, md: 6 }}>
+          <DataTable
+            title="Maintenance by Category"
+            data={reportData.maintenance_analysis.maintenance_by_category}
+            columns={[
+              { key: 'category', label: 'Category' },
+              { key: 'count', label: 'Maintenance Count' },
+              { 
+                key: 'total_cost', 
+                label: 'Total Cost', 
+                render: (value) => `₵${Number(value || 0).toLocaleString()}`
+              },
+              { 
+                key: 'average_cost', 
+                label: 'Avg Cost', 
+                render: (value) => `₵${Number(value || 0).toLocaleString()}`
+              },
+              { key: 'total_downtime', label: 'Downtime (hrs)' },
+            ]}
+          />
+        </Grid>
+      )}
+
+      {/* Critical Items */}
+      {reportData.critical_items && (
+        <Grid size={{ xs: 12 }}>
+          <DataTable
+            title="Critical Stock Items"
+            data={reportData.critical_items}
+            columns={[
+              { key: 'name', label: 'Item Name' },
+              { key: 'item_code', label: 'Item Code' },
+              { key: 'category', label: 'Category' },
+              { key: 'current_quantity', label: 'Current Qty' },
+              { key: 'available_quantity', label: 'Available Qty' },
+              { key: 'status', label: 'Status', render: (value) => (
+                <Chip 
+                  label={value?.replace(/_/g, ' ') || 'Unknown'} 
+                  color={
+                    value === 'out_of_stock' ? 'error' : 
+                    value === 'low_stock' ? 'warning' : 'success'
+                  } 
+                  size="small" 
+                />
+              )}
+            ]}
+          />
+        </Grid>
+      )}
+
+      {/* Recent Activities */}
+      {reportData.recent_activities && (
+        <Grid size={{ xs: 12 }}>
+          <DataTable
+            title="Recent Activities (Last 20)"
+            data={reportData.recent_activities.slice(0, 20)}
+            columns={[
+              { key: 'date', label: 'Date' },
+              { key: 'action', label: 'Action' },
+              { key: 'item', label: 'Item' },
+              { key: 'user', label: 'User' },
+              { key: 'quantity', label: 'Quantity' },
+              { 
+                key: 'value', 
+                label: 'Value', 
+                render: (value) => value ? `₵${Number(value).toLocaleString()}` : '-'
+              },
+            ]}
+          />
+        </Grid>
+      )}
+
+      {/* Supplier Performance */}
+{reportData.purchase_analysis?.supplier_performance && reportData.suppliers && (
+  <Grid size={{ xs: 12 }}>
+    <DataTable
+      title="Supplier Performance Analysis"
+      data={reportData.purchase_analysis.supplier_performance.map((performance, index) => {
+        // Try to match by order amount pattern or use index-based matching
+        // Since we can't match by name, we'll assign suppliers sequentially
+        const matchedSupplier = reportData.suppliers[index % reportData.suppliers.length];
+        
+        return {
+          ...performance,
+          legal_name: matchedSupplier?.legal_name || `Supplier ${index + 1}`,
+          supplier_id: matchedSupplier?.id,
+          display_rank: index + 1
+        };
+      })}
+      columns={[
+        { 
+          key: 'display_rank', 
+          label: 'Rank',
+          render: (value) => `#${value}`
+        },
+        { 
+          key: 'legal_name', 
+          label: 'Supplier Name',
+          render: (value, row) => (
+            <Box>
+              <Typography variant="body2" fontWeight="bold">
+                {value}
+              </Typography>
+              <Typography variant="caption" color="textSecondary">
+                {row.order_count} order{row.order_count !== 1 ? 's' : ''}
+              </Typography>
+            </Box>
+          )
+        },
+        { 
+          key: 'order_count', 
+          label: 'Orders',
+          render: (value) => (
+            <Chip 
+              label={value || 0} 
+              size="small" 
+              color={
+                value >= 2 ? "success" : 
+                value === 1 ? "info" : "default"
+              }
+            />
+          )
+        },
+        { 
+          key: 'total_spent', 
+          label: 'Total Spent', 
+          render: (value) => (
+            <Typography fontWeight="bold" color="success.main">
+              ₵{Number(value || 0).toLocaleString()}
+            </Typography>
+          )
+        },
+        { 
+          key: 'average_order_value', 
+          label: 'Avg Order Value', 
+          render: (value) => `₵${Number(value || 0).toLocaleString()}`
+        },
+        { 
+          key: 'performance_rating', 
+          label: 'Rating', 
+          render: (value, row) => {
+            const avgValue = row.average_order_value || 0;
+            let rating = "Standard";
+            let color = "default";
+            
+            if (avgValue > 40000) {
+              rating = "Premium";
+              color = "success";
+            } else if (avgValue > 25000) {
+              rating = "High Value";
+              color = "info";
+            } else if (avgValue < 15000) {
+              rating = "Budget";
+              color = "warning";
+            }
+            
+            return <Chip label={rating} size="small" color={color} />;
+          }
+        },
+      ]}
+    />
+  </Grid>
+)}
+
+{/* // Recent Orders Table */}
+{reportData.purchase_analysis?.recent_orders && (
+  <Grid size={{ xs: 12, md: 12 }}>
+    <DataTable
+      title="Recent Purchase Orders"
+      data={reportData.purchase_analysis.recent_orders}
+      columns={[
+        { key: 'po_number', label: 'PO Number' },
+        { 
+          key: 'order_date', 
+          label: 'Order Date',
+          render: (value) => new Date(value).toLocaleDateString()
+        },
+        { 
+          key: 'total_amount', 
+          label: 'Amount', 
+          render: (value) => `₵${Number(value || 0).toLocaleString()}`
+        },
+        { 
+          key: 'status', 
+          label: 'Status',
+          render: (value) => (
+            <Chip 
+              label={value?.replace(/_/g, ' ') || 'Unknown'} 
+              size="small"
+              color={
+                value === 'received' || value === 'closed' ? 'success' :
+                value === 'cancelled' ? 'error' :
+                value === 'ordered' ? 'info' : 'default'
+              }
+            />
+          )
+        },
+      ]}
+    />
+  </Grid>
+)}
+
+{/* // Supplier Directory - Now with actual supplier data */}
+{reportData.suppliers && reportData.suppliers.length > 0 && (
+  <Grid size={{ xs: 12, md: 6 }}>
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>Supplier Directory</Typography>
+        <List dense>
+          <ListItem>
+            <ListItemText 
+              primary="Total Registered Suppliers" 
+              secondary={reportData.suppliers.length}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText 
+              primary="Active in Reporting Period" 
+              secondary={reportData.purchase_analysis?.supplier_performance?.length || 0}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText 
+              primary="Total Purchase Orders" 
+              secondary={reportData.purchase_analysis?.summary?.total_orders || 0}
+            />
+          </ListItem>
+        </List>
+        
+        {/* Supplier List */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle2" gutterBottom>Registered Suppliers</Typography>
+          <Grid container spacing={1}>
+            {reportData.suppliers.map((supplier, index) => (
+              <Grid size={{ xs: 6 }} key={supplier.id}>
+                <Chip 
+                  label={supplier.legal_name}
+                  size="small"
+                  variant="outlined"
+                  sx={{ mb: 1 }}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </CardContent>
+    </Card>
+  </Grid>
+)}
+    </Grid>
+  );
+};
+
+const ComprehensiveDetails = () => {
+  return (
+    <Grid container spacing={3}>
+      {/* Stock Level Summary */}
+      {reportData.stock_level_summary && (
+        <Grid size={{ xs: 12 }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>Inventory Health Overview</Typography>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 6, md: 2.4 }}>
+                  <Typography variant="body2" color="textSecondary">Total Items Tracked</Typography>
+                  <Typography variant="h6">{reportData.stock_level_summary.total_items_tracked}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6, md: 2.4 }}>
+                  <Typography variant="body2" color="textSecondary">Total Inventory Value</Typography>
+                  <Typography variant="h6">₵{reportData.stock_level_summary.total_inventory_value?.toLocaleString()}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6, md: 2.4 }}>
+                  <Typography variant="body2" color="textSecondary">Average Item Value</Typography>
+                  <Typography variant="h6">₵{reportData.stock_level_summary.average_item_value?.toLocaleString()}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6, md: 2.4 }}>
+                  <Typography variant="body2" color="textSecondary">Items Need Attention</Typography>
+                  <Typography variant="h6" color="error">
+                    {(reportData.stock_level_summary.status_breakdown?.critical_stock || 0) + 
+                     (reportData.stock_level_summary.status_breakdown?.low_stock || 0) +
+                     (reportData.stock_level_summary.status_breakdown?.out_of_stock || 0)}
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 6, md: 2.4 }}>
+                  <Typography variant="body2" color="textSecondary">Healthy Stock</Typography>
+                  <Typography variant="h6" color="success">
+                    {(reportData.stock_level_summary.status_breakdown?.adequate_stock || 0) + 
+                     (reportData.stock_level_summary.status_breakdown?.over_stock || 0)}
+                  </Typography>
+                </Grid>
+              </Grid>
+
+              {/* Status Breakdown */}
+              {reportData.stock_level_summary.status_breakdown && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle1" gutterBottom>Stock Status Distribution</Typography>
+                  <Grid container spacing={1}>
+                    {Object.entries(reportData.stock_level_summary.status_breakdown).map(([status, count]) => (
+                      <Grid size={{ xs: 6, md: 2.4 }} key={status}>
+                        <Card variant="outlined" sx={{ textAlign: 'center', p: 1 }}>
+                          <Typography variant="body2" color="textSecondary">
+                            {status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </Typography>
+                          <Typography 
+                            variant="h6" 
+                            color={
+                              status === 'out_of_stock' ? 'error' : 
+                              status === 'critical_stock' ? 'error' :
+                              status === 'low_stock' ? 'warning' : 
+                              status === 'over_stock' ? 'info' : 'success'
+                            }
+                          >
+                            {count}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {Math.round((count / reportData.stock_level_summary.total_items_tracked) * 100)}%
+                          </Typography>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
+
+      {/* Purchase Analysis Summary */}
+    {/* // In ComprehensiveDetails component - Update purchase analysis */}
+{reportData.purchase_analysis && (
+  <Grid size={{ xs: 12, md: 6 }}>
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>Procurement Overview</Typography>
+        
+        {/* Key Metrics */}
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="textSecondary">Total Orders</Typography>
+            <Typography variant="h6">{reportData.purchase_analysis.summary?.total_orders || 0}</Typography>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="textSecondary">Total Amount</Typography>
+            <Typography variant="h6">₵{(reportData.purchase_analysis.summary?.total_amount || 0).toLocaleString()}</Typography>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="textSecondary">Avg Order Value</Typography>
+            <Typography variant="h6">₵{(reportData.purchase_analysis.summary?.average_order_value || 0).toLocaleString()}</Typography>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="textSecondary">Largest Order</Typography>
+            <Typography variant="h6">
+              ₵{Math.max(...(reportData.purchase_analysis.recent_orders?.map(order => order.total_amount) || [0])).toLocaleString()}
+            </Typography>
+          </Grid>
+        </Grid>
+
+        {/* Order Type Breakdown */}
+        {reportData.purchase_analysis.summary?.order_type_breakdown && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>Order Types</Typography>
+            <Grid container spacing={1}>
+              {Object.entries(reportData.purchase_analysis.summary.order_type_breakdown).map(([type, count]) => (
+                <Grid size={{ xs: 6 }} key={type}>
+                  <Chip 
+                    label={`${type}: ${count}`}
+                    size="small"
+                    variant="outlined"
+                    color={
+                      type === 'capital' ? 'primary' :
+                      type === 'emergency' ? 'error' : 'default'
+                    }
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
+
+        {/* Status Breakdown */}
+        {reportData.purchase_analysis.summary?.status_breakdown && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>Order Status</Typography>
+            <Grid container spacing={1}>
+              {Object.entries(reportData.purchase_analysis.summary.status_breakdown).map(([status, count]) => (
+                <Grid size={{ xs: 6 }} key={status}>
+                  <Chip 
+                    label={`${status}: ${count}`}
+                    size="small"
+                    variant="outlined"
+                    color={
+                      status === 'received' || status === 'closed' ? 'success' :
+                      status === 'cancelled' ? 'error' :
+                      status === 'ordered' ? 'info' : 'default'
+                    }
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  </Grid>
+)}
+
+      {/* Maintenance Analysis Summary */}
+      {reportData.maintenance_analysis && (
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>Maintenance Overview</Typography>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="body2" color="textSecondary">Total Maintenance</Typography>
+                  <Typography variant="h6">{reportData.maintenance_analysis.summary?.total_maintenance || 0}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="body2" color="textSecondary">Total Cost</Typography>
+                  <Typography variant="h6">₵{(reportData.maintenance_analysis.summary?.total_cost || 0).toLocaleString()}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="body2" color="textSecondary">Avg Cost/Maintenance</Typography>
+                  <Typography variant="h6">₵{(reportData.maintenance_analysis.summary?.average_cost_per_maintenance || 0).toLocaleString()}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="body2" color="textSecondary">Total Downtime</Typography>
+                  <Typography variant="h6">{reportData.maintenance_analysis.summary?.total_downtime_hours || 0} hrs</Typography>
+                </Grid>
+              </Grid>
+
+              {/* Priority Breakdown */}
+              {reportData.maintenance_analysis.summary?.priority_breakdown && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>Priority Distribution</Typography>
+                  <Grid container spacing={1}>
+                    {Object.entries(reportData.maintenance_analysis.summary.priority_breakdown).map(([priority, count]) => (
+                      <Grid size={{ xs: 6 }} key={priority}>
+                        <Chip 
+                          label={`${priority}: ${count}`}
+                          size="small"
+                          variant="outlined"
+                          color={
+                            priority === 'critical' ? 'error' :
+                            priority === 'high' ? 'warning' :
+                            priority === 'medium' ? 'info' : 'default'
+                          }
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
+
+      {/* Transaction Summary */}
+      {reportData.summary && (
+        <Grid size={{ xs: 12 }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>Transaction Overview</Typography>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 6, md: 2.4 }}>
+                  <Typography variant="body2" color="textSecondary">Total Transactions</Typography>
+                  <Typography variant="h6">{reportData.summary.total_transactions}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6, md: 2.4 }}>
+                  <Typography variant="body2" color="textSecondary">Total Value</Typography>
+                  <Typography variant="h6">₵{reportData.summary.total_value?.toLocaleString()}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6, md: 2.4 }}>
+                  <Typography variant="body2" color="textSecondary">Incoming Stock</Typography>
+                  <Typography variant="h6" color="success">{reportData.summary.incoming_stock}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6, md: 2.4 }}>
+                  <Typography variant="body2" color="textSecondary">Outgoing Stock</Typography>
+                  <Typography variant="h6" color="warning">{reportData.summary.outgoing_stock}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6, md: 2.4 }}>
+                  <Typography variant="body2" color="textSecondary">Net Movement</Typography>
+                  <Typography variant="h6" color="info">{reportData.summary.net_stock_movement}</Typography>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
+
+      {/* Key Performance Indicators */}
+      <Grid size={{ xs: 12 }}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>Key Performance Indicators</Typography>
+            <Grid container spacing={2}>
+              {/* Inventory Health KPI */}
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="body2" color="textSecondary">Inventory Health Score</Typography>
+                  <Typography variant="h4" color="success.main">
+                    {reportData.stock_level_summary ? 
+                      Math.round(((reportData.stock_level_summary.status_breakdown?.adequate_stock || 0) + 
+                      (reportData.stock_level_summary.status_breakdown?.over_stock || 0)) / 
+                      reportData.stock_level_summary.total_items_tracked * 100) : 0}%
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    Items in good condition
+                  </Typography>
+                </Card>
+              </Grid>
+
+              {/* Maintenance Efficiency KPI */}
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="body2" color="textSecondary">Maintenance Completion Rate</Typography>
+                  <Typography variant="h4" color="info.main">
+                    {reportData.maintenance_analysis?.summary ? 
+                      Math.round((reportData.maintenance_analysis.summary.status_breakdown?.completed || 0) / 
+                      reportData.maintenance_analysis.summary.total_maintenance * 100) : 0}%
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    Tasks completed on time
+                  </Typography>
+                </Card>
+              </Grid>
+
+              {/* Procurement Efficiency KPI */}
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="body2" color="textSecondary">Procurement Success Rate</Typography>
+                  <Typography variant="h4" color="success.main">
+                    {reportData.purchase_analysis?.summary ? 
+                      Math.round(((reportData.purchase_analysis.summary.status_breakdown?.received || 0) + 
+                      (reportData.purchase_analysis.summary.status_breakdown?.closed || 0)) / 
+                      reportData.purchase_analysis.summary.total_orders * 100) : 0}%
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    Orders successfully fulfilled
+                  </Typography>
+                </Card>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      </Grid>
+
+
+{reportData.purchase_analysis?.supplier_performance && (
+  <Grid size={{ xs: 12, md: 6 }}>
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>Supplier Performance Insights</Typography>
+        
+        {/* Key Metrics */}
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="textSecondary">Total Suppliers</Typography>
+            <Typography variant="h6">{reportData.purchase_analysis.supplier_performance.length}</Typography>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="textSecondary">Total Orders</Typography>
+            <Typography variant="h6">
+              {reportData.purchase_analysis.supplier_performance.reduce((sum, s) => sum + (s.order_count || 0), 0)}
+            </Typography>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="textSecondary">Total Spent</Typography>
+            <Typography variant="h6">
+              ₵{reportData.purchase_analysis.supplier_performance.reduce((sum, s) => sum + (s.total_spent || 0), 0).toLocaleString()}
+            </Typography>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Typography variant="body2" color="textSecondary">Avg Order Value</Typography>
+            <Typography variant="h6">
+              ₵{(
+                reportData.purchase_analysis.supplier_performance.reduce((sum, s) => sum + (s.total_spent || 0), 0) / 
+                reportData.purchase_analysis.supplier_performance.reduce((sum, s) => sum + (s.order_count || 0), 1)
+              ).toLocaleString()}
+            </Typography>
+          </Grid>
+        </Grid>
+
+        {/* Top Performers */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle2" gutterBottom>Top Performers</Typography>
+          <List dense>
+            {/* Top by Total Spent */}
+            <ListItem>
+              <ListItemIcon>
+                <AttachMoney color="success" />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Highest Spending" 
+                secondary={
+                  reportData.purchase_analysis.supplier_performance
+                    .sort((a, b) => (b.total_spent || 0) - (a.total_spent || 0))[0]?.supplier_name || 'N/A'
+                }
+              />
+              <Typography variant="body2" color="success.main">
+                ₵{reportData.purchase_analysis.supplier_performance
+                  .sort((a, b) => (b.total_spent || 0) - (a.total_spent || 0))[0]?.total_spent?.toLocaleString() || '0'}
+              </Typography>
+            </ListItem>
+
+            {/* Top by Order Count */}
+            <ListItem>
+              <ListItemIcon>
+                <ShoppingCart color="info" />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Most Orders" 
+                secondary={
+                  reportData.purchase_analysis.supplier_performance
+                    .sort((a, b) => (b.order_count || 0) - (a.order_count || 0))[0]?.supplier_name || 'N/A'
+                }
+              />
+              <Typography variant="body2" color="info.main">
+                {reportData.purchase_analysis.supplier_performance
+                  .sort((a, b) => (b.order_count || 0) - (a.order_count || 0))[0]?.order_count || 0} orders
+              </Typography>
+            </ListItem>
+          </List>
+        </Box>
+
+        {/* Performance Distribution */}
+        {reportData.purchase_analysis.supplier_performance.length > 0 && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>Performance Range</Typography>
+            <Grid container spacing={1}>
+              <Grid size={{ xs: 6 }}>
+                <Chip 
+                  label={`Min: ₵${Math.min(...reportData.purchase_analysis.supplier_performance.map(s => s.total_spent || 0)).toLocaleString()}`}
+                  size="small"
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Chip 
+                  label={`Max: ₵${Math.max(...reportData.purchase_analysis.supplier_performance.map(s => s.total_spent || 0)).toLocaleString()}`}
+                  size="small"
+                  variant="outlined"
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  </Grid>
+)}
+
+{reportData.suppliers && Array.isArray(reportData.suppliers) && reportData.suppliers.length > 0 ? (
+  <Grid size={{ xs: 12, md: 6 }}>
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>Supplier Directory</Typography>
+        <List dense>
+          <ListItem>
+            <ListItemText 
+              primary="Total Registered Suppliers" 
+              secondary={reportData.suppliers.length}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText 
+              primary="Active in Reporting Period" 
+              secondary={reportData.purchase_analysis?.supplier_performance?.length || 0}
+            />
+          </ListItem>
+        </List>
+        
+        {/* Sample of suppliers */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle2" gutterBottom>Supplier Examples</Typography>
+          <Grid container spacing={1}>
+            {reportData.suppliers.slice(0, 4).map((supplier, index) => (
+              <Grid size={{ xs: 6 }} key={supplier.id || index}>
+                <Chip 
+                  label={supplier.legal_name || `Supplier ${index + 1}`}
+                  size="small"
+                  variant="outlined"
+                />
+              </Grid>
+            ))}
+          </Grid>
+          {reportData.suppliers.length > 4 && (
+            <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+              + {reportData.suppliers.length - 4} more suppliers
+            </Typography>
+          )}
+        </Box>
+      </CardContent>
+    </Card>
+  </Grid>
+) : (
+  // Enhanced supplier activity display
+  <Grid size={{ xs: 12, md: 6 }}>
+    <Card>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>Supplier Activity Summary</Typography>
+        <List dense>
+          <ListItem>
+            <ListItemText 
+              primary="Active Suppliers" 
+              secondary={reportData.purchase_analysis?.supplier_performance?.length || 0}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText 
+              primary="Total Purchase Orders" 
+              secondary={reportData.purchase_analysis?.summary?.total_orders || 0}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText 
+              primary="Total Amount Spent" 
+              secondary={`₵${reportData.purchase_analysis?.summary?.total_amount?.toLocaleString() || '0'}`}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText 
+              primary="Average Order Value" 
+              secondary={`₵${reportData.purchase_analysis?.summary?.average_order_value?.toLocaleString() || '0'}`}
+            />
+          </ListItem>
+        </List>
+        
+        {/* Enhanced supplier performance display */}
+        {reportData.purchase_analysis?.supplier_performance && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>Supplier Performance Ranking</Typography>
+            <Grid container spacing={1}>
+              {reportData.purchase_analysis.supplier_performance
+                .sort((a, b) => (b.total_spent || 0) - (a.total_spent || 0))
+                .slice(0, 6)
+                .map((supplier, index) => (
+                <Grid size={{ xs: 6 }} key={index}>
+                  <Chip 
+                    label={`#${index + 1} - ₵${supplier.total_spent?.toLocaleString()}`}
+                    size="small"
+                    variant="outlined"
+                    color={
+                      index === 0 ? "success" :
+                      index === 1 ? "primary" :
+                      index === 2 ? "secondary" : "default"
+                    }
+                    title={`${supplier.order_count} orders, Avg: ₵${supplier.average_order_value?.toLocaleString()}`}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+              Ranked by total spending • {reportData.purchase_analysis.supplier_performance.length} active suppliers
+            </Typography>
+            
+            {/* Quick stats */}
+            <Box sx={{ mt: 2, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="caption" display="block" gutterBottom>
+                <strong>Top Spender:</strong> ₵{Math.max(...reportData.purchase_analysis.supplier_performance.map(s => s.total_spent || 0)).toLocaleString()}
+              </Typography>
+              <Typography variant="caption" display="block">
+                <strong>Most Orders:</strong> {Math.max(...reportData.purchase_analysis.supplier_performance.map(s => s.order_count || 0))} orders
+              </Typography>
+            </Box>
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  </Grid>
+)}
+
+    </Grid>
+  );
+};
+
+  return (
+    <Box sx={{ mt: 4 }}>
+      <Card>
+        <CardContent>
+          <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+            <Box>
+              <Typography variant="h4" fontWeight="bold">
+                {reportTypes.find(t => t.value === currentReportType)?.label || 'Generated Report'}
+              </Typography>
+              <Typography color="textSecondary">
+                Generated on {new Date(reportData.reportGeneratedAt || Date.now()).toLocaleDateString()} • {data.data_depth} level
+              </Typography>
+            </Box>
+            <Box display="flex" gap={1}>
+              <Tooltip title="Print Report">
+                <IconButton onClick={() => window.print()}>
+                  <Print />
+                </IconButton>
+              </Tooltip>
+              <Button 
+                variant="contained" 
+                startIcon={<Download />}
+                onClick={handleExportReport}
+                disabled={!reportData}
+              >
+                Export as {data.export_format.toUpperCase()}
+              </Button>
+            </Box>
+          </Box>
+
+          <Tabs 
+            value={activeTab} 
+            onChange={(e, newValue) => setActiveTab(newValue)} 
+            sx={{ mb: 3 }}
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            <Tab label="Summary" icon={<Dashboard />} iconPosition="start" />
+            <Tab label="Analytics" icon={<BarChart />} iconPosition="start" />
+            <Tab label="Data Tables" icon={<TableChart />} iconPosition="start" />
+            <Tab label="Details" icon={<GridView />} iconPosition="start" />
+          </Tabs>
+
+          {activeTab === 0 && (
+            <Box>
+              {data.include_summary && (
+                <SummaryCards summary={summaryData} reportType={currentReportType} />
+              )}
+              
+              {/* Additional summary sections based on report type */}
+              {currentReportType === 'stock-level' && reportData.stock_level_summary && (
+                <Card sx={{ mb: 2 }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>Stock Level Overview</Typography>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 6, md: 3 }}>
+                        <Typography variant="body2" color="textSecondary">Total Committed Quantity</Typography>
+                        <Typography variant="h6">{reportData.stock_level_summary.total_committed_quantity?.toLocaleString()}</Typography>
+                      </Grid>
+                      <Grid size={{ xs: 6, md: 3 }}>
+                        <Typography variant="body2" color="textSecondary">Total On Order Quantity</Typography>
+                        <Typography variant="h6">{reportData.stock_level_summary.total_on_order_quantity?.toLocaleString()}</Typography>
+                      </Grid>
+                      <Grid size={{ xs: 6, md: 3 }}>
+                        <Typography variant="body2" color="textSecondary">Low Stock Items</Typography>
+                        <Typography variant="h6">{reportData.stock_level_summary.low_stock_items?.toLocaleString()}</Typography>
+                      </Grid>
+                      <Grid size={{ xs: 6, md: 3 }}>
+                        <Typography variant="body2" color="textSecondary">Items Need Reorder</Typography>
+                        <Typography variant="h6">{reportData.stock_level_summary.items_need_reorder?.toLocaleString()}</Typography>
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+              )}
+
+              {currentReportType === 'comprehensive' && (
+                <Grid container spacing={2}>
+                  {/* Transaction Type Breakdown */}
+                  {summaryData.purchase_count !== undefined && (
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Card>
+                        <CardContent>
+                          <Typography variant="h6" gutterBottom>Transaction Type Breakdown</Typography>
+                          <Grid container spacing={1}>
+                            <Grid size={{ xs: 6 }}>
+                              <Typography variant="body2" color="textSecondary">Purchases</Typography>
+                              <Typography variant="h6">{summaryData.purchase_count || 0}</Typography>
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                              <Typography variant="body2" color="textSecondary">Sales</Typography>
+                              <Typography variant="h6">{summaryData.sale_count || 0}</Typography>
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                              <Typography variant="body2" color="textSecondary">Transfers</Typography>
+                              <Typography variant="h6">{summaryData.transfer_count || 0}</Typography>
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                              <Typography variant="body2" color="textSecondary">Adjustments</Typography>
+                              <Typography variant="h6">{summaryData.adjustment_count || 0}</Typography>
+                            </Grid>
+                          </Grid>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+
+                  {/* Stock Level Overview */}
+                  {reportData.stock_level_summary && (
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Card>
+                        <CardContent>
+                          <Typography variant="h6" gutterBottom>Inventory Overview</Typography>
+                          <Grid container spacing={1}>
+                            <Grid size={{ xs: 6 }}>
+                              <Typography variant="body2" color="textSecondary">Total Items</Typography>
+                              <Typography variant="h6">{reportData.stock_level_summary.total_items_tracked || 0}</Typography>
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                              <Typography variant="body2" color="textSecondary">Total Value</Typography>
+                              <Typography variant="h6">₵{(reportData.stock_level_summary.total_inventory_value || 0).toLocaleString()}</Typography>
+                            </Grid>
+                          </Grid>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+                </Grid>
+              )}
+            </Box>
+          )}
+
+          {activeTab === 1 && data.include_charts && (
+            <Box>
+              <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Visual Analytics</Typography>
+              
+              {currentReportType === 'stock-level' ? (
+                <StockLevelAnalytics />
+              ) : (
+                <ComprehensiveAnalytics />
+              )}
+            </Box>
+          )}
+
+          {activeTab === 2 && data.include_tables && (
+            <Box>
+              <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Detailed Data Tables</Typography>
+              
+              {currentReportType === 'stock-level' ? (
+                <StockLevelTables />
+              ) : (
+                <ComprehensiveTables />
+              )}
+            </Box>
+          )}
+
+          {activeTab === 3 && (
+            <Box>
+              <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>Report Details</Typography>
+              
+              {currentReportType === 'stock-level' ? (
+                <StockLevelDetails />
+              ) : (
+                <ComprehensiveDetails />
+              )}
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
+  );
+};
 
   const preview = getReportPreview();
 
