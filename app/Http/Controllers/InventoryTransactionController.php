@@ -123,105 +123,216 @@ class InventoryTransactionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    // public function store(Request $request)
+    // {
+        
+    //     $validator = Validator::make($request->all(), [
+    //         'university_id' => 'required|exists:universities,university_id',
+    //         'item_id' => 'required|exists:inventory_items,item_id',
+    //         'department_id' => 'required|exists:departments,department_id',
+    //         'transaction_type' => 'required|in:' . implode(',', array_keys(InventoryTransaction::getTransactionTypes())),
+    //         'quantity' => 'required|integer|min:1',
+    //         'unit_cost' => 'required|numeric|min:0',
+    //         'transaction_date' => 'required|date',
+    //         'reference_number' => 'nullable|string|max:100',
+    //         'reference_id' => 'nullable|string|max:50',
+    //         'batch_number' => 'nullable|string|max:100',
+    //         'expiry_date' => 'nullable|date|after_or_equal:today',
+    //         'notes' => 'nullable|string|max:1000',
+    //         'source_location_id' => 'nullable|exists:locations,location_id',
+    //         'destination_location_id' => 'nullable|exists:locations,location_id',
+    //         'status' => 'sometimes|in:' . implode(',', array_keys(InventoryTransaction::getStatusOptions())),
+    //         'approved_by' => 'nullable|exists:users,name',
+    //     ], [
+    //         'item_id.required' => 'The inventory item is required.',
+    //         'item_id.exists' => 'The selected inventory item does not exist.',
+    //         'department_id.required' => 'The department is required.',
+    //         'department_id.exists' => 'The selected department does not exist.',
+    //         'transaction_type.required' => 'The transaction type is required.',
+    //         'quantity.min' => 'Quantity must be at least 1.',
+    //         'unit_cost.min' => 'Unit cost cannot be negative.',
+    //         'expiry_date.after_or_equal' => 'Expiry date must be today or in the future.',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return redirect()->route('inventory-transactions.index')
+    //             ->withErrors($validator)
+    //             ->with('error', $validator->errors());
+    //     }
+
+    //     try {
+    //     //     DB::beginTransaction();
+
+    //         // Check if item exists and is active
+    //         $item = InventoryItem::where('item_id', $request->item_id)
+    //             ->where('university_id', $request->university_id)
+    //             ->first();
+
+    //         if (!$item) {
+    //             return redirect()->route('inventory-transactions.index')->with('error','Inventory item not found or does not belong to this university');
+    //         }
+
+    //         if (!$item->is_active) {
+    //             return redirect()->route('inventory-transactions.index')->with('error','Cannot create transaction for inactive inventory item');
+    //         }
+
+    //         // Validate location access if provided
+    //         if ($request->source_location_id) {
+    //             $sourceLocation = Location::where('location_id', $request->source_location_id)
+    //                 ->where('university_id', $request->university_id)
+    //                 ->first();
+
+    //             if (!$sourceLocation) {
+    //                 return redirect()->route('inventory-transactions.index')->with('error','Source location not found or does not belong to this university');
+    //             }
+    //         }
+
+    //         if ($request->destination_location_id) {
+    //             $destinationLocation = Location::where('location_id', $request->destination_location_id)
+    //                 ->where('university_id', $request->university_id)
+    //                 ->first();
+
+    //             if (!$destinationLocation) {
+    //                 return redirect()->route('inventory-transactions.index')->with('error','Destination location not found or does not belong to this university');
+    //             }
+    //         }
+
+    //         // Validate department belongs to university
+    //         $department = Department::where('department_id', $request->department_id)
+    //             ->where('university_id', $request->university_id)
+    //             ->first();
+
+    //         if (!$department) {
+    //             return redirect()->route('inventory-transactions.index')->with('error','Department not found or does not belong to this university');
+    //         }
+
+    //         // Calculate total value
+    //         $totalValue = $request->quantity * $request->unit_cost;
+
+    //         // Create the transaction
+    //         $transaction = new InventoryTransaction();
+    //         $transaction->fill($request->all());
+    //         $transaction->total_value = $totalValue;
+            
+    //         // Set default status if not provided
+    //         if (!$request->has('status')) {
+    //             $transaction->status = InventoryTransaction::STATUS_COMPLETED;
+    //         }
+
+    //         // $transaction->performed_by = Auth::user()->name??'';
+    //         $transaction->save();
+
+    //         // Update inventory item stock levels based on transaction type
+    //         $this->updateInventoryStock($transaction);
+
+    //         // Load relationships for response
+    //         $transaction->load([
+    //             'item', 
+    //             'department', 
+    //             'university', 
+    //             'sourceLocation', 
+    //             'destinationLocation',
+    //             'performedBy',
+    //             'approvedBy'
+    //         ]);
+
+    //         // DB::commit();
+
+    //         return redirect()->route('inventory-transactions.index')
+    //         ->with('success', 'Inventory transaction created successfully');
+
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //        return redirect()->route('inventory-transactions.index')
+    //         ->with('error', 'Failed to create transaction: ' . $e->getMessage());
+    //             }
+    // }
+
     public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'university_id' => 'required|exists:universities,university_id',
-            'item_id' => 'required|exists:inventory_items,item_id',
-            'department_id' => 'required|exists:departments,department_id',
-            'transaction_type' => 'required|in:' . implode(',', array_keys(InventoryTransaction::getTransactionTypes())),
-            'quantity' => 'required|integer|min:1',
-            'unit_cost' => 'required|numeric|min:0',
-            'transaction_date' => 'required|date',
-            'reference_number' => 'nullable|string|max:100',
-            'reference_id' => 'nullable|string|max:50',
-            'batch_number' => 'nullable|string|max:100',
-            'expiry_date' => 'nullable|date|after_or_equal:today',
-            'notes' => 'nullable|string|max:1000',
-            'source_location_id' => 'nullable|exists:locations,location_id',
-            'destination_location_id' => 'nullable|exists:locations,location_id',
-            'status' => 'sometimes|in:' . implode(',', array_keys(InventoryTransaction::getStatusOptions())),
-            'approved_by' => 'nullable|exists:users,name',
-        ], [
-            'item_id.required' => 'The inventory item is required.',
-            'item_id.exists' => 'The selected inventory item does not exist.',
-            'department_id.required' => 'The department is required.',
-            'department_id.exists' => 'The selected department does not exist.',
-            'transaction_type.required' => 'The transaction type is required.',
-            'quantity.min' => 'Quantity must be at least 1.',
-            'unit_cost.min' => 'Unit cost cannot be negative.',
-            'expiry_date.after_or_equal' => 'Expiry date must be today or in the future.',
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'university_id' => 'required|exists:universities,university_id',
+        'item_id' => 'required|exists:inventory_items,item_id',
+        'department_id' => 'required|exists:departments,department_id',
+        'transaction_type' => 'required|in:' . implode(',', array_keys(InventoryTransaction::getTransactionTypes())),
+        'quantity' => 'required|integer|min:1',
+        'unit_cost' => 'required|numeric|min:0',
+        'transaction_date' => 'required|date',
+        'reference_number' => 'nullable|string|max:100',
+        'reference_id' => 'nullable|string|max:50',
+        'batch_number' => 'nullable|string|max:100',
+        'expiry_date' => 'nullable|date|after_or_equal:today',
+        'notes' => 'nullable|string|max:1000',
+        'source_location_id' => 'nullable|exists:locations,location_id',
+        'destination_location_id' => 'nullable|exists:locations,location_id',
+        'status' => 'sometimes|in:' . implode(',', array_keys(InventoryTransaction::getStatusOptions())),
+        'approved_by' => 'nullable|exists:users,name',
+    ], [
+        'item_id.required' => 'The inventory item is required.',
+        'item_id.exists' => 'The selected inventory item does not exist.',
+        'department_id.required' => 'The department is required.',
+        'department_id.exists' => 'The selected department does not exist.',
+        'transaction_type.required' => 'The transaction type is required.',
+        'quantity.min' => 'Quantity must be at least 1.',
+        'unit_cost.min' => 'Unit cost cannot be negative.',
+        'expiry_date.after_or_equal' => 'Expiry date must be today or in the future.',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+    if ($validator->fails()) {
+        return redirect()->route('inventory-transactions.index')
+            ->withErrors($validator)
+            ->with('error', 'Validation failed. Please check the form.');
+    }
+
+    // Pre-transaction validations
+    $item = InventoryItem::where('item_id', $request->item_id)
+        ->where('university_id', $request->university_id)
+        ->first();
+
+    if (!$item) {
+        return redirect()->route('inventory-transactions.index')
+            ->with('error', 'Inventory item not found or does not belong to this university');
+    }
+
+    if (!$item->is_active) {
+        return redirect()->route('inventory-transactions.index')
+            ->with('error', 'Cannot create transaction for inactive inventory item');
+    }
+
+    if ($request->source_location_id) {
+        $sourceLocation = Location::where('location_id', $request->source_location_id)
+            ->where('university_id', $request->university_id)
+            ->first();
+
+        if (!$sourceLocation) {
+            return redirect()->route('inventory-transactions.index')
+                ->with('error', 'Source location not found or does not belong to this university');
         }
+    }
 
-        try {
-            DB::beginTransaction();
+    if ($request->destination_location_id) {
+        $destinationLocation = Location::where('location_id', $request->destination_location_id)
+            ->where('university_id', $request->university_id)
+            ->first();
 
-            // Check if item exists and is active
-            $item = InventoryItem::where('item_id', $request->item_id)
-                ->where('university_id', $request->university_id)
-                ->first();
+        if (!$destinationLocation) {
+            return redirect()->route('inventory-transactions.index')
+                ->with('error', 'Destination location not found or does not belong to this university');
+        }
+    }
 
-            if (!$item) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Inventory item not found or does not belong to this university'
-                ], 404);
-            }
+    $department = Department::where('department_id', $request->department_id)
+        ->where('university_id', $request->university_id)
+        ->first();
 
-            if (!$item->is_active) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot create transaction for inactive inventory item'
-                ], 422);
-            }
+    if (!$department) {
+        return redirect()->route('inventory-transactions.index')
+            ->with('error', 'Department not found or does not belong to this university');
+    }
 
-            // Validate location access if provided
-            if ($request->source_location_id) {
-                $sourceLocation = Location::where('location_id', $request->source_location_id)
-                    ->where('university_id', $request->university_id)
-                    ->first();
-
-                if (!$sourceLocation) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Source location not found or does not belong to this university'
-                    ], 404);
-                }
-            }
-
-            if ($request->destination_location_id) {
-                $destinationLocation = Location::where('location_id', $request->destination_location_id)
-                    ->where('university_id', $request->university_id)
-                    ->first();
-
-                if (!$destinationLocation) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Destination location not found or does not belong to this university'
-                    ], 404);
-                }
-            }
-
-            // Validate department belongs to university
-            $department = Department::where('department_id', $request->department_id)
-                ->where('university_id', $request->university_id)
-                ->first();
-
-            if (!$department) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Department not found or does not belong to this university'
-                ], 404);
-            }
-
+    try {
+        // Use DB transaction helper - automatically handles commit/rollback
+        DB::transaction(function () use ($request) {
             // Calculate total value
             $totalValue = $request->quantity * $request->unit_cost;
 
@@ -235,42 +346,30 @@ class InventoryTransactionController extends Controller
                 $transaction->status = InventoryTransaction::STATUS_COMPLETED;
             }
 
-            // $transaction->performed_by = Auth::user()->name??'';
+            // Set performed_by if you have authentication
+            if (Auth::check()) {
+                $transaction->performed_by = Auth::user()->name;
+            }
+
             $transaction->save();
 
             // Update inventory item stock levels based on transaction type
             $this->updateInventoryStock($transaction);
+        });
 
-            // Load relationships for response
-            $transaction->load([
-                'item', 
-                'department', 
-                'university', 
-                'sourceLocation', 
-                'destinationLocation',
-                'performedBy',
-                'approvedBy'
-            ]);
+        return redirect()->route('inventory-transactions.index')
+            ->with('success', 'Inventory transaction created successfully');
 
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Inventory transaction created successfully',
-                'data' => $transaction
-            ], 201);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create inventory transaction',
-                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        Log::error('Transaction creation failed: ' . $e->getMessage(), [
+            'exception' => $e,
+            'request_data' => $request->all()
+        ]);
+        
+        return redirect()->route('inventory-transactions.index')
+            ->with('error', 'Failed to create transaction: ' . $e->getMessage());
     }
-
+}
     // end of store
 
     /**
@@ -290,13 +389,13 @@ class InventoryTransactionController extends Controller
         ])->find($id);
 
         if (!$transaction) {
-            return response()->json([
+            return back()->with([
                 'success' => false,
                 'message' => 'Inventory transaction not found'
             ], 404);
         }
 
-        return response()->json([
+        return back()->with([
             'success' => true,
             'data' => $transaction
         ]);
@@ -387,7 +486,7 @@ class InventoryTransactionController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             
-            return redirect()->route('inventory-transactions.index')->with('error', 'Failed to update inventory transaction');
+            return redirect()->route('inventory-transactions.index')->with('error', $e->getMessage());
         }
     }
 
@@ -701,7 +800,7 @@ class InventoryTransactionController extends Controller
             ->get()
             ->pluck('count', 'status');
 
-        return response()->json([
+        return back()->with([
             'success' => true,
             'data' => [
                 'overview' => $stats,

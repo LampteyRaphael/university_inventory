@@ -73,13 +73,23 @@ import PageHeader from "@/Components/PageHeader";
 import SummaryCard from "@/Components/SummaryCard";
 import EnhancedDataGrid from "@/Components/EnhancedDataGrid";
 import formatNumber from "../Service/FormatNumber";
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import SellIcon from '@mui/icons-material/Sell';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import TuneIcon from '@mui/icons-material/Tune';
+import ReplayIcon from '@mui/icons-material/Replay';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+
 
 export default function InventoryTransactions({ transactions=[], auth, items, departments, locations }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { flash } = usePage().props;
 
-    const showAlert = (message, severity = "success") => {
+  const showAlert = (message, severity = "success") => {
     setAlert({ open: true, message, severity });
   };
   // State management
@@ -95,17 +105,28 @@ export default function InventoryTransactions({ transactions=[], auth, items, de
   const fileInputRef = useRef(null);
 
   // Transaction types and statuses
+  // const transactionTypes = [
+  //   { value: 'purchase', label: 'Purchase', color: 'success' },
+  //   { value: 'sale', label: 'Sale', color: 'primary' },
+  //   { value: 'transfer', label: 'Transfer', color: 'info' },
+  //   { value: 'adjustment', label: 'Adjustment', color: 'warning' },
+  //   { value: 'return', label: 'Return', color: 'secondary' },
+  //   { value: 'write_off', label: 'Write Off', color: 'error' },
+  //   { value: 'consumption', label: 'Consumption', color: 'default' },
+  //   { value: 'production', label: 'Production', color: 'info' },
+  //   { value: 'donation', label: 'Donation', color: 'success' },
+  // ];
   const transactionTypes = [
-    { value: 'purchase', label: 'Purchase', color: 'success' },
-    { value: 'sale', label: 'Sale', color: 'primary' },
-    { value: 'transfer', label: 'Transfer', color: 'info' },
-    { value: 'adjustment', label: 'Adjustment', color: 'warning' },
-    { value: 'return', label: 'Return', color: 'secondary' },
-    { value: 'write_off', label: 'Write Off', color: 'error' },
-    { value: 'consumption', label: 'Consumption', color: 'default' },
-    { value: 'production', label: 'Production', color: 'info' },
-    { value: 'donation', label: 'Donation', color: 'success' },
-  ];
+  { value: 'purchase', label: 'Purchase', color: 'success', icon: <ShoppingCartIcon /> },
+  { value: 'sale', label: 'Sale', color: 'primary', icon: <SellIcon /> },
+  { value: 'transfer', label: 'Transfer', color: 'info', icon: <SwapHorizIcon /> },
+  { value: 'adjustment', label: 'Adjustment', color: 'warning', icon: <TuneIcon /> },
+  { value: 'return', label: 'Return', color: 'secondary', icon: <ReplayIcon /> },
+  { value: 'write_off', label: 'Write Off', color: 'error', icon: <DeleteForeverIcon /> },
+  { value: 'consumption', label: 'Consumption', color: 'default', icon: <RestaurantIcon /> },
+  { value: 'production', label: 'Production', color: 'info', icon: <PrecisionManufacturingIcon /> },
+  { value: 'donation', label: 'Donation', color: 'success', icon: <VolunteerActivismIcon /> },
+];
 
   const transactionStatuses = [
     { value: 'pending', label: 'Pending', color: 'warning', icon: <PendingIcon /> },
@@ -177,10 +198,10 @@ const { data, setData, post, put, processing, errors, reset, clearErrors } = use
 
   // Calculate total values for summary cards
   const { totalTransactions, totalValue, pendingTransactions, recentTransactions } = useMemo(() => {
-    const total = rows.length || 0;
-    const value = rows.reduce((sum, row) => sum + (row.total_value || 0), 0);
-    const pending = rows.filter(row => row.status === 'pending').length;
-    const recent = rows.filter(row => 
+    const total = rows?.length || 0;
+    const value = rows?.reduce((sum, row) => sum + (row.total_value || 0), 0);
+    const pending = rows?.filter(row => row.status === 'pending').length;
+    const recent = rows?.filter(row => 
       moment().diff(moment(row.transaction_date), 'days') <= 7
     ).length;
     
@@ -418,10 +439,10 @@ const columns = useMemo(() => [
     if (!searchText) return rows;
     
     const query = searchText.toLowerCase();
-    return rows.filter(row => 
+    return rows?.filter(row => 
       row.reference_number?.toLowerCase().includes(query) ||
       row.batch_number?.toLowerCase().includes(query) ||
-      (items.find(i => i.item_id === row.item_id)?.name || "").toLowerCase().includes(query) ||
+      (items?.find(i => i.item_id === row.item_id)?.name || "").toLowerCase().includes(query) ||
       (departments?.find(d => d.department_id === row.department_id)?.name || "").toLowerCase().includes(query)
     );
   }, [rows, searchText, items, departments]);
@@ -580,7 +601,9 @@ const handleSubmit = useCallback(() => {
   
   if (Object.keys(validationErrors).length > 0) {
     // Set validation errors (you might want to handle this differently)
-    console.log('Validation errors:', validationErrors);
+    // console.log('Validation errors:', validationErrors);
+    const errorMessage = Object.values(validationErrors).join('\n');
+     setAlert({ open: true, message: errorMessage, severity: 'error' });
     return;
   }
 
@@ -613,7 +636,7 @@ const handleSubmit = useCallback(() => {
         setOpenDialog(false);
         reset();
       },
-      onError: (errors) => {
+      onError: (errors) => { 
         setAlert({ open: true, message: response.props.flash.error, severity: 'error' });
       }
     });
@@ -763,7 +786,7 @@ const handleSubmit = useCallback(() => {
           searchText={searchText}
           onSearchClear={() => setSearchText('')}
           filteredCount={filteredRows.length}
-          totalCount={rows.length}
+          totalCount={rows?.length??0}
         />
 
           {/* Summary Cards */}
@@ -890,7 +913,7 @@ const handleSubmit = useCallback(() => {
                     >
                       {transactionTypes?.map(type => (
                         <MenuItem key={type.value} value={type.value}>
-                          {type.label}
+                         {type.icon} {type.label}
                         </MenuItem>
                       ))}
                     </Select>
@@ -932,7 +955,10 @@ const handleSubmit = useCallback(() => {
                     >
                       {items?.map(item => (
                         <MenuItem key={item.item_id} value={item.item_id}>
-                          {item.name} ({item.item_code})
+                          <Box display="flex" alignItems="center">
+                            {item.icon}
+                            <Box ml={1}>{item.item_code}</Box>
+                          </Box>
                         </MenuItem>
                       ))}
                     </Select>
@@ -1094,7 +1120,10 @@ const handleSubmit = useCallback(() => {
                     <InputLabel>Source Location</InputLabel>
                     <Select 
                       name="source_location_id" 
-                      value={data.source_location_id || ""} 
+                      value={
+                        locations?.some(loc=>loc.location_id=== data.source_location_id)? 
+                        data.source_location_id:''
+                      } 
                       label="Source Location" 
                       onChange={handleInputChange}
                     >
@@ -1108,12 +1137,12 @@ const handleSubmit = useCallback(() => {
                   </FormControl>
                 </Grid>
 
-                <Grid size={{ xs:12, sm:12, md:6}}>
+                {/* <Grid size={{ xs:12, sm:12, md:6}}>
                   <FormControl fullWidth>
                     <InputLabel>Destination Location</InputLabel>
                     <Select 
                       name="destination_location_id" 
-                      value={data.destination_location_id ||""} 
+                      value={data.destination_location_id ||''} 
                       label="Destination Location" 
                       onChange={handleInputChange}
                     >
@@ -1125,7 +1154,31 @@ const handleSubmit = useCallback(() => {
                       ))}
                     </Select>
                   </FormControl>
+                </Grid> */}
+
+                <Grid size={{ xs:12, sm:12, md:6 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Destination Location</InputLabel>
+                    <Select
+                      name="destination_location_id"
+                      value={
+                        locations?.some(loc => loc.location_id === data.destination_location_id)
+                          ? data.destination_location_id
+                          : ''
+                      }
+                      label="Destination Location"
+                      onChange={handleInputChange}
+                    >
+                      <MenuItem value="">None</MenuItem>
+                      {locations?.map(location => (
+                        <MenuItem key={location.location_id} value={location.location_id}>
+                          {location.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Grid>
+
 
                 <Grid size={{ xs:12, sm:12, md:6}}>
                   <TextField 

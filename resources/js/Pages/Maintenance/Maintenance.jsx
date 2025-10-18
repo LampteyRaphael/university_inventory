@@ -90,10 +90,10 @@ const useMaintenanceManager = (initialRecords, auth) => {
     if (!searchText) return rows;
     const query = searchText.toLowerCase();
     return rows.filter(record =>
-      record.maintenance_code?.toLowerCase().includes(query) ||
-      record.description?.toLowerCase().includes(query) ||
-      record.technician?.toLowerCase().includes(query) ||
-      record.vendor?.toLowerCase().includes(query)
+      record?.maintenance_code?.toLowerCase().includes(query) ||
+      record?.description?.toLowerCase().includes(query) ||
+      record?.technician?.toLowerCase().includes(query) ||
+      record?.vendor?.toLowerCase().includes(query)
     );
   }, [rows, searchText]);
 
@@ -224,7 +224,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
             <FormControl fullWidth error={!!errors.university_id}>
               <InputLabel>University</InputLabel>
               <Select 
-                value={data.university_id} 
+                value={data.university_id||""} 
                 label="University" 
                 onChange={(e) => setData('university_id', e.target.value)}
               >
@@ -242,7 +242,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
             <TextField
               fullWidth
               label="Maintenance Code"
-              value={data.maintenance_code}
+              value={data.maintenance_code||""}
               onChange={(e) => setData('maintenance_code', e.target.value)}
               error={!!errors.maintenance_code}
               helperText={errors.maintenance_code}
@@ -253,7 +253,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
             <FormControl fullWidth error={!!errors.item_id}>
               <InputLabel>Item</InputLabel>
               <Select
-                value={data.item_id}
+                value={data.item_id||""}
                 label="Item"
                 onChange={(e) => setData('item_id', e.target.value)}
               >
@@ -272,7 +272,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
             <FormControl fullWidth error={!!errors.department_id}>
               <InputLabel>Department</InputLabel>
               <Select
-                value={data.department_id}
+                value={data.department_id||""}
                 label="Department"
                 onChange={(e) => setData('department_id', e.target.value)}
               >
@@ -291,7 +291,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
             <FormControl fullWidth>
               <InputLabel>Maintenance Type</InputLabel>
               <Select
-                value={data.maintenance_type}
+                value={data.maintenance_type || ""}
                 label="Maintenance Type"
                 onChange={(e) => setData('maintenance_type', e.target.value)}
               >
@@ -308,7 +308,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
             <FormControl fullWidth>
               <InputLabel>Priority</InputLabel>
               <Select
-                value={data.priority}
+                value={data.priority||""}
                 label="Priority"
                 onChange={(e) => setData('priority', e.target.value)}
               >
@@ -324,7 +324,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select
-                value={data.status}
+                value={data.status || ""}
                 label="Status"
                 onChange={(e) => setData('status', e.target.value)}
               >
@@ -338,12 +338,13 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
           </Grid>
 
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            {data.scheduled_date}
             <TextField
               fullWidth
               type="date"
               label="Scheduled Date"
               InputLabelProps={{ shrink: true }}
-              value={data.scheduled_date}
+              value={moment(data.scheduled_date).format("YYYY-MM-DD")|| null}
               onChange={(e) => setData('scheduled_date', e.target.value)}
             />
           </Grid>
@@ -354,7 +355,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
               type="date"
               label="Completed Date"
               InputLabelProps={{ shrink: true }}
-              value={data.completed_date}
+              value={moment(data.completed_date).format("YYYY-MM-DD")}
               onChange={(e) => setData('completed_date', e.target.value)}
             />
           </Grid>
@@ -365,7 +366,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
               type="date"
               label="Next Maintenance Date"
               InputLabelProps={{ shrink: true }}
-              value={data.next_maintenance_date}
+              value={moment(data.next_maintenance_date).format("YYYY-MM-DD")}
               onChange={(e) => setData('next_maintenance_date', e.target.value)}
             />
           </Grid>
@@ -375,7 +376,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
               fullWidth
               type="number"
               label="Labor Cost"
-              value={data.labor_cost}
+              value={data.labor_cost||""}
               onChange={(e) => setData('labor_cost', e.target.value)}
               InputProps={{ startAdornment: <InputAdornment position="start">₵</InputAdornment> }}
             />
@@ -386,7 +387,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
               fullWidth
               type="number"
               label="Parts Cost"
-              value={data.parts_cost}
+              value={data.parts_cost||""}
               onChange={(e) => setData('parts_cost', e.target.value)}
               InputProps={{ startAdornment: <InputAdornment position="start">₵</InputAdornment> }}
             />
@@ -397,7 +398,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
               fullWidth
               type="number"
               label="Downtime Hours"
-              value={data.downtime_hours}
+              value={data.downtime_hours||""}
               onChange={(e) => setData('downtime_hours', e.target.value)}
             />
           </Grid>
@@ -406,7 +407,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
             <TextField
               fullWidth
               label="Technician"
-              value={data.technician}
+              value={data.technician||""}
               onChange={(e) => setData('technician', e.target.value)}
             />
           </Grid>
@@ -415,7 +416,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
             <TextField
               fullWidth
               label="Vendor"
-              value={data.vendor}
+              value={data.vendor||""}
               onChange={(e) => setData('vendor', e.target.value)}
             />
           </Grid>
@@ -426,7 +427,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
               multiline
               rows={3}
               label="Description"
-              value={data.description}
+              value={data.description || ""}
               onChange={(e) => setData('description', e.target.value)}
               error={!!errors.description}
               helperText={errors.description}
@@ -450,7 +451,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
               multiline
               rows={2}
               label="Root Cause"
-              value={data.root_cause}
+              value={data.root_cause || ""}
               onChange={(e) => setData('root_cause', e.target.value)}
             />
           </Grid>
@@ -461,7 +462,7 @@ const MaintenanceFormDialog = ({ open, onClose, record = null, items = [], depar
               multiline
               rows={2}
               label="Recommendations"
-              value={data.recommendations}
+              value={data.recommendations ||""}
               onChange={(e) => setData('recommendations', e.target.value)}
             />
           </Grid>
@@ -574,7 +575,7 @@ export default function MaintenanceRecords({ records, auth, items=[], department
   const handleExport = useCallback(() => {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rows?.map(record => ({
-      'Maintenance Code': record.maintenance_code,
+      'Maintenance Code': record?.maintenance_code,
       'Item': items?.find(i => i.item_id === record.item_id)?.name,
       'Type': record.maintenance_type,
       'Priority': record.priority,
@@ -602,7 +603,6 @@ export default function MaintenanceRecords({ records, auth, items=[], department
 
   const handleDelete = async () => {
     if (!selectedRecord) return;
-
     try {
       router.delete(route('maintenance.destroy', selectedRecord.maintenance_id), {
         preserveScroll: true,

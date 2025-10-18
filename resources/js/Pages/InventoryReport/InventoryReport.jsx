@@ -297,13 +297,13 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
   setData({
     ...data,
     report_type: type,
-    date_range: 'last30days', // Change this to match backend validation
+    date_range: 'last30days',
   });
 
   post(route('inventory-report.generate'), {
     preserveScroll: true,
     onSuccess: (response) => {
-      showAlert(`${reportTypes.find(t => t.value === type)?.label} generated successfully!`, 'success');
+      showAlert(`${reportTypes?.find(t => t.value === type)?.label} generated successfully!`, 'success');
     },
     onError: (errors) => {
       console.error('Backend errors:', errors);

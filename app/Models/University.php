@@ -9,9 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class University extends Model
 {
-    use HasFactory, SoftDeletes;
-
-    use Auditable;
+    use HasFactory, SoftDeletes, Auditable;
     
     protected $primaryKey = 'university_id';
     public $incrementing = false;

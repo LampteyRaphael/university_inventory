@@ -11,8 +11,7 @@ use Illuminate\Support\Str;
 
 class InventoryItem extends Model
 {
-    use HasFactory, SoftDeletes;
-    use Auditable;
+    use HasFactory, SoftDeletes , Auditable;
     protected $table = 'inventory_items';
     protected $primaryKey = 'item_id';
     public $incrementing = false; // Because you're using UUID
