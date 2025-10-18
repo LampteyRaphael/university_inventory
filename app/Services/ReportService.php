@@ -410,7 +410,7 @@ class ReportService
             )
             ->groupBy(DB::raw("DATE_FORMAT(inventory_transactions.transaction_date, '%Y-%m')"))
             ->orderBy(DB::raw("DATE_FORMAT(inventory_transactions.transaction_date, '%Y-%m')")) // Order by the same expression
-            ->limit(12)
+            // ->limit(12)
             ->get()
             ->map(function ($item) {
                 return [
@@ -464,8 +464,8 @@ class ReportService
                   });
             })
             ->orderBy('available_quantity')
-            ->orderBy('total_value', 'desc')
-            ->limit(15);
+            ->orderBy('total_value', 'desc');
+            // ->limit(15);
 
         if (Auth::check() && Auth::user()->university_id) {
             $query->where('university_id', Auth::user()->university_id);
@@ -502,7 +502,7 @@ class ReportService
         return $activities
             ->with(['performedBy', 'item'])
             ->orderBy('inventory_transactions.transaction_date', 'desc')
-            ->limit(20)
+            // ->limit(20)
             ->get()
             ->map(function ($transaction) {
                 return [
@@ -927,7 +927,7 @@ class ReportService
      */
     private function formatAuditData(Collection $auditLogs): array
     {
-        return $auditLogs->take(50)->map(function ($audit) {
+        return $auditLogs->take(500)->map(function ($audit) {
             return [
                 'id' => $audit->audit_id,
                 'timestamp' => $audit->performed_at->format('Y-m-d H:i:s'),
@@ -1449,37 +1449,37 @@ class ReportService
     /**
      * Get category spend analysis
      */
-    // private function getCategorySpendAnalysis(Collection $purchaseOrders): array
-    // {
-    //     $categorySpend = [];
+    private function getCategorySpendAnalysis(Collection $purchaseOrders): array
+    {
+        $categorySpend = [];
 
-    //     foreach ($purchaseOrders as $order) {
-    //         foreach ($order->items as $item) {
-    //             $categoryName = $item->item->category->name ?? 'Uncategorized';
-    //             if (!isset($categorySpend[$categoryName])) {
-    //                 $categorySpend[$categoryName] = [
-    //                     'category' => $categoryName,
-    //                     'total_spend' => 0,
-    //                     'order_count' => 0,
-    //                     'item_count' => 0,
-    //                 ];
-    //             }
+        foreach ($purchaseOrders as $order) {
+            foreach ($order->items as $item) {
+                $categoryName = $item->item->category->name ?? 'Uncategorized';
+                if (!isset($categorySpend[$categoryName])) {
+                    $categorySpend[$categoryName] = [
+                        'category' => $categoryName,
+                        'total_spend' => 0,
+                        'order_count' => 0,
+                        'item_count' => 0,
+                    ];
+                }
 
-    //             $categorySpend[$categoryName]['total_spend'] += $item->line_total;
-    //             $categorySpend[$categoryName]['item_count'] += $item->quantity_ordered;
-    //         }
-    //     }
+                $categorySpend[$categoryName]['total_spend'] += $item->line_total;
+                $categorySpend[$categoryName]['item_count'] += $item->quantity_ordered;
+            }
+        }
 
-    //     foreach ($categorySpend as $category => $data) {
-    //         $categorySpend[$category]['order_count'] = $purchaseOrders->filter(function ($order) use ($category) {
-    //             return $order->items->contains(function ($item) use ($category) {
-    //                 return ($item->item->category->name ?? 'Uncategorized') === $category;
-    //             });
-    //         })->count();
-    //     }
+        foreach ($categorySpend as $category => $data) {
+            $categorySpend[$category]['order_count'] = $purchaseOrders->filter(function ($order) use ($category) {
+                return $order->items->contains(function ($item) use ($category) {
+                    return ($item->item->category->name ?? 'Uncategorized') === $category;
+                });
+            })->count();
+        }
 
-    //     return array_values($categorySpend);
-    // }
+        return array_values($categorySpend);
+    }
     
 
     /**
@@ -1665,7 +1665,7 @@ private function getYearOverYearAnalysis($query): array
         )
         ->groupBy(DB::raw('YEAR(inventory_transactions.transaction_date)'))
         ->orderBy('year', 'desc')
-        ->limit(3)
+        // ->limit(3)
         ->get()
         ->toArray();
 }
