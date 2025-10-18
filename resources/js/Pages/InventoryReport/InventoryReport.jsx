@@ -126,12 +126,36 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
     setTimeout(() => setAlert({ ...alert, open: false }), 5000);
   };
   
-  const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
+  // const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
+  //   report_type: 'comprehensive',
+  //   categories: [],
+  //   locations: [],
+  //   departments: [],
+  //   date_range: 'last30days',
+  //   custom_start_date: '',
+  //   custom_end_date: '',
+  //   include_charts: true,
+  //   include_tables: true,
+  //   include_summary: true,
+  //   include_export: true,
+  //   export_format: 'pdf',
+  //   chart_types: ['bar', 'pie'],
+  //   data_depth: 'summary',
+  //   compare_period: false,
+  //   suppliers: [],
+  //   maintenance_types: [],
+  //   priority_levels: [],
+  //   order_types: [],
+  // });
+
+  // Enhanced report types with new additions
+ 
+ const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
     report_type: 'comprehensive',
     categories: [],
     locations: [],
     departments: [],
-    date_range: 'last30days',
+    date_range: 'last30days', // Change this here too
     custom_start_date: '',
     custom_end_date: '',
     include_charts: true,
@@ -146,9 +170,8 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
     maintenance_types: [],
     priority_levels: [],
     order_types: [],
-  });
-
-  // Enhanced report types with new additions
+});
+ 
   const reportTypes = [
     { 
       value: 'comprehensive', 
@@ -255,23 +278,39 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
     });
   };
 
-  const handleQuickReport = (type) => {
-    setData({
-      ...data,
-      report_type: type,
-      date_range: 'last30days',
-      include_charts: true,
-      include_tables: true,
-      include_summary: true,
-    });
+  // const handleQuickReport = (type) => {
+  //   setData({
+  //     ...data,
+  //     report_type: type,
+  //     date_range: 'last_30_days',
+  //   });
     
-    post(route('inventory-report.generate'), {
-      preserveScroll: true,
-      onSuccess: () => {
-        showAlert(`${reportTypes.find(t => t.value === type)?.label} generated successfully!`, 'success');
-      }
-    });
-  };
+  //   post(route('inventory-report.generate'), {
+  //     preserveScroll: true,
+  //     onSuccess: () => {
+  //       showAlert(`${reportTypes.find(t => t.value === type)?.label} generated successfully!`, 'success');
+  //     }
+  //   });
+  // };
+
+  const handleQuickReport = (type) => {
+  setData({
+    ...data,
+    report_type: type,
+    date_range: 'last30days', // Change this to match backend validation
+  });
+
+  post(route('inventory-report.generate'), {
+    preserveScroll: true,
+    onSuccess: (response) => {
+      showAlert(`${reportTypes.find(t => t.value === type)?.label} generated successfully!`, 'success');
+    },
+    onError: (errors) => {
+      console.error('Backend errors:', errors);
+      showAlert('Failed to generate report. Check console for details.', 'error');
+    }
+  });
+};
 
   const handleExportReport = () => {
     if (reportData) {

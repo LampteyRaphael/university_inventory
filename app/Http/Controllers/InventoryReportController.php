@@ -166,7 +166,7 @@ class InventoryReportController extends Controller
             // }
 
             // Redirect back to the index page with success message
-            return redirect()->route('inventory-report.index')->with([
+             return back()->with([
                 'success' => 'Report generated successfully!',
                 'generated_at' => now()->toISOString(),
                 'report_type' => $validated['report_type'],
