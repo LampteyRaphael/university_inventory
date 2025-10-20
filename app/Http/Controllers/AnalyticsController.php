@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Auth;
 class AnalyticsController extends Controller
 {
     public function getDashboardData(Request $request)
-    {
+    {        
         $timeRange = $request->get('time_range', 'last30days');
         $realTime = $request->boolean('real_time', false);
         

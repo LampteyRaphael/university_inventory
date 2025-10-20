@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Contracts\HasRoles;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 
-class User extends Authenticatable
+class User extends Authenticatable implements HasRoles
 {
     use HasFactory, Notifiable, SoftDeletes, Auditable;
 
@@ -31,8 +34,8 @@ class User extends Authenticatable
         'last_name',
         'phone',
         'position',
-        'role', // Keep for backward compatibility
-        'permissions',
+        'role', // Legacy column - will be phased out
+        'permissions', // User-specific permissions override
         'is_active',
         'hire_date',
         'termination_date',
@@ -57,60 +60,258 @@ class User extends Authenticatable
         'permissions' => 'array',
     ];
 
-    // Add appends for computed attributes
-    protected $appends = ['full_name', 'display_role'];
+    protected $appends = [
+        'full_name', 
+        'display_role',
+        'effective_permissions',
+    ];
 
-    public function university()
+    /**
+     * Boot method
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->user_id)) {
+                $model->user_id = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
+
+    /**
+     * Relationships
+     */
+    public function university(): BelongsTo
     {
         return $this->belongsTo(University::class, 'university_id', 'university_id');
     }
 
-    public function department()
+    public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'department_id', 'department_id');
     }
 
-    /**
-     * Role relationship - FIXED: Added proper foreign key and local key
-     */
-    public function role()
+    public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id', 'role_id');
     }
 
-    public function getFullNameAttribute()
+    /**
+     * Accessors
+     */
+    public function getFullNameAttribute(): string
     {
         if ($this->first_name && $this->last_name) {
             return "{$this->first_name} {$this->last_name}";
         }
-        return $this->name;
+        return $this->name ?: '';
+    }
+
+    public function getDisplayRoleAttribute(): string
+    {
+        return $this->getRoleName() ?: 'No Role';
+    }
+
+
+    public function getEffectivePermissionsAttribute(): array
+    {
+        $permissions = [];
+        
+        // Get permissions from role - FIXED: Handle both role relationship and legacy role column
+        $rolePermissions = $this->getRolePermissions();
+        $permissions = array_merge($permissions, $rolePermissions);
+        
+        // Get user-specific permissions from JSON column
+        $userPermissions = $this->permissions ?? [];
+        
+        // Handle case where permissions might be stored as JSON string
+        if (is_string($userPermissions)) {
+            $userPermissions = json_decode($userPermissions, true) ?? [];
+        }
+        
+        if (!is_array($userPermissions)) {
+            $userPermissions = [];
+        }
+        
+        // Check for wildcard permission
+        if (in_array('*', $userPermissions)) {
+            return ['*'];
+        }
+        
+        $permissions = array_merge($permissions, $userPermissions);
+        
+        return array_unique($permissions);
     }
 
     /**
-     * Get the role slug safely - FIXED VERSION
+     * Get permissions from role - FIXED VERSION
      */
-    public function getRoleSlug()
+    private function getRolePermissions(): array
     {
-        // Use role relationship if available
+        // If we have a role relationship, use it
+        if ($this->role_id) {
+            // Ensure role relationship is loaded with permissions
+            if (!$this->relationLoaded('role')) {
+                $this->load(['role.permissions']);
+            }
+            
+            // Check if role is properly loaded and is an object
+            if ($this->role && is_object($this->role) && method_exists($this->role, 'activePermissions')) {
+                try {
+                    return $this->role->activePermissions()->pluck('name')->toArray();
+                } catch (\Exception $e) {
+                    Log::error('Error getting role permissions via relationship', [
+                        'user_id' => $this->user_id,
+                        'role_id' => $this->role_id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+        }
+        
+        // Fallback: get permissions based on legacy role column
+        return $this->getLegacyRolePermissions();
+    }
+
+    /**
+     * Get permissions for legacy role string
+     */
+    private function getLegacyRolePermissions(): array
+    {
+        $legacyRole = $this->attributes['role'] ?? null;
+        
+        if (!$legacyRole) {
+            return [];
+        }
+
+        $rolePermissionsMap = [
+            'super_admin' => ['*'], // Super admin has all permissions
+            'inventory_manager' => [
+                'inventory.view', 'inventory.create', 'inventory.edit', 'inventory.delete',
+                'inventory.manage_categories', 'inventory.adjust_stock', 'inventory.export',
+                'purchase_orders.view', 'purchase_orders.create', 'purchase_orders.edit',
+                'purchase_orders.export', 'reports.view', 'reports.export',
+                'users.view', 'departments.view'
+            ],
+            'department_head' => [
+                'inventory.view', 'inventory.create', 'inventory.edit',
+                'purchase_orders.view', 'purchase_orders.approve',
+                'reports.view', 'reports.generate', 'budget.view',
+                'users.view', 'departments.view', 'departments.manage_members'
+            ],
+            'procurement_officer' => [
+                'inventory.view', 'inventory.create',
+                'purchase_orders.view', 'purchase_orders.create', 'purchase_orders.edit',
+                'purchase_orders.export', 'reports.view'
+            ],
+            'faculty' => [
+                'inventory.view', 'requests.create', 'requests.view'
+            ],
+            'staff' => [
+                'inventory.view', 'requests.create', 'requests.view'
+            ],
+            'student' => [
+                'inventory.view'
+            ],
+        ];
+
+        return $rolePermissionsMap[$legacyRole] ?? [];
+    }
+
+    /**
+     * Safe method to get role object for debugging
+     */
+    public function getRoleObject(): ?Role
+    {
+        if ($this->role_id) {
+            if (!$this->relationLoaded('role')) {
+                $this->load('role');
+            }
+            
+            return $this->role instanceof Role ? $this->role : null;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Enhanced permission check that handles both systems
+     */
+    public function hasPermission($permission): bool
+    {
+        $effectivePermissions = $this->effective_permissions;
+        
+        if (in_array('*', $effectivePermissions)) {
+            return true;
+        }
+
+        return in_array($permission, $effectivePermissions);
+    }
+
+
+
+
+    /**
+     * Get effective permissions combining role permissions and user-specific permissions
+     */
+    // public function getEffectivePermissionsAttribute(): array
+    // {
+    //     $permissions = [];
+        
+    //     // Get permissions from role
+    //     if ($this->role_id) {
+    //         if (!$this->relationLoaded('role')) {
+    //             $this->load(['role.permissions']);
+    //         }
+            
+    //         if ($this->role) {
+    //             $rolePermissions = $this->role->activePermissions()->pluck('name')->toArray();
+    //             $permissions = array_merge($permissions, $rolePermissions);
+    //         }
+    //     }
+        
+    //     // Get user-specific permissions from JSON column
+    //     $userPermissions = $this->permissions ?? [];
+        
+    //     // Handle case where permissions might be stored as JSON string
+    //     if (is_string($userPermissions)) {
+    //         $userPermissions = json_decode($userPermissions, true) ?? [];
+    //     }
+        
+    //     if (!is_array($userPermissions)) {
+    //         $userPermissions = [];
+    //     }
+        
+    //     // Check for wildcard permission
+    //     if (in_array('*', $userPermissions)) {
+    //         return ['*'];
+    //     }
+        
+    //     $permissions = array_merge($permissions, $userPermissions);
+        
+    //     return array_unique($permissions);
+    // }
+
+    /**
+     * Role & Permission Methods
+     */
+    public function getRoleSlug(): ?string
+    {
         if ($this->role_id && $this->relationLoaded('role') && $this->role) {
             return $this->role->slug;
         }
         
-        // Fallback to the old string role column
         return $this->attributes['role'] ?? null;
     }
 
-    /**
-     * Get the role name safely - FIXED VERSION
-     */
-    public function getRoleName()
+    public function getRoleName(): ?string
     {
-        // Use role relationship if available
         if ($this->role_id && $this->relationLoaded('role') && $this->role) {
-            return $this->role->name;
+            return $this->role->name??'';
         }
         
-        // Fallback: convert the enum string to a display name
         if (isset($this->attributes['role'])) {
             return ucwords(str_replace('_', ' ', $this->attributes['role']));
         }
@@ -118,62 +319,43 @@ class User extends Authenticatable
         return null;
     }
 
-    /**
-     * Check if user has a specific role - FIXED VERSION
-     */
-    public function hasRole($roleName)
+    public function hasRole($role): bool
     {
-        // Use role relationship if available
-        if ($this->role_id) {
-            // Ensure role relationship is loaded
-            if (!$this->relationLoaded('role')) {
-                $this->load('role');
-            }
-            
-            if ($this->role) {
-                if (is_array($roleName)) {
-                    return in_array($this->role->slug, $roleName) || in_array($this->role->name, $roleName);
+        if (is_array($role)) {
+            foreach ($role as $r) {
+                if ($this->checkSingleRole($r)) {
+                    return true;
                 }
-                return $this->role->slug === $roleName || $this->role->name === $roleName;
             }
+            return false;
         }
         
-        // Fallback: check against the string role column
-        if (isset($this->attributes['role'])) {
-            if (is_array($roleName)) {
-                return in_array($this->attributes['role'], $roleName);
-            }
-            return $this->attributes['role'] === $roleName;
-        }
-        
-        return false;
+        return $this->checkSingleRole($role);
     }
 
-    /**
-     * Check if user has any of the given roles - FIXED VERSION
-     */
-    public function hasAnyRole(array $roles)
+    private function checkSingleRole($role): bool
+    {
+        // Check role relationship first
+        if ($this->role_id && $this->relationLoaded('role') && $this->role) {
+            return $this->role->slug === $role || $this->role->name === $role;
+        }
+        
+        // Fallback to legacy role column
+        return isset($this->attributes['role']) && $this->attributes['role'] === $role;
+    }
+
+    public function hasAnyRole(array $roles): bool
     {
         return $this->hasRole($roles);
     }
 
-    /**
-     * Get user's role level - FIXED VERSION
-     */
-    public function getRoleLevel()
+    public function getRoleLevel(): int
     {
-        // Use role relationship if available
-        if ($this->role_id) {
-            if (!$this->relationLoaded('role')) {
-                $this->load('role');
-            }
-            
-            if ($this->role) {
-                return $this->role->level;
-            }
+        if ($this->role_id && $this->relationLoaded('role') && $this->role) {
+            return $this->role->level;
         }
         
-        // Fallback: approximate levels for string roles
+        // Fallback levels for legacy roles
         $roleLevels = [
             'super_admin' => 100,
             'inventory_manager' => 80,
@@ -187,64 +369,48 @@ class User extends Authenticatable
         return $roleLevels[$this->attributes['role'] ?? 'student'] ?? 0;
     }
 
-    /**
-     * Check role level hierarchy - FIXED VERSION
-     */
-    public function hasHigherRoleThan($level)
+    public function hasHigherRoleThan($level): bool
     {
         return $this->getRoleLevel() > $level;
     }
 
-    /**
-     * Check if user can manage another user based on role level - FIXED VERSION
-     */
-    public function canManageUser(User $otherUser)
+    public function canManageUser(User $otherUser): bool
     {
-        // Users can't manage themselves
         if ($this->user_id === $otherUser->user_id) {
             return false;
         }
 
-        // Super admins can manage everyone
         if ($this->hasRole('super_admin')) {
             return true;
         }
 
-        // Users can only manage others with lower role levels
         return $this->getRoleLevel() > $otherUser->getRoleLevel();
     }
 
     /**
-     * Check if user has a specific permission - FIXED VERSION
+     * Permission checking methods
      */
-    public function hasPermission($permissionName)
-    {
-        // Always use the role relationship
-        if (!$this->role_id) {
-            return false;
-        }
+    // public function hasPermission($permission): bool
+    // {
+    //     $effectivePermissions = $this->effective_permissions;
         
-        // Ensure role relationship is loaded with permissions
-        if (!$this->relationLoaded('role')) {
-            $this->load(['role' => function($query) {
-                $query->with('permissions');
-            }]);
-        }
-        
-        if (!$this->role) {
-            return false;
-        }
-        
-        return $this->role->hasActivePermission($permissionName);
-    }
+    //     if (in_array('*', $effectivePermissions)) {
+    //         return true;
+    //     }
 
-    /**
-     * Check if user has any of the given permissions - FIXED VERSION
-     */
-    public function hasAnyPermission(array $permissions)
+    //     return in_array($permission, $effectivePermissions);
+    // }
+
+    public function hasAnyPermission(array $permissions): bool
     {
+        $effectivePermissions = $this->effective_permissions;
+        
+        if (in_array('*', $effectivePermissions)) {
+            return true;
+        }
+
         foreach ($permissions as $permission) {
-            if ($this->hasPermission($permission)) {
+            if (in_array($permission, $effectivePermissions)) {
                 return true;
             }
         }
@@ -252,13 +418,16 @@ class User extends Authenticatable
         return false;
     }
 
-    /**
-     * Check if user has all of the given permissions
-     */
-    public function hasAllPermissions(array $permissions)
+    public function hasAllPermissions(array $permissions): bool
     {
+        $effectivePermissions = $this->effective_permissions;
+        
+        if (in_array('*', $effectivePermissions)) {
+            return true;
+        }
+
         foreach ($permissions as $permission) {
-            if (!$this->hasPermission($permission)) {
+            if (!in_array($permission, $effectivePermissions)) {
                 return false;
             }
         }
@@ -266,57 +435,93 @@ class User extends Authenticatable
         return true;
     }
 
-    /**
-     * Check if user can perform specific module action
-     */
-    public function canPerform($module, $action)
+    public function canPerform($module, $action): bool
     {
         $permissionName = "{$module}.{$action}";
         return $this->hasPermission($permissionName);
     }
 
     /**
-     * Helper methods for common role checks
+     * User-specific permission management
      */
-    public function isSuperAdmin()
+    public function assignUserPermission($permission): void
+    {
+        $permissions = $this->permissions ?? [];
+        
+        if (is_array($permission)) {
+            $permissions = array_merge($permissions, $permission);
+        } else {
+            $permissions[] = $permission;
+        }
+        
+        $this->update(['permissions' => array_unique($permissions)]);
+    }
+
+    public function revokeUserPermission($permission): void
+    {
+        $permissions = $this->permissions ?? [];
+        
+        if (is_array($permission)) {
+            $permissions = array_diff($permissions, $permission);
+        } else {
+            $permissions = array_diff($permissions, [$permission]);
+        }
+        
+        $this->update(['permissions' => array_values($permissions)]);
+    }
+
+    public function syncUserPermissions(array $permissions): void
+    {
+        $this->update(['permissions' => array_unique($permissions)]);
+    }
+
+    /**
+     * Role-specific helper methods
+     */
+    public function isSuperAdmin(): bool
     {
         return $this->hasRole('super_admin');
     }
 
-    public function isInventoryManager()
+    public function isInventoryManager(): bool
     {
         return $this->hasRole('inventory_manager');
     }
 
-    public function isDepartmentHead()
+    public function isDepartmentHead(): bool
     {
         return $this->hasRole('department_head');
     }
 
-    public function isProcurementOfficer()
+    public function isProcurementOfficer(): bool
     {
         return $this->hasRole('procurement_officer');
     }
 
-    public function isFaculty()
+    public function isFaculty(): bool
     {
         return $this->hasRole('faculty');
     }
 
-    public function isStaff()
+    public function isStaff(): bool
     {
         return $this->hasRole('staff');
     }
 
-    public function isStudent()
+    public function isStudent(): bool
     {
         return $this->hasRole('student');
     }
 
+    public function isAdmin(): bool
+    {
+        return $this->hasAnyRole(['super_admin', 'inventory_manager', 'department_head']);
+    }
+
     /**
-     * Check if user can access inventory module
+     * Module access checks
      */
-    public function canAccessInventory()
+    public function canAccessInventory(): bool
     {
         return $this->hasAnyPermission([
             'inventory.view',
@@ -327,10 +532,7 @@ class User extends Authenticatable
         ]);
     }
 
-    /**
-     * Check if user can access purchase orders module
-     */
-    public function canAccessPurchaseOrders()
+    public function canAccessPurchaseOrders(): bool
     {
         return $this->hasAnyPermission([
             'purchase_orders.view',
@@ -341,42 +543,23 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user has any admin privileges
-     */
-    public function isAdmin()
-    {
-        return $this->hasAnyRole(['super_admin', 'inventory_manager', 'department_head']);
-    }
-
-    /**
-     * Get display role name for UI
-     */
-    public function getDisplayRoleAttribute()
-    {
-        return $this->getRoleName();
-    }
-
-    /**
-     * Scope for active users
+     * Scopes
      */
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
 
-    /**
-     * Scope for users with role
-     */
     public function scopeWithRole($query, $role)
     {
         if (is_array($role)) {
             return $query->whereHas('role', function($q) use ($role) {
-                $q->whereIn('slug', $role)->orWhereIn('name', $role);
+                $q->whereIn('slug', $role);
             })->orWhereIn('role', $role);
         }
         
         return $query->whereHas('role', function($q) use ($role) {
-            $q->where('slug', $role)->orWhere('name', $role);
+            $q->where('slug', $role);
         })->orWhere('role', $role);
     }
 }
