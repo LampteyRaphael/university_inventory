@@ -1,6 +1,6 @@
 import InputLabel from "@/Components/InputLabel";
 import { useForm } from "@inertiajs/react";
-import { Add, Save } from "@mui/icons-material";
+import { Add, Create, Edit, EditAttributesRounded, Save } from "@mui/icons-material";
 import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormHelperText, Grid, InputAdornment, LinearProgress, MenuItem, Select, Switch, TextField, Typography } from "@mui/material";
 import moment from "moment/moment";
 import { useEffect } from "react";
@@ -129,12 +129,32 @@ export default function ItemFormDialog ({ open, onClose, item = null, categories
         py: 2
       }}>
         <Typography variant="body2" fontWeight={600}>
-          {item ? 'Edit Inventory Item' : 'Create New Inventory Item'}
+        {item? <Edit /> : <Create />} {item ? 'Edit Inventory Item' : 'Create New Inventory Item'}
         </Typography>
       </DialogTitle>
 
       <DialogContent dividers>
         {processing && <LinearProgress />}
+
+          <Grid size={{ xs: 12, sm: 6, md:4 }} sx={{ mb:2}}>
+            <FormControl fullWidth error={!!errors.university_id}>
+              <InputLabel>University</InputLabel>
+              <Select 
+                value={universities.some(u=>u.university_id===data.university_id)?
+                 data.university_id : ''
+                } 
+                label="University" 
+                onChange={(e) => setData('university_id', e.target.value)}
+              >
+                {universities?.map(university => (
+                  <MenuItem key={university?.university_id} value={university?.university_id}>
+                    {university?.name}
+                  </MenuItem>
+                ))}
+              </Select>
+              {errors?.university_id && <FormHelperText>{errors?.university_id}</FormHelperText>}
+            </FormControl>
+          </Grid>
 
         <Grid container spacing={3} sx={{ mt: 1 }}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -160,28 +180,12 @@ export default function ItemFormDialog ({ open, onClose, item = null, categories
           </Grid>
 
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <FormControl fullWidth error={!!errors.university_id}>
-              <InputLabel>University</InputLabel>
-              <Select 
-                value={data?.university_id ||''} 
-                label="University" 
-                onChange={(e) => setData('university_id', e.target.value)}
-              >
-                {universities?.map(university => (
-                  <MenuItem key={university?.university_id} value={university?.university_id}>
-                    {university?.name}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors?.university_id && <FormHelperText>{errors?.university_id}</FormHelperText>}
-            </FormControl>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth error={!!errors.category_id}>
               <InputLabel>Category</InputLabel>
               <Select
-                value={data.category_id||''}
+                value={categories.some(c=>c.category_id===data.category_id)?
+                  data.category_id:''
+                }
                 label="Category"
                 onChange={(e) => setData('category_id', e.target.value)}
               >
@@ -451,7 +455,7 @@ export default function ItemFormDialog ({ open, onClose, item = null, categories
               multiline
               rows={2}
               label="Description"
-              value={data.description}
+              value={data?.description||''}
               onChange={(e) => setData('description', e.target.value)}
             />
           </Grid>
@@ -462,7 +466,7 @@ export default function ItemFormDialog ({ open, onClose, item = null, categories
               multiline
               rows={4}
               label="Specifications (JSON)"
-              value={data.specifications}
+              value={data?.specifications|| ''}
               onChange={(e) => setData('specifications', e.target.value)}
               error={!!errors.specifications}
               helperText={errors.specifications || 'Enter a valid JSON object (optional).'}

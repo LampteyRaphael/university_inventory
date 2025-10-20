@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\HomeController;
@@ -206,8 +207,18 @@ Route::middleware('auth','verified')->group(function () {
 });
 
 
+Route::get('/analytics/dashboard', [AnalyticsController::class, 'getDashboardData'])
+    ->name('analytics.dashboard');
+    
+Route::post('/analytics/export', [AnalyticsController::class, 'exportDashboard'])
+    ->name('analytics.export');
+
+Route::get('/analytics/refresh', [AnalyticsController::class, 'refreshData'])
+    ->name('analytics.refresh');
+    
+
     // User Management
-    // Route::get('/user-management', [RouteController::class, 'management'])->name('user.management');  
+    // Route::get('/analytics-dashboard', [RouteController::class, 'analytics'])->name('analytics.index');  
 
 });
 

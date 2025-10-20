@@ -600,8 +600,6 @@ const handleSubmit = useCallback(() => {
   const validationErrors = validateForm();
   
   if (Object.keys(validationErrors).length > 0) {
-    // Set validation errors (you might want to handle this differently)
-    // console.log('Validation errors:', validationErrors);
     const errorMessage = Object.values(validationErrors).join('\n');
      setAlert({ open: true, message: errorMessage, severity: 'error' });
     return;

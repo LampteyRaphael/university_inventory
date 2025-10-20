@@ -75,7 +75,9 @@ const CategoryDialog = ({
             <FormControl fullWidth error={!!errors.university_id}>
               <InputLabel>University</InputLabel>
               <Select 
-                value={data.university_id} 
+                value={universities?.some(uni=>uni.university_id===data.university_id)
+                  ? data.university_id:''
+                } 
                 label="University" 
                 onChange={(e) => setData('university_id', e.target.value)}
               >
@@ -122,7 +124,9 @@ const CategoryDialog = ({
               <InputLabel>Parent Category</InputLabel>
               <Select
                 name="parent_category_id"
-                value={data.parent_category_id}
+                value={categories?.some(c=>c.category_id===data.parent_category_id)
+                  ?data.parent_category_id:''
+                }
                 label="Parent Category"
                 onChange={(e) => setData('parent_category_id', e.target.value)}
                 disabled={processing}

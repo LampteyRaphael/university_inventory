@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\ItemCategory;
 use App\Models\University;
 use App\Repositories\ItemCategoryRepository;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ItemCategoryController extends Controller
@@ -23,36 +25,7 @@ class ItemCategoryController extends Controller
     public function index(Request $request)
     {
         try {
-            $categories = ItemCategory::with(['university', 'parent','items'])
-            ->get()
-            ->map(function ($category) {
-                return [
-                    'category_id' => $category->category_id,
-                    'category_code' => $category->category_code,
-                    'name' => $category->name,
-                    'description' => $category->description,
-                    'image_url' => $category->image_url,
-                    'warranty_period_days' => $category->warranty_period_days,
-                    'depreciation_rate' => $category->depreciation_rate,
-                    'depreciation_method' => $category->depreciation_method,
-                    'requires_serial_number' => $category->requires_serial_number,
-                    'requires_maintenance' => $category->requires_maintenance,
-                    'maintenance_interval_days' => $category->maintenance_interval_days,
-                    'specification_template' => $category->specification_template,
-                    'lft' => $category->lft,
-                    'rgt' => $category->rgt,
-                    'depth' => $category->depth,
-                    'is_active' => $category->is_active,
-                    'parent_category_name' => $category->parent_category_name,
-                    'parent_category_id' => $category->parent_category_id,
-                    'university_name' => $category->university_name,
-                    'university_id' => $category->university_id,
-                    'items_count' => $category->items_count,
-                    'is_root' => $category->is_root,
-                    'created_at'=>$category->created_at,
-                    'updated_at'=>$category->updated_at,
-                ];
-            });
+            $categories =$this->itemCategoryRepository->getAll();
 
             return Inertia::render('Items/ItemCategories')
             ->with([
@@ -104,10 +77,10 @@ class ItemCategoryController extends Controller
 
             return redirect()->back()->with('success', 'Category created successfully');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()->back()->with('error', 'Failed to create category: ' . $e->getMessage());
         }
     }
@@ -155,7 +128,7 @@ class ItemCategoryController extends Controller
 
             return redirect()->back()->with('success', 'Category updated successfully');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
 
         } catch (\Exception $e) {
@@ -170,7 +143,7 @@ class ItemCategoryController extends Controller
 
             return redirect()->back()->with('success', 'Category deleted successfully');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()->back()->with('error', 'Failed to delete category: ' . $e->getMessage());
         }
     }

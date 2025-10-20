@@ -34,9 +34,7 @@ class ItemController extends Controller
             return Inertia::render('Items/Items')
     ->with([
         // Large dataset (best if paginated in repository)
-        'items' => Inertia::defer(fn () =>
-            $this->itemRepository->getAll()
-        ),
+        'items' => Inertia::defer(fn () => $this->itemRepository->getAll()),
 
         // Medium dataset
         'categories' => Inertia::defer(fn () =>
@@ -114,6 +112,7 @@ class ItemController extends Controller
             $validated = $request->validate([
                 'category_id' => 'sometimes|uuid|exists:item_categories,category_id',
                 'item_code' => 'sometimes|string|max:50|unique:inventory_items,item_code,' . $id . ',item_id',
+                'university_id' => 'required|exists:universities,university_id',
                 'name' => 'sometimes|string|max:255',
                 'description' => 'nullable|string',
                 'specifications' => 'nullable|array',
@@ -141,7 +140,7 @@ class ItemController extends Controller
                 'is_active' => 'boolean'
             ]);
 
-            $item = $this->itemRepository->update($id, $validated);
+             $this->itemRepository->update($id, $validated);
             return redirect()->back()->with('success', 'Item updated successfully');
 
         } catch (\Illuminate\Validation\ValidationException $e) {

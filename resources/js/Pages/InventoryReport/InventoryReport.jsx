@@ -126,27 +126,7 @@ const ModernReportGenerator = ({ auth, categories: initialCategories, locations:
     setTimeout(() => setAlert({ ...alert, open: false }), 5000);
   };
   
-  // const { data, setData, post, processing, errors, recentlySuccessful } = useForm({
-  //   report_type: 'comprehensive',
-  //   categories: [],
-  //   locations: [],
-  //   departments: [],
-  //   date_range: 'last30days',
-  //   custom_start_date: '',
-  //   custom_end_date: '',
-  //   include_charts: true,
-  //   include_tables: true,
-  //   include_summary: true,
-  //   include_export: true,
-  //   export_format: 'pdf',
-  //   chart_types: ['bar', 'pie'],
-  //   data_depth: 'summary',
-  //   compare_period: false,
-  //   suppliers: [],
-  //   maintenance_types: [],
-  //   priority_levels: [],
-  //   order_types: [],
-  // });
+
 
   // Enhanced report types with new additions
  

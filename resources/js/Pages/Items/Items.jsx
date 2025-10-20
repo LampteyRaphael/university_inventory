@@ -30,6 +30,7 @@ import {
   Download,
   AccountTree,
   CheckCircle,
+  BarcodeReader,
 } from "@mui/icons-material";
 import { usePage, router } from "@inertiajs/react";
 import PageHeader from "@/Components/PageHeader";
@@ -38,6 +39,16 @@ import SummaryCard from "@/Components/SummaryCard";
 import DeleteConfirmationDialog from "./DeleteConfirmationDialogItem";
 import ItemFormDialog from "./ItemFormDialog";
 import formatNumber from "../Service/FormatNumber";
+import SchoolIcon from '@mui/icons-material/School';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import ScaleIcon from '@mui/icons-material/Scale';
+import AspectRatioIcon from '@mui/icons-material/AspectRatio';
+import StorageIcon from '@mui/icons-material/Storage';
+import EventIcon from '@mui/icons-material/Event';
+import NfcIcon from '@mui/icons-material/Nfc';
+import CancelIcon from '@mui/icons-material/Cancel';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import Badge from '@mui/material/Badge';
 
 // Custom Hooks
 const useInventoryManager = (initialItems, auth) => {
@@ -61,6 +72,7 @@ const useInventoryManager = (initialItems, auth) => {
       volume_cubic_m: item?.volume_cubic_m ? Number(item.volume_cubic_m) : null,
       is_hazardous: !!item?.is_hazardous,
       is_active: item?.is_active ?? true,
+      name:item?.item_name??"",
       // expiry_date:item?.expiry_date??null,
       expiry_date:moment(item?.expiry_date).format('YYYY-MM-DD'),
       created_at: item?.created_at ? moment(item.created_at).format("MMM DD, YYYY") : "",
@@ -217,313 +229,734 @@ export default function InventoryItems({ items=[], auth, categories=[], universi
     setAlert((prev) => ({ ...prev, open: false }));
   };
 
-  const columns = [
-      {
-        field: 'item_id',
-        headerName: 'ID',
-        width: 120,
-        renderCell: (params) => {
-          const id = params.value;
-          const shortId = id ? id.substring(0, 8) : '';
-          return (
-            <Tooltip title={id} arrow>
-              <Typography variant="body2" noWrap sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
-                {shortId}
-              </Typography>
-            </Tooltip>
-          );
-        }
-      },
-      {
-        field: 'item_code',
-        headerName: 'CODE',
-        width: 120,
-        renderCell: (params) => {
-          const id = params.value;
-          const shortId = id ? id.substring(0, 8) : '';
-          return (
-            <Tooltip title={id} arrow>
-              <Typography variant="body2" noWrap sx={{ fontFamily: 'monospace' }}>
-                {shortId}
-              </Typography>
-            </Tooltip>
-          );
-        }
-      },
-      {
-        field: 'name',
-        headerName: 'ITEM',
-        width: 240,
-        renderCell: (params) => (
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="body2" fontWeight="bold" noWrap sx={{ color: 'text.primary' }}>
-              {params.value}
-            </Typography>
-            {params.row.description && (
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {params.row.description}
-              </Typography>
-            )}
-          </Box>
-        )
-      },
-      {
-        field: 'category_id',
-        headerName: 'CATEGORY',
-        width: 160,
-        renderCell: (params) => {
-          const category = categories.find(c => c.category_id === params.value);
-          const categoryColors = {
-            'Electronics': { color: 'primary', variant: 'filled' },
-            'Tools': { color: 'secondary', variant: 'filled' },
-            'Raw Materials': { color: 'success', variant: 'filled' },
-            'Consumables': { color: 'info', variant: 'filled' },
-            'Safety Equipment': { color: 'warning', variant: 'filled' },
-            'Office Supplies': { color: 'secondary', variant: 'outlined' }
-          };
+  // const columns = [
+  //     {
+  //       field: 'item_id',
+  //       headerName: 'ID',
+  //       width: 120,
+  //       renderCell: (params) => {
+  //         const id = params.value;
+  //         const shortId = id ? id.substring(0, 8) : '';
+  //         return (
+  //           <Tooltip title={id} arrow>
+  //             <Typography variant="body2" noWrap sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
+  //               {shortId}
+  //             </Typography>
+  //           </Tooltip>
+  //         );
+  //       }
+  //     },
+  //     {
+  //       field: 'item_code',
+  //       headerName: 'CODE',
+  //       width: 120,
+  //       renderCell: (params) => {
+  //         const id = params.value;
+  //         const shortId = id ? id.substring(0, 8) : '';
+  //         return (
+  //           <Tooltip title={id} arrow>
+  //             <Typography variant="body2" noWrap sx={{ fontFamily: 'monospace' }}>
+  //               {shortId}
+  //             </Typography>
+  //           </Tooltip>
+  //         );
+  //       }
+  //     },
+  //     {
+  //       field: 'name',
+  //       headerName: 'ITEM',
+  //       width: 240,
+  //       renderCell: (params) => (
+  //         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+  //           <Typography variant="body2" fontWeight="bold" noWrap sx={{ color: 'text.primary' }}>
+  //             {params.row.item_name}
+  //           </Typography>
+  //           {/* {params.row.description && (
+  //             <Typography variant="caption" color="text.secondary" noWrap>
+  //               {params.row.description}
+  //             </Typography>
+  //           )} */}
+  //         </Box>
+  //       )
+  //     },
+  //     {
+  //       field: 'category_id',
+  //       headerName: 'CATEGORY',
+  //       width: 160,
+  //       renderCell: (params) => {
+  //         const category = categories.find(c => c.category_id === params.value);
+  //         const categoryColors = {
+  //           'Electronics': { color: 'primary', variant: 'filled' },
+  //           'Tools': { color: 'secondary', variant: 'filled' },
+  //           'Raw Materials': { color: 'success', variant: 'filled' },
+  //           'Consumables': { color: 'info', variant: 'filled' },
+  //           'Safety Equipment': { color: 'warning', variant: 'filled' },
+  //           'Office Supplies': { color: 'secondary', variant: 'outlined' }
+  //         };
           
-          const categoryName = category?.name || 'Uncategorized';
-          const categoryStyle = categoryColors[categoryName] || { color: 'default', variant: 'outlined' };
+  //         const categoryName = category?.name || 'Uncategorized';
+  //         const categoryStyle = categoryColors[categoryName] || { color: 'default', variant: 'outlined' };
           
-          return (
-            <Chip
-              label={categoryName}
-              size="small"
-              variant={categoryStyle.variant}
-              color={categoryStyle.color}
-              sx={{ 
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                ...(categoryStyle.variant === 'filled' && {
-                  color: 'white'
-                })
-              }}
-            />
-          );
-        },
-      },
-      {
-        field: 'unit',
-        headerName: 'UNIT',
-        width: 160,
-        renderCell: (params) => (
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-            <Chip 
-              label={`₵${Number(params.row.unit_cost).toFixed(2)}`}
-              size="small"
-              variant="outlined"
-              color="success"
-              sx={{ fontWeight: 600 }}
-            />
-            <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
-              {params.row.unit_of_measure}
-            </Typography>
-          </Box>
-        ),
-      },
-      {
-        field: 'stock',
-        headerName: 'STOCK',
-        width: 180,
-        renderCell: (params) => (
-          <Box>
-            <Box sx={{ display: 'flex', gap: 1, pb: 0.1 }}>
-              <Chip 
-                label={`Min: ${params.row.minimum_stock_level}`}
-                size="small"
-                variant="outlined"
-                color="info"
-              />
-              <Chip 
-                label={`Max: ${params.row.maximum_stock_level}`}
-                size="small"
-                variant="outlined"
-                color="info"
-              />
-            </Box>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Typography variant="caption" color="warning.main" fontWeight={600}>
-                Reorder: {params.row.reorder_point}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                | EOQ: {params.row.economic_order_quantity}
-              </Typography>
-            </Box>
-          </Box>
-        ),
-      },
-      {
-        field: 'value',
-        headerName: 'VALUE',
-        width: 180,
-        renderCell: (params) => (
-          <Box>
-            <Chip 
-              label={`₵${Number(params.row.current_value).toLocaleString()}`}
-              size="small"
-              color="success"
-              variant="filled"
-              sx={{ fontWeight: 700, color: 'white', mb: 0.5 }}
-            />
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                {params.row.weight_kg || 0}kg
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                | {params.row.volume_cubic_m || 0}m³
-              </Typography>
-            </Box>
-          </Box>
-        ),
-      },
-      {
-        field: 'hazard',
-        headerName: 'HAZARD',
-        width: 200,
-        renderCell: (params) =>
-          params.row.is_hazardous ? (
-            <Box>
-              <Chip 
-                label="Hazardous" 
-                size="small" 
-                color="error" 
-                variant="filled"
-                sx={{ fontWeight: 700, color: 'white', mb: 0.5 }}
-              />
-              <Typography variant="caption" color="error.main" fontWeight={600} noWrap>
-                {params.row.hazard_type}
-              </Typography>
-            </Box>
-          ) : (
-            <Chip 
-              label="Safe" 
-              size="small" 
-              color="success" 
-              variant="filled"
-              sx={{ fontWeight: 600, color: 'white' }}
-            />
-          ),
-      },
-      {
-        field: 'storage',
-        headerName: 'STORAGE & EXPIRY',
-        width: 350,
-        renderCell: (params) => {
-          const { storage_conditions, expiry_date, shelf_life_days } = params.row;
-          const isExpired = expiry_date && new Date(expiry_date) < new Date();
+  //         return (
+  //           <Chip
+  //             label={categoryName}
+  //             size="small"
+  //             variant={categoryStyle.variant}
+  //             color={categoryStyle.color}
+  //             sx={{ 
+  //               fontWeight: 600,
+  //               fontSize: '0.75rem',
+  //               ...(categoryStyle.variant === 'filled' && {
+  //                 color: 'white'
+  //               })
+  //             }}
+  //           />
+  //         );
+  //       },
+  //     },
+  //     {
+  //       field: 'unit',
+  //       headerName: 'UNIT',
+  //       width: 160,
+  //       renderCell: (params) => (
+  //         <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+  //           <Chip 
+  //             label={`₵${Number(params.row.unit_cost).toFixed(2)}`}
+  //             size="small"
+  //             variant="outlined"
+  //             color="success"
+  //             sx={{ fontWeight: 600 }}
+  //           />
+  //           <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
+  //             {params.row.unit_of_measure}
+  //           </Typography>
+  //         </Box>
+  //       ),
+  //     },
+  //     {
+  //       field: 'stock',
+  //       headerName: 'STOCK',
+  //       width: 180,
+  //       renderCell: (params) => (
+  //         <Box>
+  //           <Box sx={{ display: 'flex', gap: 1, pb: 0.1 }}>
+  //             <Chip 
+  //               label={`Min: ${params.row.minimum_stock_level}`}
+  //               size="small"
+  //               variant="outlined"
+  //               color="info"
+  //             />
+  //             <Chip 
+  //               label={`Max: ${params.row.maximum_stock_level}`}
+  //               size="small"
+  //               variant="outlined"
+  //               color="info"
+  //             />
+  //           </Box>
+  //           <Box sx={{ display: 'flex', gap: 0.5 }}>
+  //             <Typography variant="caption" color="warning.main" fontWeight={600}>
+  //               Reorder: {params.row.reorder_point}
+  //             </Typography>
+  //             <Typography variant="caption" color="text.secondary">
+  //               | EOQ: {params.row.economic_order_quantity}
+  //             </Typography>
+  //           </Box>
+  //         </Box>
+  //       ),
+  //     },
+  //     {
+  //       field: 'value',
+  //       headerName: 'VALUE',
+  //       width: 180,
+  //       renderCell: (params) => (
+  //         <Box>
+  //           <Chip 
+  //             label={`₵${Number(params.row.current_value).toLocaleString()}`}
+  //             size="small"
+  //             color="success"
+  //             variant="filled"
+  //             sx={{ fontWeight: 700, color: 'white', mb: 0.5 }}
+  //           />
+  //           <Box sx={{ display: 'flex', gap: 1 }}>
+  //             <Typography variant="caption" color="text.secondary">
+  //               {params.row.weight_kg || 0}kg
+  //             </Typography>
+  //             <Typography variant="caption" color="text.secondary">
+  //               | {params.row.volume_cubic_m || 0}m³
+  //             </Typography>
+  //           </Box>
+  //         </Box>
+  //       ),
+  //     },
+  //     {
+  //       field: 'hazard',
+  //       headerName: 'HAZARD',
+  //       width: 200,
+  //       renderCell: (params) =>
+  //         params.row.is_hazardous ? (
+  //           <Box>
+  //             <Chip 
+  //               label="Hazardous" 
+  //               size="small" 
+  //               color="error" 
+  //               variant="filled"
+  //               sx={{ fontWeight: 700, color: 'white', mb: 0.5 }}
+  //             />
+  //             <Typography variant="caption" color="error.main" fontWeight={600} noWrap>
+  //               {params.row.hazard_type}
+  //             </Typography>
+  //           </Box>
+  //         ) : (
+  //           <Chip 
+  //             label="Safe" 
+  //             size="small" 
+  //             color="success" 
+  //             variant="filled"
+  //             sx={{ fontWeight: 600, color: 'white' }}
+  //           />
+  //         ),
+  //     },
+  //     {
+  //       field: 'storage',
+  //       headerName: 'STORAGE & EXPIRY',
+  //       width: 350,
+  //       renderCell: (params) => {
+  //         const { storage_conditions, expiry_date, shelf_life_days } = params.row;
+  //         const isExpired = expiry_date && new Date(expiry_date) < new Date();
 
-          return (
-            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 0.5 }}>
-              {storage_conditions && (
-                <Tooltip title={storage_conditions} arrow>
-                  <Chip
-                    label="Storage Info"
-                    size="small"
-                    variant="outlined"
-                    color="info"
-                    // sx={{ maxWidth: 200 }}
-                  />
-                </Tooltip>
-              )}
-              {expiry_date && (
-                <Chip
-                  label={`Exp: ${new Date(expiry_date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "2-digit",
-                    year: "numeric"
-                  })}`}
-                  size="small"
-                  color={isExpired ? 'error' : 'warning'}
-                  variant={isExpired ? 'filled' : 'outlined'}
-                  // sx={{ fontWeight: 600 }}
-                />
-              )}
-              {shelf_life_days && (
-                <Typography variant="caption" color="text.secondary" noWrap>
-                  Shelf: {shelf_life_days} days
+  //         return (
+  //           <Box sx={{ display: 'flex', flexDirection: 'row', gap: 0.5 }}>
+  //             {storage_conditions && (
+  //               <Tooltip title={storage_conditions} arrow>
+  //                 <Chip
+  //                   label="Storage Info"
+  //                   size="small"
+  //                   variant="outlined"
+  //                   color="info"
+  //                   // sx={{ maxWidth: 200 }}
+  //                 />
+  //               </Tooltip>
+  //             )}
+  //             {expiry_date && (
+  //               <Chip
+  //                 label={`Exp: ${new Date(expiry_date).toLocaleDateString("en-US", {
+  //                   month: "short",
+  //                   day: "2-digit",
+  //                   year: "numeric"
+  //                 })}`}
+  //                 size="small"
+  //                 color={isExpired ? 'error' : 'warning'}
+  //                 variant={isExpired ? 'filled' : 'outlined'}
+  //                 // sx={{ fontWeight: 600 }}
+  //               />
+  //             )}
+  //             {shelf_life_days && (
+  //               <Typography variant="caption" color="text.secondary" noWrap>
+  //                 Shelf: {shelf_life_days} days
+  //               </Typography>
+  //             )}
+  //           </Box>
+  //         );
+  //       },
+  //     },
+  //     {
+  //       field: 'abc_classification',
+  //       headerName: 'CLASS',
+  //       width: 100,
+  //       align: 'center',
+  //       headerAlign: 'center',
+  //       renderCell: (params) => {
+  //         const classColors = {
+  //           'A': { color: 'error', variant: 'filled' },
+  //           'B': { color: 'warning', variant: 'filled' },
+  //           'C': { color: 'info', variant: 'filled' },
+  //           'D': { color: 'default', variant: 'outlined' }
+  //         };
+          
+  //         const classConfig = classColors[params.value] || { color: 'default', variant: 'outlined' };
+          
+  //         return (
+  //           <Chip
+  //             label={params.value}
+  //             size="small"
+  //             color={classConfig.color}
+  //             variant={classConfig.variant}
+  //             sx={{ 
+  //               fontWeight: 700,
+  //               minWidth: 40,
+  //               ...(classConfig.variant === 'filled' && {
+  //                 color: 'white'
+  //               })
+  //             }}
+  //           />
+  //         );
+  //       },
+  //     },
+  //     {
+  //       field: 'actions',
+  //       headerName: 'ACTIONS',
+  //       width: 120,
+  //       sortable: false,
+  //       align: 'center',
+  //       headerAlign: 'center',
+  //       renderCell: (params) => (
+  //         <Stack direction="row" spacing={0.5}>
+  //           <Tooltip title="Edit item">
+  //             <IconButton
+  //               size="small"
+  //               onClick={() => handleEdit(params.row)}
+  //               sx={{ 
+  //                 color: 'primary.main',
+  //                 backgroundColor: 'primary.light',
+  //                 '&:hover': { backgroundColor: 'primary.main', color: 'white' }
+  //               }}
+  //             >
+  //               <EditIcon fontSize="small" />
+  //             </IconButton>
+  //           </Tooltip>
+  //           <Tooltip title="Delete item">
+  //             <IconButton
+  //               size="small"
+  //               sx={{ 
+  //                 color: 'error.main',
+  //                 backgroundColor: 'error.light',
+  //                 '&:hover': { backgroundColor: 'error.main', color: 'white' }
+  //               }}
+  //               onClick={() => {
+  //                 setSelectedItem(params.row);
+  //                 setDeleteDialogOpen(true);
+  //               }}
+  //             >
+  //               <DeleteIcon fontSize="small" />
+  //             </IconButton>
+  //           </Tooltip>
+  //         </Stack>
+  //       ),
+  //     },
+  // ];
+
+  // Create action buttons for header
+const columns = [
+  {
+    field: 'item_id',
+    headerName: 'ID',
+    width: 100,
+    align: 'center',
+    headerAlign: 'center',
+    renderCell: (params) => (
+      <Tooltip title={params.value} arrow>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="caption" sx={{ 
+            fontFamily: 'monospace', 
+            fontWeight: 700,
+            color: 'primary.main',
+            backgroundColor: 'primary.50',
+            px: 1,
+            py: 0.5,
+            borderRadius: 1,
+            display: 'block'
+          }}>
+            {params.value ? params.value.substring(0, 6) + '...' : 'N/A'}
+          </Typography>
+        </Box>
+      </Tooltip>
+    )
+  },
+  {
+    field: 'university',
+    headerName: 'UNIVERSITY',
+    width: 160,
+    renderCell: (params) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <SchoolIcon color="primary" fontSize="small" />
+        <Typography variant="body2" fontWeight="500" noWrap>
+          {params.value || 'N/A'}
+        </Typography>
+      </Box>
+    )
+  },
+  {
+    field: 'item_code',
+    headerName: 'ITEM CODE',
+    width: 130,
+    renderCell: (params) => (
+      <Chip
+        label={params.value}
+        size="small"
+        variant="outlined"
+        color="secondary"
+        sx={{ 
+          fontWeight: 600,
+          fontFamily: 'monospace',
+          fontSize: '0.75rem'
+        }}
+      />
+    )
+  },
+  {
+    field: 'item_name',
+    headerName: 'ITEM DETAILS',
+    width: 280,
+    renderCell: (params) => (
+      <Box sx={{ display: 'flex', flexDirection: 'column', }}>
+        <Typography variant="subtitle2" fontWeight="600" noWrap>
+          {params.value}
+        </Typography>
+        {params.row.description && (
+          <Tooltip title={params.row.description} arrow>
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {params.row.description.length > 60 
+                ? `${params.row.description.substring(0, 60)}...` 
+                : params.row.description
+              }
+            </Typography>
+          </Tooltip>
+        )}
+      </Box>
+    )
+  },
+  {
+    field: 'category',
+    headerName: 'CATEGORY',
+    width: 150,
+    renderCell: (params) => {    
+      return (
+        <Box
+          sx={{
+            px: 1.5,
+            py: 0.5,
+            borderRadius: 2,
+            textAlign: 'center',
+            width: '100%'
+          }}
+        >
+          <Typography variant="caption" fontWeight="600">
+            {params.value || 'Uncategorized'}
+          </Typography>
+        </Box>
+      );
+    },
+  },
+  {
+    field: 'pricing',
+    headerName: 'PRICING & UNIT',
+    width: 180,
+    renderCell: (params) => (
+      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="body2" fontWeight="600" color="success.main">
+            ₵{Number(params.row.unit_cost).toFixed(2)}
+          </Typography>
+          <Chip 
+            label={params.row.unit_of_measure}
+            size="small"
+            variant="outlined"
+            sx={{ fontWeight: 500 }}
+          />
+        </Box>
+        <Typography variant="caption" color="text.secondary" textAlign="center">
+          Value: ₵{Number(params.row.current_value).toLocaleString()}
+        </Typography>
+      </Box>
+    ),
+  },
+{
+  field: 'inventory_metrics',
+  headerName: 'INVENTORY METRICS',
+  width: 200,
+  renderCell: (params) => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      {/* Stock Level Indicators */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="caption" color="text.secondary" display="block">Min</Typography>
+          <Typography variant="body2" fontWeight="600" color="success.main">
+            {params.row.minimum_stock_level}
+          </Typography>
+        </Box>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="caption" color="text.secondary" display="block">Max</Typography>
+          <Typography variant="body2" fontWeight="600" color="info.main">
+            {params.row.maximum_stock_level}
+          </Typography>
+        </Box>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="caption" color="text.secondary" display="block">Reorder</Typography>
+          <Typography variant="body2" fontWeight="600" color="warning.main">
+            {params.row.reorder_point}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* EOQ and Classification */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+        <Tooltip title="Economic Order Quantity" arrow>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Inventory fontSize="small" color="action" />
+            <Typography variant="caption" color="text.secondary" fontWeight="500">
+              {params.row.economic_order_quantity}
+            </Typography>
+          </Box>
+        </Tooltip>
+        
+        {/* ABC Classification with better styling */}
+        <Chip
+          label={`Class ${params.row.abc_classification}`}
+          size="small"
+          color={
+            params.row.abc_classification === 'A' ? 'error' :
+            params.row.abc_classification === 'B' ? 'warning' :
+            params.row.abc_classification === 'C' ? 'info' : 'default'
+          }
+          variant="filled"
+          sx={{ 
+            fontWeight: 700,
+            fontSize: '0.7rem',
+            minWidth: 60,
+            height: 24
+          }}
+        />
+      </Box>
+    </Box>
+  ),
+},
+  {
+    field: 'physical_properties',
+    headerName: 'PHYSICAL PROPERTIES',
+    width: 180,
+    renderCell: (params) => (
+      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <ScaleIcon fontSize="small" color="action" />
+            <Typography variant="caption">
+              {params.row.weight_kg || 0} kg
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <AspectRatioIcon fontSize="small" color="action" />
+            <Typography variant="caption">
+              {params.row.volume_cubic_m || 0} m³
+            </Typography>
+          </Box>
+        </Box>
+        {params.row.is_hazardous && (
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 0.5,
+            px: 1,
+            py: 0.25,
+            borderRadius: 1,
+            backgroundColor: 'error.light'
+          }}>
+            <WarningIcon fontSize="small" sx={{ color: 'error.main' }} />
+            <Typography variant="caption" fontWeight="600" color="error.main">
+              {params.row.hazard_type}
+            </Typography>
+          </Box>
+        )}
+      </Box>
+    ),
+  },
+  {
+    field: 'storage_expiry',
+    headerName: 'STORAGE & EXPIRY',
+    width: 290,
+    renderCell: (params) => {
+      const isExpired = params.row.expiry_date && new Date(params.row.expiry_date) < new Date();
+      const isExpiringSoon = params.row.expiry_date && 
+        new Date(params.row.expiry_date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      return (
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1 }}>
+          {params.row.storage_conditions && (
+            <Tooltip title={params.row.storage_conditions} arrow>
+              <Chip
+                icon={<StorageIcon />}
+                label="Storage Info"
+                size="small"
+                variant="outlined"
+                color="info"
+              />
+            </Tooltip>
+          )}
+          {params.row.expiry_date && (
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 1,
+              px: 1,
+              py: 0.5,
+              borderRadius: 1,
+              backgroundColor: isExpired ? 'error.light' : 
+                             isExpiringSoon ? 'warning.light' : 'success.light'
+            }}>
+              <EventIcon fontSize="small" />
+              <Typography variant="caption" fontWeight="600">
+                {new Date(params.row.expiry_date).toLocaleDateString()}
+              </Typography>
+              {params.row.shelf_life_days && (
+                <Typography variant="caption" color="text.secondary">
+                  ({params.row.shelf_life_days}d)
                 </Typography>
               )}
             </Box>
-          );
-        },
-      },
-      {
-        field: 'abc_classification',
-        headerName: 'CLASS',
-        width: 100,
-        align: 'center',
-        headerAlign: 'center',
-        renderCell: (params) => {
-          const classColors = {
-            'A': { color: 'error', variant: 'filled' },
-            'B': { color: 'warning', variant: 'filled' },
-            'C': { color: 'info', variant: 'filled' },
-            'D': { color: 'default', variant: 'outlined' }
-          };
-          
-          const classConfig = classColors[params.value] || { color: 'default', variant: 'outlined' };
-          
-          return (
-            <Chip
-              label={params.value}
-              size="small"
-              color={classConfig.color}
-              variant={classConfig.variant}
-              sx={{ 
-                fontWeight: 700,
-                minWidth: 40,
-                ...(classConfig.variant === 'filled' && {
-                  color: 'white'
-                })
-              }}
-            />
-          );
-        },
-      },
-      {
-        field: 'actions',
-        headerName: 'ACTIONS',
-        width: 120,
-        sortable: false,
-        align: 'center',
-        headerAlign: 'center',
-        renderCell: (params) => (
-          <Stack direction="row" spacing={0.5}>
-            <Tooltip title="Edit item">
-              <IconButton
-                size="small"
-                onClick={() => handleEdit(params.row)}
-                sx={{ 
-                  color: 'primary.main',
-                  backgroundColor: 'primary.light',
-                  '&:hover': { backgroundColor: 'primary.main', color: 'white' }
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete item">
-              <IconButton
-                size="small"
-                sx={{ 
-                  color: 'error.main',
-                  backgroundColor: 'error.light',
-                  '&:hover': { backgroundColor: 'error.main', color: 'white' }
-                }}
-                onClick={() => {
-                  setSelectedItem(params.row);
-                  setDeleteDialogOpen(true);
-                }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        ),
-      },
-  ];
-
-  // Create action buttons for header
+          )}
+        </Box>
+      );
+    },
+  },
+  {
+    field: 'tracking_codes',
+    headerName: 'TRACKING',
+    width: 200,
+    renderCell: (params) => (
+      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 0.5 }}>
+        {params.row.barcode && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <BarcodeReader fontSize="small" color="action" />
+            <Typography variant="caption" fontFamily="monospace">
+              {params.row.barcode}
+            </Typography>
+          </Box>
+        )}
+        {params.row.rfid_tag && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <NfcIcon fontSize="small" color="action" />
+            <Typography variant="caption" fontFamily="monospace">
+              {params.row.rfid_tag.substring(0, 10)}...
+            </Typography>
+          </Box>
+        )}
+        {params.row.qr_code && (
+          <Chip
+            icon={<QrCodeIcon />}
+            label="QR Code"
+            size="small"
+            variant="outlined"
+          />
+        )}
+      </Box>
+    ),
+  },
+  {
+    field: 'audit_info',
+    headerName: 'AUDIT INFO',
+    width: 200,
+    renderCell: (params) => (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Typography variant="caption" color="text.secondary">Created</Typography>
+          <Typography variant="caption" fontWeight="500">
+            {new Date(params.row.created_at).toLocaleDateString()}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Typography variant="caption" color="text.secondary">By</Typography>
+          <Typography variant="caption" fontWeight="500">
+            {params.row.creator || 'System'}
+          </Typography>
+        </Box>
+        {params.row.updater && (
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="caption" color="text.secondary">Updated by</Typography>
+            <Typography variant="caption" fontWeight="500">
+              {params.row.updater}
+            </Typography>
+          </Box>
+        )}
+      </Box>
+    ),
+  },
+  {
+    field: 'status',
+    headerName: 'STATUS',
+    width: 100,
+    align: 'center',
+    headerAlign: 'center',
+    renderCell: (params) => (
+      <Box sx={{ position: 'relative' }}>
+        <Chip
+          label={params.row.is_active ? 'Active' : 'Inactive'}
+          size="small"
+          color={params.row.is_active ? 'success' : 'default'}
+          variant={params.row.is_active ? 'filled' : 'outlined'}
+          sx={{ 
+            fontWeight: 600,
+            minWidth: 70
+          }}
+        />
+        {!params.row.is_active && (
+          <CancelIcon 
+            sx={{ 
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              fontSize: 16,
+              color: 'error.main',
+              backgroundColor: 'white',
+              borderRadius: '50%'
+            }} 
+          />
+        )}
+      </Box>
+    ),
+  },
+  {
+    field: 'actions',
+    headerName: 'ACTIONS',
+    width: 120,
+    sortable: false,
+    align: 'center',
+    headerAlign: 'center',
+    renderCell: (params) => (
+      <Stack direction="row" spacing={0.5}>
+        <Tooltip title="Edit item">
+          <IconButton
+            size="small"
+            onClick={() => handleEdit(params.row)}
+            sx={{ 
+              color: 'primary.main',
+              backgroundColor: 'action.hover',
+              '&:hover': { backgroundColor: 'primary.main', color: 'white' }
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="View details">
+          <IconButton
+            size="small"
+            sx={{ 
+              color: 'info.main',
+              backgroundColor: 'action.hover',
+              '&:hover': { backgroundColor: 'info.main', color: 'white' }
+            }}
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete item">
+          <IconButton
+            size="small"
+            sx={{ 
+              color: 'error.main',
+              backgroundColor: 'action.hover',
+              '&:hover': { backgroundColor: 'error.main', color: 'white' }
+            }}
+            onClick={() => {
+              setSelectedItem(params.row);
+              setDeleteDialogOpen(true);
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    ),
+  },
+];
 
   const actionButtons = [
     <Button

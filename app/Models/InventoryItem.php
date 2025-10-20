@@ -7,14 +7,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class InventoryItem extends Model
 {
-    use HasFactory, SoftDeletes , Auditable;
+    use HasFactory, SoftDeletes, Auditable;
+    
     protected $table = 'inventory_items';
     protected $primaryKey = 'item_id';
-    public $incrementing = false; // Because you're using UUID
+    public $incrementing = false;
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -67,35 +69,31 @@ class InventoryItem extends Model
         'shelf_life_days'      => 'integer',
     ];
 
-
     protected static function booted()
     {
         static::creating(function ($model) {
-            // Auto-generate UUID if not provided
             if (empty($model->item_id)) {
                 $model->item_id = Str::uuid()->toString();
             }
             
-            // Set created_by from authenticated user
             if (Auth::check() && empty($model->created_by)) {
                 $model->created_by = Auth::user()->user_id;
             }
 
-            // Convert specifications array to JSON if needed
             if (isset($model->specifications) && is_array($model->specifications)) {
                 $model->specifications = json_encode($model->specifications);
             }
         });
 
         static::updating(function ($model) {
-            // Convert specifications array to JSON on update as well
             if (isset($model->specifications) && is_array($model->specifications)) {
                 $model->specifications = json_encode($model->specifications);
             }
         });
     }
 
-    // Relationships
+    // ========== RELATIONSHIPS ==========
+
     public function university()
     {
         return $this->belongsTo(University::class, 'university_id', 'university_id');
@@ -121,7 +119,26 @@ class InventoryItem extends Model
         return $this->belongsTo(ItemCategory::class, 'category_id', 'category_id');
     }
 
-    // Scopes
+    // ADD THIS RELATIONSHIP - Stock Level
+    public function stockLevel()
+    {
+        return $this->hasOne(StockLevel::class, 'item_id', 'item_id');
+    }
+
+    // ADD THIS RELATIONSHIP - Multiple Stock Levels (if you track multiple locations)
+    public function stockLevels()
+    {
+        return $this->hasMany(StockLevel::class, 'item_id', 'item_id');
+    }
+
+    // ADD THIS RELATIONSHIP - Maintenance Records
+    public function maintenanceRecords()
+    {
+        return $this->hasMany(MaintenanceRecord::class, 'item_id', 'item_id');
+    }
+
+    // ========== SCOPES ==========
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -150,6 +167,54 @@ class InventoryItem extends Model
 
     public function scopeLowStock($query)
     {
-        return $query->whereRaw('(SELECT COALESCE(SUM(quantity), 0) FROM stock_levels WHERE stock_levels.item_id = inventory_items.item_id) <= reorder_point');
+        return $query->whereHas('stockLevel', function($query) {
+            $query->where('current_quantity', '<=', DB::raw('reorder_point'));
+        });
+    }
+
+    // ========== CUSTOM METHODS ==========
+
+    /**
+     * Get current stock quantity
+     */
+    public function getCurrentStockAttribute()
+    {
+        return $this->stockLevel ? $this->stockLevel->current_quantity : 0;
+    }
+
+    /**
+     * Check if item is in low stock
+     */
+    public function getIsLowStockAttribute()
+    {
+        if (!$this->stockLevel) return false;
+        
+        return $this->stockLevel->current_quantity <= $this->reorder_point;
+    }
+
+    /**
+     * Check if item is out of stock
+     */
+    public function getIsOutOfStockAttribute()
+    {
+        if (!$this->stockLevel) return true;
+        
+        return $this->stockLevel->current_quantity <= 0;
+    }
+
+    /**
+     * Get stock status
+     */
+    public function getStockStatusAttribute()
+    {
+        if (!$this->stockLevel) return 'unknown';
+        
+        $quantity = $this->stockLevel->current_quantity;
+        
+        if ($quantity <= 0) return 'out_of_stock';
+        if ($quantity <= $this->reorder_point) return 'low_stock';
+        if ($quantity <= $this->maximum_stock_level) return 'adequate_stock';
+        
+        return 'over_stock';
     }
 }

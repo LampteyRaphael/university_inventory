@@ -26,7 +26,7 @@ class ItemRepository
                     'category_id' => $item->category_id,
                     'category' => $item->category->name??'',
                     'item_code' => $item->item_code,
-                    'name' => $item->name??null,
+                    'item_name' => $item->name??null,
                     'description' => $item->description, // limit description length
                     'unit_of_measure' => $item->unit_of_measure,
                     'unit_cost' => $item->unit_cost,

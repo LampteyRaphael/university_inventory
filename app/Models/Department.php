@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Department extends Model
@@ -83,4 +84,41 @@ class Department extends Model
         
         return $location;
     }
+    
+    public function stockLevels(): HasMany
+    {
+        return $this->hasMany(StockLevel::class, 'department_id', 'department_id');
+    }
+
+    /**
+     * Get the maintenance records for the department.
+     */
+    public function maintenanceRecords(): HasMany
+    {
+        return $this->hasMany(MaintenanceRecord::class, 'department_id', 'department_id');
+    }
+
+    /**
+     * Get the purchase orders for the department.
+     */
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class, 'department_id', 'department_id');
+    }
+
+    /**
+     * Get inventory items through stock levels (indirect relationship)
+     */
+    public function inventoryItems()
+    {
+        return $this->hasManyThrough(
+            InventoryItem::class,
+            StockLevel::class,
+            'department_id', // Foreign key on stock_levels table
+            'item_id',       // Foreign key on inventory_items table
+            'department_id', // Local key on departments table
+            'item_id'        // Local key on stock_levels table
+        );
+    }
+    
 }

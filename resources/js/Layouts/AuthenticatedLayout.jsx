@@ -211,7 +211,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
       title: 'Reports & Analytics',
       icon: <BarChartIcon />,
       items: [
-        { text: 'Analytics Dashboard', icon: <AnalyticsIcon /> },
+        { text: 'Analytics Dashboard', icon: <AnalyticsIcon /> , route:'analytics.dashboard'},
         { text: 'Inventory Reports', icon: <BarChartIcon />, route:"inventory-report.index" },
         { text: 'Audit Logs', icon: <AuditIcon />, route: 'audit-logs.index' }
       ]

@@ -453,13 +453,16 @@ export default function ItemCategories({ categories = [], auth, filters: initial
       // Update existing category
       put(route('item-categories.update', selectedItem.category_id), {
         preserveScroll: true,
-        onSuccess: () => {
-          showAlert("Category updated successfully!", "success");
+        onSuccess: (response) => {
+          // showAlert("Category updated successfully!", "success");
+          setAlert({ open: true, message: response.props.flash.error, severity: 'success' });
           setOpenCreateDialog(false);
           reset();
         },
-        onError: () => {
-          showAlert("Error updating category", "error");
+        onError: (error) => {
+          // setAlert({ open: true, message: response.props.flash.error, severity: 'error' });
+          // console.log(Object.values(error).join('\n'))
+          showAlert("Error updating category:"+Object.values(error).join('\n'), "error");
         }
       });
     } else {
@@ -471,7 +474,7 @@ export default function ItemCategories({ categories = [], auth, filters: initial
           setOpenCreateDialog(false);
           reset();
         },
-        onError: () => {
+        onError: (error) => {
           showAlert("Error creating category", "error");
         }
       });
@@ -656,7 +659,7 @@ export default function ItemCategories({ categories = [], auth, filters: initial
 
           {/* Data Grid */}
           <EnhancedDataGrid
-            rows={filteredRows}
+            rows={rows}
             columns={columns}
             loading={gridLoading}
             searchText={searchText}
@@ -696,6 +699,7 @@ export default function ItemCategories({ categories = [], auth, filters: initial
             onClose={() => setOpenDeleteDialog(false)}
             selectedItem={selectedItem}
             onConfirm={handleDeleteConfirm}
+            gridLoading={processing}
           />
         </Box>
       </Fade>

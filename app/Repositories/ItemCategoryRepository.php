@@ -9,70 +9,40 @@ use Illuminate\Support\Facades\DB;
 
 class ItemCategoryRepository
 {
-    public function getAll($filters = [], $perPage = 500)
+    public function getAll()
     {
-        $query = ItemCategory::with([
-            'university:university_id,name',
-            'parent:category_id,name',
-        ])->select([
-            'category_id',
-            'university_id',
-            'parent_category_id',
-            'category_code',
-            'name',
-            'description',
-            'image_url',
-            'warranty_period_days',
-            'depreciation_rate',
-            'depreciation_method',
-            'requires_serial_number',
-            'requires_maintenance',
-            'maintenance_interval_days',
-            'specification_template',
-            'is_active',
-            'created_at',
-            'updated_at'
-        ]);
-
-        // Apply filters
-        $cleanedFilters = array_filter($filters, function($value) {
-            return $value !== '' && $value !== null;
-        });
-
-        if (!empty($cleanedFilters['university_id'])) {
-            $query->where('university_id', $cleanedFilters['university_id']);
-        }
-
-        if (!empty($cleanedFilters['parent_category_id'])) {
-            $query->where('parent_category_id', $cleanedFilters['parent_category_id']);
-        }
-
-        if (isset($cleanedFilters['is_active'])) {
-            $query->where('is_active', (bool)$cleanedFilters['is_active']);
-        }
-
-        if (!empty($cleanedFilters['requires_maintenance'])) {
-            $query->where('requires_maintenance', (bool)$cleanedFilters['requires_maintenance']);
-        }
-
-        if (!empty($cleanedFilters['requires_serial_number'])) {
-            $query->where('requires_serial_number', (bool)$cleanedFilters['requires_serial_number']);
-        }
-
-        if (!empty($cleanedFilters['search'])) {
-            $search = trim($cleanedFilters['search']);
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('category_code', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+        $categories = ItemCategory::orderBy('created_at','desc')->with(['university', 'parent','items'])
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'category_id' => $category->category_id,
+                    'category_code' => $category->category_code,
+                    'name' => $category->name,
+                    'description' => $category->description,
+                    'image_url' => $category->image_url,
+                    'warranty_period_days' => $category->warranty_period_days,
+                    'depreciation_rate' => $category->depreciation_rate,
+                    'depreciation_method' => $category->depreciation_method,
+                    'requires_serial_number' => $category->requires_serial_number,
+                    'requires_maintenance' => $category->requires_maintenance,
+                    'maintenance_interval_days' => $category->maintenance_interval_days,
+                    'specification_template' => $category->specification_template,
+                    'lft' => $category->lft,
+                    'rgt' => $category->rgt,
+                    'depth' => $category->depth,
+                    'is_active' => $category->is_active,
+                    'parent_category_name' => $category->parent_category_name,
+                    'parent_category_id' => $category->parent_category_id,
+                    'university_name' => $category->university_name,
+                    'university_id' => $category->university_id,
+                    'items_count' => $category->items_count,
+                    'is_root' => $category->is_root,
+                    'created_at'=>$category->created_at,
+                    'updated_at'=>$category->updated_at,
+                ];
             });
-        }
 
-        $orderBy = $cleanedFilters['order_by'] ?? 'name';
-        $orderDirection = $cleanedFilters['order_direction'] ?? 'asc';
-        $query->orderBy($orderBy, $orderDirection);
-
-        return $query->paginate($perPage);
+        return  $categories;
     }
 
     public function findById($categoryId)

@@ -7,14 +7,16 @@ import {
   Typography,
   Button,
   Alert,
+  CircularProgress,
 } from '@mui/material';
-import { Delete as DeleteIcon, Warning } from '@mui/icons-material';
+import { Delete, Delete as DeleteIcon, Warning } from '@mui/icons-material';
 
 const DeleteDialog = ({
   open,
   onClose,
   selectedItem,
   onConfirm,
+  gridLoading
 }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -42,7 +44,11 @@ const DeleteDialog = ({
         <Button onClick={onClose} color="inherit">
           Cancel
         </Button>
-        <Button onClick={onConfirm} variant="contained" color="error" startIcon={<DeleteIcon />}>
+        <Button onClick={onConfirm} variant="contained" color="error"
+        disabled={gridLoading}
+        startIcon={gridLoading ? <CircularProgress size={16} /> : <Delete />}
+        // startIcon={<DeleteIcon />}
+        >
           Delete Category
         </Button>
       </DialogActions>
