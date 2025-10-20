@@ -61,7 +61,7 @@ import {
   History as AuditIcon // Added for audit logs
 } from '@mui/icons-material';
 import { keyframes } from '@emotion/react';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 
 // Animation keyframes
 const fadeIn = keyframes`
@@ -125,6 +125,10 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
   const [openGroups, setOpenGroups] = useState({});
   const { post, get } = useForm();
 
+  const { auth } = usePage().props;
+
+  // console.log(auth.user.role.display_name)
+   
   const handleDrawerToggle = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -269,10 +273,10 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
             src="https://randomuser.me/api/portraits/men/32.jpg"
           />
           <Typography variant="h6" sx={{ fontWeight: 'medium', fontSize: '1.1rem' }}>
-            Michael Chen
+            {auth?.user?.username??'N/A'}
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.8rem' }}>
-            Inventory Manager
+            {/* Inventory Manager */}{auth?.user?.role?.display_name??'N/A'}
           </Typography>
           <Chip 
             label="Premium Plan" 

@@ -224,6 +224,169 @@
 
 // require __DIR__.'/auth.php';
 
+
+// use App\Http\Controllers\AnalyticsController;
+// use App\Http\Controllers\AuditLogController;
+// use App\Http\Controllers\DepartmentController;
+// use App\Http\Controllers\InventoryReportController;
+// use App\Http\Controllers\InventoryTransactionController;
+// use App\Http\Controllers\ItemCategoryController;
+// use App\Http\Controllers\ItemController;
+// use App\Http\Controllers\LocationController;
+// use App\Http\Controllers\MaintenanceRecordController;
+// use App\Http\Controllers\ProfileController;
+// use App\Http\Controllers\PurchaseOrderController;
+// use App\Http\Controllers\PurchaseOrderItemController;
+// use App\Http\Controllers\RoleController;
+// use App\Http\Controllers\RouteController;
+// use App\Http\Controllers\StockLevelsController;
+// use App\Http\Controllers\SupplierController;
+// use App\Http\Controllers\UserController;
+// use Illuminate\Foundation\Application;
+// use Illuminate\Support\Facades\Route;
+// use Inertia\Inertia;
+
+// Route::get('/', function () {
+//     return Inertia::render('Welcome', [
+//         'canLogin' => Route::has('login'),
+//         'canRegister' => Route::has('register'),
+//         'laravelVersion' => Application::VERSION,
+//         'phpVersion' => PHP_VERSION,
+//     ]);
+// });
+
+// Route::get('/dashboard', function () {
+//     return Inertia::render('Dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
+
+// Route::middleware('auth')->group(function () {
+//     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+//     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+//     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+// });
+
+// // Main application routes with role-based access control
+// Route::middleware(['auth', 'verified'])->group(function () {
+    
+//     // Admin-only routes (Super Admin, Inventory Manager, Department Head)
+//     Route::middleware(['role:super_admin,inventory_manager,department_head'])->group(function () {
+//         // User Management
+//         Route::get('/users', [UserController::class, 'index'])->name('users.index');
+//         Route::post('/users', [UserController::class, 'store'])->name('admin.users.store');
+//         Route::put('/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
+//         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+//         Route::put('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
+
+//         // Role Management (Super Admin only)
+//         Route::middleware(['role:super_admin'])->group(function () {
+//             Route::get('/roles', [RoleController::class, 'index'])->name('admin.roles.index');
+//             Route::post('/roles', [RoleController::class, 'store'])->name('admin.roles.store');
+//             Route::put('/roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
+//             Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('admin.roles.destroy');
+//             Route::post('/roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('admin.roles.update-permissions');
+//         });
+
+//         // Audit Logs (Admin only)
+//         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+//         Route::post('/audit-logs', [AuditLogController::class, 'store'])->name('audit-logs.store');
+//         Route::put('/audit-logs/{id}', [AuditLogController::class, 'update'])->name('audit-logs.update');
+//         Route::delete('/audit-logs/{id}', [AuditLogController::class, 'destroy'])->name('audit-logs.destroy');
+
+//         // Analytics & Reports
+//         Route::get('/analytics/dashboard', [AnalyticsController::class, 'getDashboardData'])->name('analytics.dashboard');
+//         Route::post('/analytics/export', [AnalyticsController::class, 'exportDashboard'])->name('analytics.export');
+//         Route::get('/analytics/refresh', [AnalyticsController::class, 'refreshData'])->name('analytics.refresh');
+//     });
+
+//     // Inventory Management Routes (Various permission levels)
+//     Route::prefix('inventory')->middleware(['permission:inventory.view'])->group(function () {
+//         // Item Categories (Manage categories permission)
+//         Route::middleware(['permission:inventory.manage_categories'])->group(function () {
+//             Route::get('/item-categories', [ItemCategoryController::class, 'index'])->name("item-categories.index");
+//             Route::post('/item-categories', [ItemCategoryController::class, 'store'])->name("item-categories.store");
+//             Route::get('/item-categories/{id}', [ItemCategoryController::class, 'show'])->name("item-categories.show");
+//             Route::put('/item-categories/{id}', [ItemCategoryController::class, 'update'])->name("item-categories.update");
+//             Route::delete('/item-categories/{id}', [ItemCategoryController::class, 'destroy'])->name("item-categories.destroy");
+//         });
+
+//         // Items (Various item permissions)
+//         Route::get('/items', [ItemController::class, 'index'])->name('item.index');
+//         Route::middleware(['permission:inventory.create'])->group(function () {
+//             Route::post('/items', [ItemController::class, 'store'])->name('item.store');
+//         });
+//         Route::middleware(['permission:inventory.edit'])->group(function () {
+//             Route::put('/items/{id}', [ItemController::class, 'update'])->name('item.update');
+//         });
+//         Route::middleware(['permission:inventory.delete'])->group(function () {
+//             Route::delete('/items/{id}', [ItemController::class, 'destroy'])->name('item.destroy');
+//         });
+
+//         // Inventory Transactions
+//         Route::get('/transactions', [InventoryTransactionController::class, 'transactionIndex'])->name('inventory-transactions.index');
+//         Route::middleware(['permission:inventory.edit'])->group(function () {
+//             Route::post('/transactions', [InventoryTransactionController::class, 'store'])->name('inventory-transactions.store');
+//             Route::put('/transactions/{id}', [InventoryTransactionController::class, 'update'])->name('inventory-transactions.update');
+//             Route::delete('/transactions/{id}', [InventoryTransactionController::class, 'destroy'])->name('inventory-transactions.destroy');
+//         });
+//     });
+
+//     // Purchase Order Routes
+//     Route::prefix('purchase-orders')->middleware(['permission:purchase_orders.view'])->group(function () {
+//         Route::get('/', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+//         Route::get('/{id}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+        
+//         Route::middleware(['permission:purchase_orders.create'])->group(function () {
+//             Route::post('/', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+//         });
+        
+//         Route::middleware(['permission:purchase_orders.edit'])->group(function () {
+//             Route::put('/{id}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
+//         });
+        
+//         Route::middleware(['permission:purchase_orders.approve'])->group(function () {
+//             Route::post('/{id}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
+//         });
+//     });
+
+//     // Department Routes (Department Head and above)
+//     Route::middleware(['role:super_admin,inventory_manager,department_head'])->group(function () {
+//         Route::get('/departments', [DepartmentController::class, 'index'])->name('department.index');
+//         Route::post('/departments', [DepartmentController::class, 'store'])->name('department.store');
+//         Route::put('/departments/{id}', [DepartmentController::class, 'update'])->name('department.update');
+//         Route::delete('/departments/{id}', [DepartmentController::class, 'destroy'])->name('department.destroy');
+//     });
+
+//     // Supplier Routes
+//     Route::resource('suppliers', SupplierController::class)->middleware(['permission:inventory.view']);
+
+//     // Stock Levels
+//     Route::resource('stock-levels', StockLevelsController::class)->middleware(['permission:inventory.view']);
+//     Route::post('/stock-levels/import', [StockLevelsController::class, 'import'])->name('stock-levels.import')->middleware(['permission:inventory.edit']);
+//     Route::post('/stock-levels/bulk-update', [StockLevelsController::class, 'bulkUpdate'])->name('stock-levels.bulk-update')->middleware(['permission:inventory.edit']);
+
+//     // Locations
+//     Route::resource('locations', LocationController::class)->middleware(['permission:inventory.view']);
+
+//     // Maintenance Records
+//     Route::get('/maintenance-records', [MaintenanceRecordController::class, 'index'])->name('maintenance_records.index');
+//     Route::middleware(['permission:inventory.edit'])->group(function () {
+//         Route::post('/maintenance-records', [MaintenanceRecordController::class, 'store'])->name('maintenance.store');
+//         Route::put('/maintenance-records/{maintenanceRecord}', [MaintenanceRecordController::class, 'update'])->name('maintenance.update');
+//         Route::delete('/maintenance-records/{maintenanceRecord}', [MaintenanceRecordController::class, 'destroy'])->name('maintenance.destroy');
+//     });
+
+//     // Reports
+//     Route::prefix('reports')->middleware(['permission:reports.view'])->group(function () {
+//         Route::get('/', [InventoryReportController::class, 'index'])->name('inventory-report.index');
+//         Route::post('/generate', [InventoryReportController::class, 'generate'])->name('inventory-report.generate');
+//         Route::get('/quick/{type}', [InventoryReportController::class, 'quickReport'])->name('inventory-report.quick');
+//         Route::post('/export', [InventoryReportController::class, 'exportReport'])->name('inventory-report.export');
+//     });
+
+//     // Universities (Read-only for most users)
+//     Route::get('/universities', [RouteController::class, 'universities'])->name('universities');
+// });
+
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DepartmentController;
@@ -272,23 +435,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // =========================================================================
     Route::prefix('users')->group(function () {
         // View users - REQUIRES: admin role + view permission
-        Route::middleware(['role:super_admin,inventory_manager,department_head', 'permission:users.view'])->group(function () {
+        Route::middleware(['role:super_admin'])->group(function () {
             Route::get('/', [UserController::class, 'index'])->name('users.index');
-        });
+        // });
         
         // Create users - REQUIRES: super_admin role + create permission
-        Route::middleware(['role:super_admin', 'permission:users.create'])->group(function () {
+        // Route::middleware(['role:super_admin', 'permission:users.create'])->group(function () {
             Route::post('/', [UserController::class, 'store'])->name('admin.users.store');
-        });
+        // });
         
         // Update users - REQUIRES: admin role + edit permission
-        Route::middleware(['role:super_admin,inventory_manager,department_head', 'permission:users.edit'])->group(function () {
+        // Route::middleware(['role:super_admin,inventory_manager,department_head', 'permission:users.edit'])->group(function () {
             Route::put('/{user}', [UserController::class, 'update'])->name('admin.users.update');
             Route::put('/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
-        });
+        // });
         
         // Delete users - REQUIRES: super_admin role + delete permission
-        Route::middleware(['role:super_admin', 'permission:users.delete'])->group(function () {
+        // Route::middleware(['role:super_admin', 'permission:users.delete'])->group(function () {
             Route::delete('/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
         });
     });
@@ -331,22 +494,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // =========================================================================
     Route::prefix('audit-logs')->group(function () {
         // View audit logs - REQUIRES: admin role + view permission
-        Route::middleware(['role:super_admin,inventory_manager,department_head', 'permission:audit_logs.view'])->group(function () {
+        Route::middleware(['role:super_admin,inventory_manager', 'permission:audit_logs.view'])->group(function () {
             Route::get('/', [AuditLogController::class, 'index'])->name('audit-logs.index');
         });
         
         // Create audit logs - REQUIRES: admin role + create permission
-        Route::middleware(['role:super_admin,inventory_manager,department_head', 'permission:audit_logs.create'])->group(function () {
+        Route::middleware(['role:super_admin,inventory_manager', 'permission:audit_logs.create'])->group(function () {
             Route::post('/', [AuditLogController::class, 'store'])->name('audit-logs.store');
         });
         
         // Update audit logs - REQUIRES: admin role + edit permission
-        Route::middleware(['role:super_admin,inventory_manager,department_head', 'permission:audit_logs.edit'])->group(function () {
+        Route::middleware(['role:super_admin,inventory_manager', 'permission:audit_logs.edit'])->group(function () {
             Route::put('/{id}', [AuditLogController::class, 'update'])->name('audit-logs.update');
         });
         
         // Delete audit logs - REQUIRES: admin role + delete permission
-        Route::middleware(['role:super_admin,inventory_manager,department_head', 'permission:audit_logs.delete'])->group(function () {
+        Route::middleware(['role:super_admin,inventory_manager', 'permission:audit_logs.delete'])->group(function () {
             Route::delete('/{id}', [AuditLogController::class, 'destroy'])->name('audit-logs.destroy');
         });
     });
@@ -375,7 +538,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // INVENTORY MANAGEMENT ROUTES - STRICT REQUIREMENTS
     // =========================================================================
     Route::prefix('inventory')->group(function () {
-        
+        Route::middleware(['role:super_admin,inventory_manager'])->group(function () {
+
         // VIEW INVENTORY - REQUIRES: any role + view permission
         Route::middleware(['permission:inventory.view'])->group(function () {
             Route::get('/items', [ItemController::class, 'index'])->name('item.index');
@@ -454,16 +618,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/bulk-adjust', [InventoryTransactionController::class, 'bulkAdjustStock'])->name('inventory.bulk-adjust-stock');
             });
         });
+
+       });
     });
 
     // =========================================================================
     // PURCHASE ORDER ROUTES - STRICT REQUIREMENTS
     // =========================================================================
     Route::prefix('purchase-orders')->group(function () {
+    Route::middleware(['role:super_admin,inventory_manager,procurement_officer'])->group(function () {
+
         // View purchase orders - REQUIRES: any role + view permission
         Route::middleware(['permission:purchase_orders.view'])->group(function () {
             Route::get('/', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
             Route::get('/{id}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+            Route::resource('purchase-order-items', PurchaseOrderItemController::class);
+
         });
         
         // Create purchase orders - REQUIRES: inventory_manager role + create permission
@@ -481,6 +651,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/{id}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
             Route::post('/{id}/reject', [PurchaseOrderController::class, 'reject'])->name('purchase-orders.reject');
         });
+
+    });
+
+
     });
 
     // =========================================================================
