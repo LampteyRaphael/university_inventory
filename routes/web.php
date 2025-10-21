@@ -387,6 +387,7 @@
 //     Route::get('/universities', [RouteController::class, 'universities'])->name('universities');
 // });
 
+use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DepartmentController;
@@ -448,6 +449,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Route::middleware(['role:super_admin,inventory_manager,department_head', 'permission:users.edit'])->group(function () {
             Route::put('/{user}', [UserController::class, 'update'])->name('admin.users.update');
             Route::put('/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
+                
+    // Route::put('/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+    // Route::put('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
+
         // });
         
         // Delete users - REQUIRES: super_admin role + delete permission
@@ -626,6 +632,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // PURCHASE ORDER ROUTES - STRICT REQUIREMENTS
     // =========================================================================
     Route::prefix('purchase-orders')->group(function () {
+        
     Route::middleware(['role:super_admin,inventory_manager,procurement_officer'])->group(function () {
 
         // View purchase orders - REQUIRES: any role + view permission
@@ -637,12 +644,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
         
         // Create purchase orders - REQUIRES: inventory_manager role + create permission
-        Route::middleware(['role:inventory_manager', 'permission:purchase_orders.create'])->group(function () {
+        Route::middleware(['permission:purchase_orders.create'])->group(function () {
             Route::post('/', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
         });
         
         // Edit purchase orders - REQUIRES: inventory_manager role + edit permission
-        Route::middleware(['role:inventory_manager', 'permission:purchase_orders.edit'])->group(function () {
+        Route::middleware(['permission:purchase_orders.edit'])->group(function () {
             Route::put('/{id}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
         });
         
@@ -770,6 +777,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // UNIVERSITIES - VIEW ONLY
     // =========================================================================
     Route::get('/universities', [RouteController::class, 'universities'])->name('universities');
+
+
+    // =========================================================================
+    // ROLES AND PERMISSIONS - VIEW ONLY
+    // =========================================================================
+    Route::prefix('admin/role-permissions')->group(function () {
+    // Get all role permissions with filters
+    Route::get('/', [RolePermissionController::class, 'index'])->name('role_permission.index');
+    
+    // Assign permission to role
+    Route::post('/', [RolePermissionController::class, 'store']);
+    
+    // Bulk operations
+    Route::post('/bulk-assign', [RolePermissionController::class, 'bulkAssign']);
+    Route::post('/bulk-remove', [RolePermissionController::class, 'bulkRemove']);
+    
+    // Get permissions by role
+    Route::get('/role/{roleId}', [RolePermissionController::class, 'getByRole']);
+    
+    // Update role permission
+    Route::put('/{id}', [RolePermissionController::class, 'update']);
+    
+    // Toggle permission status
+    Route::patch('/{id}/toggle-status', [RolePermissionController::class, 'toggleStatus']);
+    
+    // Remove permission from role
+    Route::delete('/{id}', [RolePermissionController::class, 'destroy']);
+});
+
+
+
 });
 
 require __DIR__.'/auth.php';

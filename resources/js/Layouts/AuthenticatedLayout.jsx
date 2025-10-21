@@ -225,7 +225,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
       title: 'Settings',
       icon: <SettingsIcon />,
       items: [
-        { text: 'System Settings', icon: <SettingsIcon /> },
+        { text: 'System Settings', icon: <SettingsIcon />, route:'role_permission.index' },
         { text: 'User Management', icon: <PeopleIcon />, route:'users.index' }
       ]
     }
@@ -276,7 +276,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
             {auth?.user?.username??'N/A'}
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.8rem' }}>
-            {/* Inventory Manager */}{auth?.user?.role?.display_name??'N/A'}
+            {/* Inventory Manager */}{auth?.user?.role?.name??'N/A'}
           </Typography>
           <Chip 
             label="Premium Plan" 

@@ -20,7 +20,12 @@ class PurchaseOrderController extends Controller
      * Display a listing of the purchase orders.
      */
     public function index(Request $request)
-    {
+    {   $user=Auth::user();
+        if(!$user->hasPermissionTo('purchase_orders.view')){
+
+         return back()->with('error', 'You do not have permission to perform this action');
+       };
+
         try {
             $purchaseOrders = PurchaseOrder::with(['university', 'supplier', 'department', 'requestedBy'])
                 ->get()
@@ -127,6 +132,12 @@ class PurchaseOrderController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+       if(!$user->hasPermissionTo('purchase_orders.create')){
+
+         return back()->with('error', 'You do not have permission to perform this action');
+       };
+
         $validated = $request->validate([
             'university_id' => 'required|exists:universities,university_id',
             'supplier_id' => 'required|exists:suppliers,supplier_id',
@@ -220,6 +231,13 @@ class PurchaseOrderController extends Controller
      */
     public function update(Request $request, $id)
     {
+
+        $user = Auth::user();
+       if(!$user->hasPermissionTo('purchase_orders.edit')){
+
+         return back()->with('error', 'You do not have permission to perform this action');
+       };
+
         $purchaseOrder = PurchaseOrder::findOrFail($id);
                 
         $validated = $request->validate([

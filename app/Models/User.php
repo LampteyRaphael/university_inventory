@@ -93,11 +93,6 @@ class User extends Authenticatable implements HasRoles
         return $this->belongsTo(Department::class, 'department_id', 'department_id');
     }
 
-    public function role(): BelongsTo
-    {
-        return $this->belongsTo(Role::class, 'role_id', 'role_id');
-    }
-
     /**
      * Accessors
      */
@@ -108,6 +103,158 @@ class User extends Authenticatable implements HasRoles
         }
         return $this->name ?: '';
     }
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+ /**
+     * Get the user's role
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id', 'role_id');
+    }
+
+    /**
+     * Check if user is super admin - FIXED VERSION
+     */
+    public function isSuperAdmin(): bool
+    {
+        // If role is already loaded as a relationship
+        if ($this->relationLoaded('role') && $this->role instanceof Role) {
+            return $this->role->name === 'super_admin';
+        }
+        
+        // If role is a string (from select), check directly
+        if (is_string($this->role)) {
+            return $this->role === 'super_admin';
+        }
+        
+        // Fallback: check via database if needed
+        if ($this->role_id) {
+            $role = \App\Models\Role::find($this->role_id);
+            return $role && $role->name === 'super_admin';
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if user has a specific permission - IMPROVED VERSION
+     */
+    public function hasPermissionTo(string $permission): bool
+    {
+        // Super admin has all permissions
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Check if user has a role
+        if (!$this->role_id) {
+            return false;
+        }
+
+        return \App\Models\RolePermission::where('role_id', $this->role_id)
+            ->where('is_enabled', true)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+            })
+            ->whereHas('permission', function ($query) use ($permission) {
+                $query->where('name', $permission);
+            })
+            ->exists();
+    }
+
+    /**
+     * Check if user has any of the given permissions
+     */
+    public function hasAnyPermission(array $permissions): bool
+    {
+        // Super admin has all permissions
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if (!$this->role_id) {
+            return false;
+        }
+
+        return \App\Models\RolePermission::where('role_id', $this->role_id)
+            ->where('is_enabled', true)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+            })
+            ->whereHas('permission', function ($query) use ($permissions) {
+                $query->whereIn('name', $permissions);
+            })
+            ->exists();
+    }
+
+    /**
+     * Get all permissions for the user
+     */
+    public function getAllPermissions()
+    {
+        if (!$this->role_id) {
+            return collect();
+        }
+
+        return \App\Models\RolePermission::with('permission')
+            ->where('role_id', $this->role_id)
+            ->where('is_enabled', true)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+            })
+            ->get()
+            ->pluck('permission.name')
+            ->filter();
+    }
+
+    /**
+     * Get user's role name - SAFE VERSION
+     */
+    public function getRoleName(): string
+    {
+        // If role is loaded as relationship
+        if ($this->relationLoaded('role') && $this->role instanceof Role) {
+            return $this->role->name;
+        }
+        
+        // If role is a string
+        if (is_string($this->role)) {
+            return $this->role;
+        }
+        
+        // Fallback to database lookup
+        if ($this->role_id) {
+            $role = \App\Models\Role::find($this->role_id);
+            return $role ? $role->name : 'No Role';
+        }
+        
+        return 'No Role';
+    }
+
+
+
+////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public function getDisplayRoleAttribute(): string
     {
@@ -306,18 +453,6 @@ class User extends Authenticatable implements HasRoles
         return $this->attributes['role'] ?? null;
     }
 
-    public function getRoleName(): ?string
-    {
-        if ($this->role_id && $this->relationLoaded('role') && $this->role) {
-            return $this->role->name??'';
-        }
-        
-        if (isset($this->attributes['role'])) {
-            return ucwords(str_replace('_', ' ', $this->attributes['role']));
-        }
-        
-        return null;
-    }
 
     public function hasRole($role): bool
     {
@@ -387,36 +522,6 @@ class User extends Authenticatable implements HasRoles
         return $this->getRoleLevel() > $otherUser->getRoleLevel();
     }
 
-    /**
-     * Permission checking methods
-     */
-    // public function hasPermission($permission): bool
-    // {
-    //     $effectivePermissions = $this->effective_permissions;
-        
-    //     if (in_array('*', $effectivePermissions)) {
-    //         return true;
-    //     }
-
-    //     return in_array($permission, $effectivePermissions);
-    // }
-
-    public function hasAnyPermission(array $permissions): bool
-    {
-        $effectivePermissions = $this->effective_permissions;
-        
-        if (in_array('*', $effectivePermissions)) {
-            return true;
-        }
-
-        foreach ($permissions as $permission) {
-            if (in_array($permission, $effectivePermissions)) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
 
     public function hasAllPermissions(array $permissions): bool
     {
@@ -475,13 +580,7 @@ class User extends Authenticatable implements HasRoles
         $this->update(['permissions' => array_unique($permissions)]);
     }
 
-    /**
-     * Role-specific helper methods
-     */
-    public function isSuperAdmin(): bool
-    {
-        return $this->hasRole('super_admin');
-    }
+
 
     public function isInventoryManager(): bool
     {
