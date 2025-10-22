@@ -418,6 +418,14 @@ Route::get('/', function () {
     ]);
 });
 
+
+Route::get('error/{code?}', function ($code = 500) {
+    return Inertia::render('Errors/Error', [
+        'status' => (int) $code,
+    ]);
+})->name('error.page');
+
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');

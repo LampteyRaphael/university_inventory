@@ -37,17 +37,15 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 
-    // Handle 403 Forbidden
-    $exceptions->render(function (Throwable $e, $request) {
+        $exceptions->render(function (Throwable $e, $request) {
 
         if (! $request->inertia()) {
             return null; // Let Laravel handle non-Inertia requests normally
         }
 
-        $status = 500; // Default error code
+        $status = 500;
         $message = $e->getMessage() ?: 'Something went wrong';
 
-        // Detect known HTTP exceptions
         if ($e instanceof HttpException) {
             $status = $e->getStatusCode();
         } elseif ($e instanceof ValidationException) {
@@ -60,24 +58,33 @@ return Application::configure(basePath: dirname(__DIR__))
             $status = 419;
         }
 
-        // Map status codes to error page names
-        // $pages = [
-        //     401 => 'Errors/401',
-        //     403 => 'Errors/403',
-        //     404 => 'Errors/404',
-        //     419 => 'Errors/419',
-        //     422 => 'Errors/422',
-        //     429 => 'Errors/429',
-        //     500 => 'Errors/500',
-        //     503 => 'Errors/503',
-        // ];
+        // Redirect for 401 and 403 errors
+        if (in_array($status, [401, 403])) {
+            return redirect()
+                ->route('error.page', ['code' => $status])
+                ->with([
+                    'message' => $message,
+                ]);
+        }
 
-        // $page = $pages[$status] ?? 'Errors/500';
+        // For others, render directly
+        $pages = [
+            404 => 'Errors/404',
+            419 => 'Errors/419',
+            422 => 'Errors/422',
+            429 => 'Errors/429',
+            500 => 'Errors/500',
+            503 => 'Errors/503',
+        ];
 
-        return Inertia::render('Error', [
+        $page = $pages[$status] ?? 'Errors/500';
+
+        return Inertia::render($page, [
             'status' => $status,
             'message' => $message,
         ])->toResponse($request)->setStatusCode($status);
     });
-        //
+
+    
+
     })->create();

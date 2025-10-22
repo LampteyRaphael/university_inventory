@@ -16,10 +16,10 @@ use Inertia\Inertia;
 
 class PurchaseOrderController extends Controller
 {
-    // public function __construct()
-    // {
-    //     $this->authorizeResource(PurchaseOrder::class, 'purchaseOrder');
-    // }
+    public function __construct()
+    {
+        $this->authorizeResource(PurchaseOrder::class, 'purchaseOrder');
+    }
 
     /**
      * Display a listing of the purchase orders.

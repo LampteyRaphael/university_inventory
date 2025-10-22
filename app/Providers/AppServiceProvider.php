@@ -13,7 +13,6 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
-    
     public function register(): void
     {
         //
@@ -26,6 +25,5 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
-
     }
 }
