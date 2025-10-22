@@ -61,18 +61,18 @@ return Application::configure(basePath: dirname(__DIR__))
         }
 
         // Map status codes to error page names
-        $pages = [
-            401 => 'Errors/401',
-            403 => 'Errors/403',
-            404 => 'Errors/404',
-            419 => 'Errors/419',
-            422 => 'Errors/422',
-            429 => 'Errors/429',
-            500 => 'Errors/500',
-            503 => 'Errors/503',
-        ];
+        // $pages = [
+        //     401 => 'Errors/401',
+        //     403 => 'Errors/403',
+        //     404 => 'Errors/404',
+        //     419 => 'Errors/419',
+        //     422 => 'Errors/422',
+        //     429 => 'Errors/429',
+        //     500 => 'Errors/500',
+        //     503 => 'Errors/503',
+        // ];
 
-        $page = $pages[$status] ?? 'Errors/500';
+        // $page = $pages[$status] ?? 'Errors/500';
 
         return Inertia::render('Error', [
             'status' => $status,
