@@ -651,6 +651,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Edit purchase orders - REQUIRES: inventory_manager role + edit permission
         Route::middleware(['permission:purchase_orders.edit'])->group(function () {
             Route::put('/{id}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
+            Route::delete('/{id}',[PurchaseOrderController::class,'destroy'])->name('purchase-orders.destroy');
+
         });
         
         // Approve purchase orders - REQUIRES: department_head role + approve permission

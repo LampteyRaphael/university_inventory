@@ -16,15 +16,16 @@ use Inertia\Inertia;
 
 class PurchaseOrderController extends Controller
 {
+    // public function __construct()
+    // {
+    //     $this->authorizeResource(PurchaseOrder::class, 'purchaseOrder');
+    // }
+
     /**
      * Display a listing of the purchase orders.
      */
     public function index(Request $request)
-    {   $user=Auth::user();
-        if(!$user->hasPermissionTo('purchase_orders.view')){
-
-         return back()->with('error', 'You do not have permission to perform this action');
-       };
+    {   
 
         try {
             $purchaseOrders = PurchaseOrder::with(['university', 'supplier', 'department', 'requestedBy'])
@@ -98,46 +99,12 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new purchase order.
-     */
-    // public function create()
-    // {
-    //     $universities = University::all();
-    //     $suppliers = Supplier::all();
-    //     $departments = Department::all();
-    //     $users = User::all();
-        
-    //     $orderTypes = ['regular', 'emergency', 'capital', 'consumable', 'service'];
-    //     $currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
-    //     $statuses = ['draft', 'submitted', 'approved', 'ordered', 'partially_received', 'received', 'cancelled', 'closed'];
-        
-    //     // Generate PO Number
-    //     $poNumber = 'PO-' . date('Ymd') . '-' . Str::random(6);
-        
-    //     return view('purchase-orders.create', compact(
-    //         'universities', 
-    //         'suppliers', 
-    //         'departments', 
-    //         'users',
-    //         'orderTypes',
-    //         'currencies',
-    //         'statuses',
-    //         'poNumber'
-    //     ));
-    // }
-
+    
     /**
      * Store a newly created purchase order in storage.
      */
     public function store(Request $request)
     {
-        $user = Auth::user();
-       if(!$user->hasPermissionTo('purchase_orders.create')){
-
-         return back()->with('error', 'You do not have permission to perform this action');
-       };
-
         $validated = $request->validate([
             'university_id' => 'required|exists:universities,university_id',
             'supplier_id' => 'required|exists:suppliers,supplier_id',
@@ -231,13 +198,6 @@ class PurchaseOrderController extends Controller
      */
     public function update(Request $request, $id)
     {
-
-        $user = Auth::user();
-       if(!$user->hasPermissionTo('purchase_orders.edit')){
-
-         return back()->with('error', 'You do not have permission to perform this action');
-       };
-
         $purchaseOrder = PurchaseOrder::findOrFail($id);
                 
         $validated = $request->validate([
