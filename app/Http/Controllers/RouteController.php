@@ -176,13 +176,6 @@ class RouteController extends Controller
             ]);
     }
 
-    public function universities():Response
-    {
-            $universities= University::all();
-            return Inertia::render('Universities/Universities', [
-                'universities'=>$universities,
-            ]);
-    }
 
 
 }

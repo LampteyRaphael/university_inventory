@@ -190,7 +190,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
       items: [
         { text: 'Suppliers', icon: <SuppliersIcon />, route: 'suppliers.index' },
         { text: 'Customers', icon: <CustomersIcon />, route: 'users.index' },
-        { text: 'Universities', icon: <UniversityIcon />, route: 'universities' }
+        { text: 'Universities', icon: <UniversityIcon />, route: 'universities.index' }
       ]
     },
     {
@@ -225,7 +225,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
       title: 'Settings',
       icon: <SettingsIcon />,
       items: [
-        { text: 'System Settings', icon: <SettingsIcon />, route:'role_permission.index' },
+        { text: 'System Settings', icon: <SettingsIcon />, route:'admin.role-permission.manager' },
         { text: 'User Management', icon: <PeopleIcon />, route:'users.index' }
       ]
     }

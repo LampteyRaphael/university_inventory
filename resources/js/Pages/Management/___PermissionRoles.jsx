@@ -17,7 +17,7 @@ import {
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Notification from '@/Components/Notification';
 
-const RolePermissionManager = ({ role_permissions, roles, permissions, flash, auth }) => {
+const RolePermissionManager = ({ role_permissions=[], roles=[], permissions=[], flash, auth }) => {
   const { props } = usePage();
   
   // Initialize state with proper array checks

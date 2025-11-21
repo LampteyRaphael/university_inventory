@@ -3,350 +3,422 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 use App\Models\Role;
 use App\Models\Permission;
-use App\Models\University;
-use Inertia\Inertia;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Validator;
+
 
 class RoleController extends Controller
 {
-    public function index()
+    public function home(){
+        $user = auth()->user();
+        // dd([
+        // 'user_id' => $user->user_id,
+        // 'permissions_relationship_loaded' => $user->relationLoaded('permissions'),
+        // // 'permissions_collection' => $user->permissions,
+        // // 'permissions_collection_count' => $user->permissions->count(),
+        // // 'permissions_via_getPermissionNames' => $user->getPermissionNames(),
+        // // 'permissions_via_getAllPermissions' => $user->getAllPermissions()->pluck('name'),
+        // // 'has_permission_users_view' => $user->hasPermissionTo('users.view'),
+        // ]);
+
+        $roles = Role::orderBy('name','asc')->withCount(['permissions', 'users'])
+                    ->with('permissions:id,name')
+                    ->get();
+        $permissions = Permission::orderBy('name','asc')->withCount('roles')->get();
+        $users = User::orderBy('created_at','desc')->with(['roles', 'permissions'])->get()->map(function ($user) {
+            return array_merge($user->toArray(), [
+                'id' => $user->user_id,
+            ]);
+        });
+        return Inertia::render('Admin/RolePermissionManager', [
+            'roles' => $roles,
+            'permissions' => $permissions,
+            'users' => $users,
+        ]);
+    }
+
+    /**
+     * Display the role permission manager page
+     */
+    public function manager(Request $request)
     {
-        $user = Auth::user();
-        $roles = Role::with(['permissions', 'university'])
+        $roles = Role::withCount(['permissions', 'users'])
             ->get()
             ->map(function ($role) {
                 return [
-                    'id' => $role->role_id, // Add this for MUI Data Grid
-                    'role_id' => $role->role_id,
-                    'university_id' => $role->university_id,
+                    'id' => $role->id,
                     'name' => $role->name,
-                    'slug' => $role->slug,
-                    'description' => $role->description,
-                    'is_system_role' => $role->is_system_role,
-                    'is_assignable' => $role->is_assignable,
-                    'level' => $role->level,
+                    'guard_name' => $role->guard_name,
+                    'permissions_count' => $role->permissions_count,
+                    'users_count' => $role->users_count,
                     'permissions' => $role->permissions->map(function ($permission) {
                         return [
-                            'permission_id' => $permission->permission_id,
+                            'id' => $permission->id,
                             'name' => $permission->name,
-                            'slug' => $permission->slug,
-                            'module' => $permission->module,
-                            'action' => $permission->action,
-                            'category' => $permission->category,
                         ];
                     }),
-                    'user_count' => $role->users()->count(),
-                    'settings' => $role->settings,
+                    'created_at' => $role->created_at,
+                    'updated_at' => $role->updated_at,
                 ];
             });
 
-        $permissions = Permission::all()->groupBy('module');
-        $universities = University::select('university_id', 'name')->get();
+        $permissions = Permission::withCount('roles')
+            ->get()
+            ->map(function ($permission) {
+                return [
+                    'id' => $permission->id,
+                    'name' => $permission->name,
+                    'guard_name' => $permission->guard_name,
+                    'description' => $permission->description ?? '',
+                    'roles_count' => $permission->roles_count,
+                    'created_at' => $permission->created_at,
+                    'updated_at' => $permission->updated_at,
+                ];
+            });
 
-        return Inertia::render('Admin/RoleManagement', [
+        $users = User::with(['roles', 'permissions'])
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'user_id' => $user->user_id ?? $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'first_name' => $user->first_name ?? '',
+                    'last_name' => $user->last_name ?? '',
+                    'roles' => $user->roles->map(function ($role) {
+                        return [
+                            'id' => $role->id,
+                            'name' => $role->name,
+                        ];
+                    }),
+                    'permissions' => $user->permissions->map(function ($permission) {
+                        return [
+                            'id' => $permission->id,
+                            'name' => $permission->name,
+                        ];
+                    }),
+                ];
+            });
+
+        return Inertia::render('Admin/RolePermissionManager', [
             'roles' => $roles,
             'permissions' => $permissions,
-            'universities' => $universities,
+            'users' => $users,
         ]);
     }
 
-public function store(Request $request)
+    /**
+     * Display a listing of roles
+     */
+    public function index(Request $request)
+    {
+        $roles = Role::withCount(['permissions', 'users'])
+            ->with('permissions')
+            ->get();
+
+        return response()->json([
+            'roles' => $roles,
+        ]);
+    }
+
+    /**
+     * Store a newly created role
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('roles', 'name')
+            ],
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,id',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request) {
+                $role = Role::create([
+                    'name' => $request->name,
+                    'guard_name' => 'web',
+                ]);
+
+                if ($request->has('permissions') && !empty($request->permissions)) {
+                    $permissions = Permission::whereIn('id', $request->permissions)->get();
+                    $role->syncPermissions($permissions);
+                }
+
+                app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+            });
+
+            return redirect()->back()->with('success', 'Role created successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to create role: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update the specified role
+     */
+    public function update(Request $request, $roleId)
+    {
+        try {
+            // Find the role by UUID
+            $role = Role::findOrFail($roleId);
+
+            // Prevent modification of Super Admin role
+            // if ($role->name === 'Super Admin' && !auth()->user()->hasRole('Super Admin')) {
+            //     return response()->json([
+            //         'error' => 'You cannot modify the Super Admin role.'
+            //     ], 403);
+            // }
+
+            $request->validate([
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('roles', 'name')->ignore($role->id)
+                ],
+                'permissions' => 'nullable|array',
+                'permissions.*' => 'exists:permissions,id',
+            ]);
+
+            DB::transaction(function () use ($request, $role) {
+                $role->update([
+                    'name' => $request->name,
+                ]);
+
+                if ($request->has('permissions')) {
+                    $permissions = Permission::whereIn('id', $request->permissions)->get();
+                    $role->syncPermissions($permissions);
+                } else {
+                    $role->syncPermissions([]);
+                }
+
+                app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+            });
+
+            return back()->with([
+                'success' => 'Role updated successfully.',
+                'role' => $role->load(['permissions'])
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return back()->with([
+                'error' => 'Role not found.'
+            ], 404);
+        } catch (\Exception $e) {
+            return back()->with([
+                'error' => 'Failed to update role: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove the specified role
+     */
+    public function destroy($roleId)
+    {
+        try {
+            $role = Role::findOrFail($roleId);
+
+            // Prevent deletion of Super Admin role
+            if ($role->name === 'Super Admin') {
+                return response()->json([
+                    'error' => 'Cannot delete Super Admin role.'
+                ], 403);
+            }
+
+            // Check if role has users
+            if ($role->users()->count() > 0) {
+                return response()->json([
+                    'error' => 'Cannot delete role that has users assigned. Please reassign users first.'
+                ], 422);
+            }
+
+            DB::transaction(function () use ($role) {
+                $role->syncPermissions([]);
+                $role->delete();
+
+                app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+            });
+
+            return response()->json([
+                'success' => 'Role deleted successfully.'
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'error' => 'Role not found.'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to delete role: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get specific role with permissions
+     */
+    public function show($roleId)
+    {
+        try {
+            $role = Role::with('permissions')->findOrFail($roleId);
+
+            return response()->json([
+                'role' => $role
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'error' => 'Role not found.'
+            ], 404);
+        }
+    }
+
+
+
+///////////////////////////////////
+
+/////////////////////////////////////
+
+
+
+/**
+ * Update user roles
+ */
+public function updateUserRoles(Request $request, $user_id) // Use $user_id parameter
 {
-    // $this->authorize('users.manage_roles');
-    
-    $validated = $request->validate([
-        'name' => 'required|string|unique:roles,name',
-        'description' => 'nullable|string',
-        'university_id' => 'required|exists:universities,university_id',
-        'permissions' => 'array',
-        'permissions.*' => 'string|exists:permissions,name',
-    ]);
+    try {
+        $user = User::findOrFail($user_id); // Manually find the user
+        
+        $request->validate([
+            'roles' => 'required|array',
+            'roles.*' => 'exists:roles,id',
+        ]);
 
-    $role = Role::create([
-        'name' => $validated['name'],
-        'slug' => Str::slug($validated['name']),
-        'description' => $validated['description'],
-        'university_id' => $validated['university_id'],
-        'is_system_role' => false,
-        'level' => 50,
-    ]);
+        $user->syncRoles($request->roles);
+        
+        // Clear permission cache
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-    // In your store method
-if (!empty($validated['permissions'])) {
-    $permissions = Permission::whereIn('name', $validated['permissions'])->get();
-    
-    $permissionData = [];
-    foreach ($permissions as $permission) {
-        $permissionData[$permission->permission_id] = [
-            'id' => Str::uuid(), // Manually generate UUID for each pivot
-            'is_enabled' => true,
-            'granted_at' => now(),
-            'granted_by'=>Auth::user()->user_id,
-            'created_at'=> now(),
-        ];
+        return back()->with([
+            'success' => 'User roles updated successfully.',
+            'user' => $user->load(['roles', 'permissions'])
+        ]);
+
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return back()->with([
+            'error' => 'User not found.'
+        ], 404);
+    } catch (\Exception $e) {
+        return back()->with([
+            'error' => 'Failed to update user roles: '
+        ], 500);
     }
-        $role->permissions()->sync($permissionData);
-    }
-
-    return redirect()->back()->with('success', 'Role created successfully.');
 }
 
-public function update(Request $request, Role $role)
+/**
+ * Update user direct permissions
+ */
+public function updateUserPermissions(Request $request, $user_id)
 {
-    // $this->authorize('users.manage_roles');
-    
-    // Prevent modification of system roles
-    if ($role->is_system_role) {
-        return redirect()->back()->with('error', 'System roles cannot be modified.');
-    }
+    try {
+        $user = User::findOrFail($user_id);
+        $permissions = $request->input('permissions', []);
 
-    $validated = $request->validate([
-        'name' => 'required|string|max:255|unique:roles,name,' . $role->role_id . ',role_id',
-        'description' => 'nullable|string|max:500',
-        'is_assignable' => 'sometimes|boolean',
-        'permissions' => 'sometimes|array',
-        'permissions.*' => 'string|exists:permissions,name', // You're validating permission names
-        'settings' => 'nullable|array',
-    ]);
+        // Get the permission IDs
+        $permissionIds = Permission::whereIn('id', $permissions)
+            ->pluck('id')
+            ->toArray();
 
-    DB::transaction(function () use ($role, $validated) {
-        $role->update([
-            'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']), // Better to generate slug from name
-            'description' => $validated['description'],
-            'level' => 70,
-            'is_assignable' => $validated['is_assignable'] ?? true,
-            'settings' => $validated['settings'] ?? null,
-        ]);
+        DB::transaction(function () use ($user, $permissionIds) {
+            // Remove all existing direct permissions
+            DB::table('model_has_permissions')
+                ->where('model_type', get_class($user))
+                ->where('model_id', $user->user_id) // Use user_id since that's your primary key
+                ->delete();
 
-        // Sync permissions - Convert permission names to UUIDs
-        if (isset($validated['permissions'])) {
-            $permissionData = [];
-            
-            foreach ($validated['permissions'] as $permissionName) {
-                // Find the permission by name to get its UUID
-                $permission = \App\Models\Permission::where('name', $permissionName)->first();
-                
-                if ($permission) {
-                    $permissionData[$permission->permission_id] = [
-                        'id' => (string) Str::uuid(),
-                        'is_enabled' => true,
-                        'granted_at' => now(),
-                        'granted_by' => Auth::user()->user_id,
+            // Add new permissions
+            if (!empty($permissionIds)) {
+                $data = [];
+                foreach ($permissionIds as $permissionId) {
+                    $data[] = [
+                        'permission_id' => $permissionId,
+                        'model_type' => get_class($user),
+                        'model_id' => $user->user_id, // Use user_id
+                        'model_id' => $user->user_id, // Add this if your table has model_uuid column
                     ];
                 }
+                
+                DB::table('model_has_permissions')->insert($data);
             }
-            
-            $role->permissions()->sync($permissionData);
-        } else {
-            // If no permissions selected, detach all
-            $role->permissions()->detach();
-        }
-    });
+        });
 
-    return redirect()->back()->with('success', 'Role updated successfully.');
+        // Clear cache
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        return back()->with([
+            'success' => 'User permissions updated successfully.',
+            'user' => $user->load(['roles', 'permissions'])
+        ]);
+
+    } catch (\Exception $e) {
+
+        return back()->withErrors([
+            'error' => 'Failed to update user permissions: ' . $e->getMessage()
+        ], 500);
+    }
 }
-    // public function update(Request $request, Role $role)
-    // {
-    //     // $this->authorize('users.manage_roles');
-        
-    //     // Prevent modification of system roles
-    //     if ($role->is_system_role) {
-    //         return redirect()->back()->with('error', 'System roles cannot be modified.');
-    //     }
 
-    //     // dd($request->all());die;
+/**
+ * Get user roles
+ */
+public function getUserRoles($user_id) // Use $user_id parameter
+{
+    try {
+        $user = User::with('roles')->findOrFail($user_id);
 
-    //     // $validated = $request->validate([
-    //     //     'name' => 'required|string|unique:roles,name,' . $role->role_id . ',role_id',
-    //     //     'slug' => 'required|string|unique:roles,slug,' . $role->role_id . ',role_id',
-    //     //     'description' => 'nullable|string',
-    //     //     'level' => 'required|integer|min:0|max:100',
-    //     //     'is_assignable' => 'boolean',
-    //     //     'permissions' => 'array',
-    //     //     'permissions.*' => 'uuid|exists:permissions,permission_id',
-    //     //     'settings' => 'nullable|array',
-    //     // ]);
-    // $validated = $request->validate([
-    //     'name' => 'required|string|max:255|unique:roles,name,' . $role->role_id . ',role_id',
-    //     // 'slug' => 'required|string|max:255|alpha_dash|unique:roles,slug,' . $role->role_id . ',role_id',
-    //     'description' => 'nullable|string|max:500',
-    //     // 'level' => 'required|integer|min:0|max:100',
-    //     'is_assignable' => 'sometimes|boolean',
-    //     'permissions' => 'sometimes|array',
-    //     'permissions.*' => 'string|exists:permissions,name',
-    //     'settings' => 'nullable|array',
-    // ]);
-
-    //     DB::transaction(function () use ($role, $validated) {
-    //         $role->update([
-    //             'name' => $validated['name'],
-    //             'slug' => $validated['name'],
-    //             'description' => $validated['description'],
-    //             'level' => 70,
-    //             // $validated['level'],
-    //             'is_assignable' => $validated['is_assignable'] ?? true,
-    //             'settings' => $validated['settings'] ?? null,
-    //         ]);
-
-    //         // Sync permissions with UUID for pivot table
-    //         if (isset($validated['permissions'])) {
-    //             $permissionData = [];
-    //             foreach ($validated['permissions'] as $permissionId) {
-    //                 $permissionData[$permissionId] = [
-    //                     'id' => (string) Str::uuid(),
-    //                     'is_enabled' => true,
-    //                     'granted_at' => now(),
-    //                     'granted_by' => Auth::user()->user_id,
-    //                 ];
-    //             }
-    //             $role->permissions()->sync($permissionData);
-    //         }
-    //     });
-
-    //     return redirect()->back()->with('success', 'Role updated successfully.');
-    // }
-
-    public function updatePermissions(Request $request, Role $role)
-    {
-        // $this->authorize('users.manage_roles');
-        
-        $validated = $request->validate([
-            'permissions' => 'required|array',
-            'permissions.*.permission_id' => 'required|uuid|exists:permissions,permission_id',
-            'permissions.*.is_enabled' => 'boolean',
-            'permissions.*.constraints' => 'nullable|array',
-            'permissions.*.expires_at' => 'nullable|date|after:now',
+        return response()->json([
+            'roles' => $user->roles
         ]);
 
-        DB::transaction(function () use ($role, $validated) {
-            $permissionData = [];
-            foreach ($validated['permissions'] as $permission) {
-                $permissionData[$permission['permission_id']] = [
-                    'id' => (string) Str::uuid(),
-                    'is_enabled' => $permission['is_enabled'] ?? true,
-                    'constraints' => $permission['constraints'] ?? null,
-                    'expires_at' => $permission['expires_at'] ?? null,
-                    'granted_at' => now(),
-                    'granted_by' => Auth::user()->user_id,
-                ];
-            }
-            
-            $role->permissions()->sync($permissionData);
-        });
-
-        return redirect()->back()->with('success', 'Role permissions updated successfully.');
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json([
+            'error' => 'User not found.'
+        ], 404);
     }
+}
 
-    public function grantPermission(Request $request, Role $role)
-    {
-        // $this->authorize('users.manage_roles');
+/**
+ * Get user permissions (both direct and via roles)
+ */
+public function getUserPermissions($user_id) // Use $user_id parameter
+{
+    try {
+        $user = User::findOrFail($user_id);
         
-        $validated = $request->validate([
-            'permission_id' => 'required|uuid|exists:permissions,permission_id',
-            'is_enabled' => 'boolean',
-            'constraints' => 'nullable|array',
-            'expires_at' => 'nullable|date|after:now',
+        $permissions = $user->getAllPermissions();
+
+        return response()->json([
+            'permissions' => $permissions
         ]);
 
-        $role->permissions()->attach($validated['permission_id'], [
-            'id' => (string) Str::uuid(),
-            'is_enabled' => $validated['is_enabled'] ?? true,
-            'constraints' => $validated['constraints'] ?? null,
-            'expires_at' => $validated['expires_at'] ?? null,
-            'granted_at' => now(),
-            'granted_by' => Auth::user()->user_id,
-        ]);
-
-        return redirect()->back()->with('success', 'Permission granted successfully.');
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json([
+            'error' => 'User not found.'
+        ], 404);
     }
+}
 
-    public function revokePermission(Request $request, Role $role)
-    {
-        // $this->authorize('users.manage_roles');
-        
-        $validated = $request->validate([
-            'permission_id' => 'required|uuid|exists:permissions,permission_id',
-        ]);
-
-        $role->permissions()->detach($validated['permission_id']);
-
-        return redirect()->back()->with('success', 'Permission revoked successfully.');
-    }
-
-    public function togglePermission(Request $request, Role $role)
-    {
-        // $this->authorize('users.manage_roles');
-        
-        $validated = $request->validate([
-            'permission_id' => 'required|uuid|exists:permissions,permission_id',
-            'is_enabled' => 'required|boolean',
-        ]);
-
-        $role->permissions()->updateExistingPivot($validated['permission_id'], [
-            'is_enabled' => $validated['is_enabled'],
-            'updated_at' => now(),
-        ]);
-
-        return redirect()->back()->with('success', 'Permission status updated successfully.');
-    }
-
-    public function destroy(Role $role)
-    {
-        // $this->authorize('users.manage_roles');
-        
-        // Prevent deletion of system roles or roles with users
-        if ($role->is_system_role) {
-            return redirect()->back()->with('error', 'System roles cannot be deleted.');
-        }
-        
-        if ($role->users()->count() > 0) {
-            return redirect()->back()->with('error', 'Cannot delete role that has users assigned.');
-        }
-
-        DB::transaction(function () use ($role) {
-            // Detach all permissions first
-            $role->permissions()->detach();
-            $role->delete();
-        });
-        
-        return redirect()->back()->with('success', 'Role deleted successfully.');
-    }
-
-    public function show(Role $role)
-    {
-        // $this->authorize('users.manage_roles');
-        
-        $role->load(['permissions', 'university', 'users']);
-
-        return Inertia::render('Admin/RoleDetail', [
-            'role' => [
-                'role_id' => $role->role_id,
-                'university_id' => $role->university_id,
-                'name' => $role->name,
-                'slug' => $role->slug,
-                'description' => $role->description,
-                'is_system_role' => $role->is_system_role,
-                'is_assignable' => $role->is_assignable,
-                'level' => $role->level,
-                'settings' => $role->settings,
-                'permissions' => $role->permissions,
-                'user_count' => $role->users()->count(),
-                'users' => $role->users->map(function ($user) {
-                    return [
-                        'user_id' => $user->user_id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                    ];
-                }),
-                'created_at' => $role->created_at,
-                'updated_at' => $role->updated_at,
-            ],
-        ]);
-    }
 }

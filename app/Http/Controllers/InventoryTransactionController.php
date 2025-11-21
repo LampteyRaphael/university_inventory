@@ -399,7 +399,10 @@ class InventoryTransactionController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect()->route('inventory-transactions.index')->with('error', 'Validation failed');
+                    return redirect()->route('inventory-transactions.index')
+            ->withErrors($validator)
+            ->with('error', 'Validation failed. Please check the form.');
+            // return redirect()->route('inventory-transactions.index')->with('error', 'Validation failed'.$validator->errors());
         }
 
         try {

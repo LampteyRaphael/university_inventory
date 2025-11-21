@@ -5,121 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\University;
 use App\Models\Department;
-use App\Models\Permission;
-use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class UserController extends Controller
 {
-    // public function index(Request $request)
-    // {
-    //     $users = User::with([
-    //             'university:university_id,name,code',
-    //             // 'department:department_id,name,code'
-    //         ])
-    //         ->get()
-    //         ->map(function ($user) {
-    //             return [
-    //                 'user_id'          => $user->user_id,
-    //                 'university_id'    => $user->university_id,
-    //                 'department_id'    => $user->department_id,
-    //                 'employee_id'      => $user->employee_id,
-    //                 'username'         => $user->username,
-    //                 'email'            => $user->email,
-    //                 'password'         => $user->password, // ⚠️ normally you don’t expose password
-    //                 'name'             => $user->name,
-    //                 'first_name'       => $user->first_name,
-    //                 'last_name'        => $user->last_name,
-    //                 'phone'            => $user->phone,
-    //                 'position'         => $user->position,
-    //                 'role'             => $user->role,
-    //                 'permissions'      => $user->permissions,
-    //                 'is_active'        => $user->is_active,
-    //                 'hire_date'        => $user->hire_date,
-    //                 'termination_date' => $user->termination_date,
-    //                 'profile_image'    => $user->profile_image,
-    //                 'timezone'         => $user->timezone,
-    //                 'language'         => $user->language,
-    //                 'last_login_at'    => $user->last_login_at,
-    //                 'last_login_ip'    => $user->last_login_ip,
-    //                 'university'       => $user->university->name??null,
-    //                 'department'       => $user->department->name??null,
-    //             ];
-    //         });
-
-           
-    //     return Inertia::render('Users/Index')
-    //         ->with([
-    //             // Users (best if paginated)
-    //             'users' => Inertia::defer(fn () =>
-    //                 $users
-    //             ),
-
-    //             // Static array – keep immediate
-    //             // 'roles' => [
-    //             //     'super_adminsss',
-    //             //     'inventory_manager', 
-    //             //     'department_head',
-    //             //     'procurement_officer',
-    //             //     'faculty',
-    //             //     'staff',
-    //             //     'student',
-    //             // ],
-
-    //                 'roles' => [
-    //                 'super_admin' => [
-    //                     'label' => 'Super Admin',
-    //                     'color' => 'error',
-    //                 ],
-    //                 'inventory_manager' => [
-    //                     'label' => 'Inventory Manager',
-    //                     'color' => 'warning',
-    //                 ],
-    //                 'department_head' => [
-    //                     'label' => 'Department Head',
-    //                     'color' => 'info',
-    //                 ],
-    //                 'procurement_officer' => [
-    //                     'label' => 'Procurement Officer',
-    //                     'color' => 'secondary',
-    //                 ],
-    //                 'faculty' => [
-    //                     'label' => 'Faculty',
-    //                     'color' => 'primary',
-    //                 ],
-    //                 'staff' => [
-    //                     'label' => 'Staff',
-    //                     'color' => 'default',
-    //                 ],
-    //                 'student' => [
-    //                     'label' => 'Student',
-    //                     'color' => 'success',
-    //                 ],
-    //             ],
-
-
-    //             // Medium datasets – defer so they don’t block
-    //             'universities' => Inertia::defer(fn () =>
-    //                 University::select('university_id', 'name')->get()
-    //             ),
-
-    //             'departments' => Inertia::defer(fn () =>
-    //                 Department::select('department_id', 'name')->get()
-    //             ),
-    //         ]);
-
-
-    // }
-
-    
      public function index()
     {
-        // $this->authorize('users.view');
         
         $users = User::with(['role', 'university', 'department'])
             ->get()

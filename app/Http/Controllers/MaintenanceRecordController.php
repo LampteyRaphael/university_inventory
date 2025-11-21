@@ -28,21 +28,7 @@ class MaintenanceRecordController extends Controller
     public function index(Request $request)
     {
         try {
-            // $maintenanceRecords = $this->maintenanceRecordRepository->getAll();
-            
-            // $stats = $this->maintenanceRecordRepository->getMaintenanceStats(Auth::user()->university_id ?? null);
-            // $items = InventoryItem::select('item_id','name')->get();
-            // $items = InventoryItem::select('item_id','name')->get();
-            // $departments = Department::select('department_id','name')->get();
-            // $universities  = University::select('university_id','name')->get();
-            // return Inertia::render('Maintenance/Maintenance', [
-            //     'records' => $maintenanceRecords,
-            //     'stats' => $stats,
-            //     'items'=>$items,
-            //     'departments'=>$departments,
-            //     'universities'=>$universities,
-            //     'filters' => $request->only(['search', 'status', 'type', 'priority']),
-            // ]);
+           
             return Inertia::render('Maintenance/Maintenance')
             ->with([
                 // Maintenance records (likely large, best if paginated)

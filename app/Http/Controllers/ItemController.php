@@ -1,10 +1,7 @@
 <?php
-// app/Http/Controllers/ItemController.php
-
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ItemPostResquest;
-use App\Models\InventoryItem;
 use App\Models\ItemCategory;
 use App\Models\University;
 use App\Repositories\ItemRepository;

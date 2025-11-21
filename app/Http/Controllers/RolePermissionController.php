@@ -3,16 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Role;
-use App\Models\Permission;
 use App\Models\RolePermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 class RolePermissionController extends Controller
 {
     /**
@@ -22,7 +20,10 @@ class RolePermissionController extends Controller
     {
         $roles = Role::all();
         $permissions = Permission::all();
-        $rolePermissions = RolePermission::with(['role', 'permission', 'grantedBy'])->get();
+        $rolePermissions =RolePermission::all();
+
+
+        // dd($rolePermissions);
 
         return Inertia::render('Management/PermissionRoles', [
             'role_permissions' => $rolePermissions,

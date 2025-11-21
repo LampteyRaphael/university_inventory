@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -32,11 +34,9 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-
             
-
-            'auth' => [
-                'user' => $request->user(),
+            'auth' => fn (Request $request) => [
+                'user' => $request->user() ? $this->getUserData($request->user()) : null,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
@@ -48,4 +48,68 @@ class HandleInertiaRequests extends Middleware
             : (object)[],
         ];
     }
+
+    // protected function getUserData($user): array
+    // {
+    //     try {
+    //         return [
+    //             'id' => $user->user_id,
+    //             'name' => $user->name,
+    //             'email' => $user->email,
+    //             'first_name' => $user->first_name,
+    //             'last_name' => $user->last_name,
+    //             'phone' => $user->phone,
+    //             'position' => $user->position,
+    //             'profile_image' => $user->profile_image,
+    //             'roles' => $user->getRoleNames()->toArray(),
+    //             'permissions' => $user->getPermissionNames()->toArray(),
+    //             'is_active' => $user->is_active,
+    //         ];
+    //     } catch (\Exception $e) {
+    //         Log::error('Error getting user data for Inertia: ' . $e->getMessage());
+            
+    //         return [
+    //             'id' => $user->user_id,
+    //             'name' => $user->name,
+    //             'email' => $user->email,
+    //             'first_name' => $user->first_name,
+    //             'last_name' => $user->last_name,
+    //             'roles' => [],
+    //             'permissions' => [],
+    //         ];
+    //     }
+    // }
+
+
+protected function getUserData($user): array
+    {
+        try {
+            return [
+                'id' => $user->user_id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'phone' => $user->phone,
+                'position' => $user->position,
+                'profile_image' => $user->profile_image,
+                'roles' => $user->getRoleNames()->toArray(),
+                'permissions' => $user->getPermissionNames()->toArray(),
+                'is_active' => $user->is_active,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error getting user data for Inertia: ' . $e->getMessage());
+            
+            return [
+                'id' => $user->user_id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'roles' => [],
+                'permissions' => [],
+            ];
+        }
+    }
+
 }

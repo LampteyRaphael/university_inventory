@@ -26,11 +26,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
         
-        $middleware->alias([
-            'auth.custom' => AuthMiddleware::class,
-            'university.access' => UniversityAccessMiddleware::class,
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'permission' => \App\Http\Middleware\PermissionMiddleware::class,
+       $middleware->alias([
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
 
         //

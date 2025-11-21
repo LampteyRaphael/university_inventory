@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Users table (merged)
+        // Users table
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('user_id')->primary();
             $table->uuid('university_id')->nullable();
@@ -21,24 +21,11 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            // From first migration
-            $table->string('name')->unique(); // keep optional since you already have first_name/last_name
-
-            // From second migration
+            $table->string('name');
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('phone', 20)->nullable();
             $table->string('position')->nullable();
-            $table->enum('role', [
-                'super_admin', 
-                'inventory_manager', 
-                'department_head', 
-                'procurement_officer', 
-                'faculty', 
-                'staff', 
-                'student'
-            ])->default('staff');
-            $table->json('permissions')->nullable();
             $table->boolean('is_active')->default(true);
             $table->date('hire_date')->nullable();
             $table->date('termination_date')->nullable();
@@ -63,8 +50,9 @@ return new class extends Migration
                   ->onDelete('set null');
 
             // Indexes
-            $table->index(['university_id', 'role', 'is_active']);
+            $table->index(['university_id', 'is_active']);
             $table->index('employee_id');
+            $table->index('email');
         });
 
         // Password reset tokens

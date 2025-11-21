@@ -9,6 +9,7 @@ use App\Repositories\DepartmentRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class DepartmentController extends Controller
 {
@@ -21,22 +22,15 @@ class DepartmentController extends Controller
 
     public function index(Request $request)
     {
+        $user = Auth::user();
+
+         $user = $request->user();
+    
+    if (!$user) {
+        return 'No user logged in';
+    }
+    
         try {
-            // $departments = $this->departmentRepository->getAll();
-
-            // $universities = University::select('university_id', 'name')
-            //     ->orderBy('name')
-            //     ->get();
-
-            // $users = User::select('user_id', 'name')
-            //     ->orderBy('name')
-            //     ->get();    
-
-            // return Inertia::render('Departments/Departments', [
-            //     'departments'=>$departments,
-            //     'universities' => $universities,
-            //     'users' => $users,
-            // ]);
             return Inertia::render('Departments/Departments')
             ->with([
                 // Large dataset (best if repository paginates)
