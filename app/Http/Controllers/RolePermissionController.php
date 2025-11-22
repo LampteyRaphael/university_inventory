@@ -22,9 +22,6 @@ class RolePermissionController extends Controller
         $permissions = Permission::all();
         $rolePermissions =RolePermission::all();
 
-
-        // dd($rolePermissions);
-
         return Inertia::render('Management/PermissionRoles', [
             'role_permissions' => $rolePermissions,
             'roles' => $roles,

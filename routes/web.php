@@ -22,14 +22,37 @@ use App\Http\Controllers\{
     DepartmentController,
     InventoryReportController,
     PermissionController,
-    RolePermissionController,
-    RouteController,
     UniversityController,
 };
-use App\Models\Permission;
-use App\Models\Role;
-use App\Models\User;
-use Illuminate\Container\Attributes\Auth;
+
+// ================================================
+// ROUTE CONSTANTS & CONFIGURATION
+// ================================================
+define('ROLE_SUPER_ADMIN', 'Super Admin');
+define('ROLE_ADMINISTRATOR', 'Administrator');
+define('ROLE_PURCHASE_MANAGER', 'Purchase Manager');
+define('ROLE_STORE_KEEPER', 'Store Keeper');
+define('ROLE_DEPARTMENT_HEAD', 'Department Heads');
+define('ROLE_STAFF', 'Staff');
+
+// Permission groups for better organization
+const PERMISSION_GROUPS = [
+    'dashboard' => ['dashboard.view'],
+    'users' => ['users.view', 'users.create', 'users.edit', 'users.delete'],
+    'roles' => ['roles.view', 'roles.create', 'roles.edit', 'roles.delete'],
+    'permissions' => ['permissions.view','permissions.create','permissions.edit','permissions.delete'],
+    'inventory' => ['inventory.view', 'inventory.create', 'inventory.edit', 'inventory.delete', 'inventory.manage_stock'],
+    'item' => ['item.view', 'item.create', 'item.edit', 'item.delete'],
+    'categories' => ['categories.view', 'categories.create', 'categories.edit', 'categories.delete'],
+    'suppliers' => ['suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete'],
+    'purchase_orders' => ['purchase_orders.view', 'purchase_orders.create', 'purchase_orders.edit', 'purchase_orders.delete', 'purchase_orders.approve', 'purchase_orders.cancel'],
+    'departments' => ['departments.view', 'departments.create', 'departments.edit', 'departments.delete'],
+    'equipment' => ['equipment.view', 'equipment.create', 'equipment.edit', 'equipment.delete', 'equipment.maintenance'],
+    'universities' => ['universities.view', 'universities.create', 'universities.edit', 'universities.delete'],
+    'audit_logs' => ['audit_logs.view', 'audit_logs.create', 'audit_logs.edit', 'audit_logs.delete'],
+    'reports' => ['reports.view', 'reports.generate'],
+    'settings' => ['settings.manage'],
+];
 
 // ================================================
 // PUBLIC ROUTES
@@ -50,16 +73,14 @@ Route::get('error/{code?}', function ($code = 500) {
 // ================================================
 // AUTHENTICATED ROUTES
 // ================================================
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified','role:' . ROLE_SUPER_ADMIN . '|' . ROLE_ADMINISTRATOR])->group(function () {
 
-    // DASHBOARD - Accessible to all authenticated users with dashboard.view permission
+    // DASHBOARD
     Route::get('/dashboard', fn() => Inertia::render('Dashboard'))
-        ->middleware('permission:dashboard.view')
+        ->middleware('permission:' . PERMISSION_GROUPS['dashboard'][0])
         ->name('dashboard');
 
-    // =============================================================
-    // PROFILE MANAGEMENT - Accessible to all authenticated users
-    // =============================================================
+    // PROFILE MANAGEMENT
     Route::controller(ProfileController::class)->group(function () {
         Route::get('/profile', 'edit')->name('profile.edit');
         Route::patch('/profile', 'update')->name('profile.update');
@@ -69,60 +90,71 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // =============================================================
     // ADMIN ROUTES - Super Admin and Administrator only
     // =============================================================
-    Route::middleware(['role:Super Admin|Administrator'])->group(function () {
+    Route::middleware(['role:' . ROLE_SUPER_ADMIN . '|' . ROLE_ADMINISTRATOR])->group(function () {
+        
         // Role & Permission Management
-         Route::get('/admin/role-permission-manager', [RoleController::class, 'home'])->name('admin.role-permission.manager');
+        Route::get('/admin/role-permission-manager', [RoleController::class, 'home'])
+            ->name('admin.role-permission.manager');
+
         // Role Management
-        Route::get('/roles', [RoleController::class, 'index'])->name('admin.roles.index');
-        Route::post('/roles', [RoleController::class, 'store'])->name('admin.roles.store');
-        Route::put('/roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
-        Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('admin.roles.destroy');
-        Route::post('/roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('admin.roles.update-permissions');
+        Route::controller(RoleController::class)->prefix('roles')->name('admin.roles.')->group(function () {
+            Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['roles'][0])->name('index');
+            Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['roles'][1])->name('store');
+            Route::put('/{role}', 'update')->middleware('permission:' . PERMISSION_GROUPS['roles'][2])->name('update');
+            Route::delete('/{role}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['roles'][3])->name('destroy');
+            Route::post('/{role}/permissions', 'updatePermissions')->name('update-permissions');
+        });
 
         // Permission Management
-        Route::get('/permissions', [PermissionController::class, 'index'])->name('admin.permissions.index');
-        Route::post('/permissions', [PermissionController::class, 'store'])->name('admin.permissions.store');
-        Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->name('admin.permissions.update');
-        Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->name('admin.permissions.destroy');
+        Route::controller(PermissionController::class)->prefix('permissions')->name('admin.permissions.')->group(function () {
+            Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['permissions'][0])->name('index');
+            Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['permissions'][1])->name('store');
+            Route::put('/{permission}', 'update')->middleware('permission:' . PERMISSION_GROUPS['permissions'][2])->name('update');
+            Route::delete('/{permission}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['permissions'][3])->name('destroy');
+        });
 
         // User Role & Permission Management
-        Route::put('/users/{user_id}/roles', [RoleController::class, 'updateUserRoles'])->name('admin.users.roles.update');
-        Route::put('/users/{user_id}/permissions', [RoleController::class, 'updateUserPermissions'])->name('admin.users.permissions.update');
-        Route::get('/users/{user_id}/roles', [RoleController::class, 'getUserRoles'])->name('admin.users.roles.index');
-        Route::get('/users/{user_id}/permissions', [RoleController::class, 'getUserPermissions'])->name('admin.users.permissions.index');
+        Route::controller(RoleController::class)->group(function () {
+            Route::put('/users/{user_id}/roles', 'updateUserRoles')->name('admin.users.roles.update');
+            Route::put('/users/{user_id}/permissions', 'updateUserPermissions')->name('admin.users.permissions.update');
+            Route::get('/users/{user_id}/roles', 'getUserRoles')->name('admin.users.roles.index');
+            Route::get('/users/{user_id}/permissions', 'getUserPermissions')->name('admin.users.permissions.index');
+        });
     });
 
     // =============================================================
-    // USER MANAGEMENT - Super Admin, Administrator with user permissions
+    // USER MANAGEMENT
     // =============================================================
-    Route::middleware(['role:Super Admin|Administrator'])->group(function () {
-        Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view')->name('users.index');
-        Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create')->name('admin.users.store');
-        Route::put('/users/{user}', [UserController::class, 'update'])->middleware('permission:users.edit')->name('admin.users.update');
-        Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete')->name('admin.users.destroy');
-        Route::put('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
+    Route::middleware(['role:' . ROLE_SUPER_ADMIN . '|' . ROLE_ADMINISTRATOR])->group(function () {
+        Route::controller(UserController::class)->prefix('users')->name('users.')->group(function () {
+            Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['users'][0])->name('index');
+            Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['users'][1])->name('store');
+            Route::put('/{user}', 'update')->middleware('permission:' . PERMISSION_GROUPS['users'][2])->name('update');
+            Route::delete('/{user}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['users'][3])->name('destroy');
+            Route::put('/{user}/toggle-status', 'toggleStatus')->name('toggle-status');
+        });
     });
 
     // =============================================================
     // SUPPLIERS MANAGEMENT
     // =============================================================
-    Route::prefix('suppliers')->group(function () {
-        Route::get('/', [SupplierController::class, 'index'])->middleware('permission:suppliers.view')->name('suppliers.index');
-        Route::post('/', [SupplierController::class, 'store'])->middleware('permission:suppliers.create')->name('suppliers.store');
-        Route::put('/{id}', [SupplierController::class, 'update'])->middleware('permission:suppliers.edit')->name('suppliers.update');
-        Route::delete('/{id}', [SupplierController::class, 'destroy'])->middleware('permission:suppliers.delete')->name('suppliers.destroy');
+    Route::controller(SupplierController::class)->prefix('suppliers')->name('suppliers.')->group(function () {
+        Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['suppliers'][0])->name('index');
+        Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['suppliers'][1])->name('store');
+        Route::put('/{id}', 'update')->middleware('permission:' . PERMISSION_GROUPS['suppliers'][2])->name('update');
+        Route::delete('/{id}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['suppliers'][3])->name('destroy');
     });
 
     // =============================================================
     // PURCHASE ORDERS
     // =============================================================
-    Route::prefix('purchase-orders')->group(function () {
-        Route::get('/', [PurchaseOrderController::class, 'index'])->middleware('permission:purchase_orders.view')->name('purchase-orders.index');
-        Route::post('/', [PurchaseOrderController::class, 'store'])->middleware('permission:purchase_orders.create')->name('purchase-orders.store');
-        Route::put('/{id}', [PurchaseOrderController::class, 'update'])->middleware('permission:purchase_orders.edit')->name('purchase-orders.update');
-        Route::delete('/{id}', [PurchaseOrderController::class, 'destroy'])->middleware('permission:purchase_orders.delete')->name('purchase-orders.destroy');
-        Route::post('/{id}/approve', [PurchaseOrderController::class, 'approve'])->middleware('permission:purchase_orders.approve')->name('purchase-orders.approve');
-        Route::get('/{id}', [PurchaseOrderController::class, 'show'])->middleware('permission:purchase_orders.view')->name('purchase-orders.show');
+    Route::controller(PurchaseOrderController::class)->prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+        Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['purchase_orders'][0])->name('index');
+        Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['purchase_orders'][1])->name('store');
+        Route::put('/{id}', 'update')->middleware('permission:' . PERMISSION_GROUPS['purchase_orders'][2])->name('update');
+        Route::delete('/{id}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['purchase_orders'][3])->name('destroy');
+        Route::post('/{id}/approve', 'approve')->middleware('permission:' . PERMISSION_GROUPS['purchase_orders'][4])->name('approve');
+        Route::get('/{id}', 'show')->middleware('permission:' . PERMISSION_GROUPS['purchase_orders'][0])->name('show');
     });
 
     // =============================================================
@@ -131,34 +163,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('inventory')->group(function () {
 
         // Categories
-        Route::prefix('categories')->group(function () {
-            Route::get('/', [ItemCategoryController::class, 'index'])->middleware('permission:categories.view')->name('item-categories.index');
-            Route::post('/', [ItemCategoryController::class, 'store'])->middleware('permission:categories.create')->name('item-categories.store');
-            Route::put('/{id}', [ItemCategoryController::class, 'update'])->middleware('permission:categories.edit')->name('item-categories.update');
-            Route::delete('/{id}', [ItemCategoryController::class, 'destroy'])->middleware('permission:categories.delete')->name('item-categories.destroy');
+        Route::controller(ItemCategoryController::class)->prefix('categories')->name('item-categories.')->group(function () {
+            Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['categories'][0])->name('index');
+            Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['categories'][1])->name('store');
+            Route::put('/{id}', 'update')->middleware('permission:' . PERMISSION_GROUPS['categories'][2])->name('update');
+            Route::delete('/{id}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['categories'][3])->name('destroy');
         });
 
         // Items
-        Route::prefix('items')->group(function () {
-            Route::get('/', [ItemController::class, 'index'])->middleware('permission:inventory.view')->name('item.index');
-            Route::post('/', [ItemController::class, 'store'])->middleware('permission:inventory.create')->name('item.store');
-            Route::put('/{id}', [ItemController::class, 'update'])->middleware('permission:inventory.edit')->name('item.update');
-            Route::delete('/{id}', [ItemController::class, 'destroy'])->middleware('permission:inventory.delete')->name('item.destroy');
+        Route::controller(ItemController::class)->prefix('items')->name('item.')->group(function () {
+            Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['item'][0])->name('index');
+            Route::post('/', 'store')->name('store');
+            // ->middleware('permission:' . PERMISSION_GROUPS['item'][1])
+            
+            Route::put('/{id}', 'update')->middleware('permission:' . PERMISSION_GROUPS['item'][2])->name('update');
+            Route::delete('/{id}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['item'][3])->name('destroy');
         });
 
         // Transactions
-        Route::prefix('transactions')->group(function () {
-            Route::get('/', [InventoryTransactionController::class, 'transactionIndex'])->middleware('permission:inventory.view')->name('inventory-transactions.index');
-            Route::post('/', [InventoryTransactionController::class, 'store'])->middleware('permission:inventory.create')->name('inventory-transactions.store');
-            Route::put('/{id}', [InventoryTransactionController::class, 'update'])->middleware('permission:inventory.edit')->name('inventory-transactions.update');
-            Route::delete('/{id}', [InventoryTransactionController::class, 'destroy'])->middleware('permission:inventory.delete')->name('inventory-transactions.destroy');
+        Route::controller(InventoryTransactionController::class)->prefix('transactions')->name('inventory-transactions.')->group(function () {
+            Route::get('/', 'transactionIndex')->middleware('permission:' . PERMISSION_GROUPS['inventory'][0])->name('index');
+            Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['inventory'][1])->name('store');
+            Route::put('/{id}', 'update')->middleware('permission:' . PERMISSION_GROUPS['inventory'][2])->name('update');
+            Route::delete('/{id}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['inventory'][3])->name('destroy');
         });
     });
 
     // =============================================================
     // STOCK MANAGEMENT
     // =============================================================
-    Route::prefix('stock')->middleware('permission:inventory.manage_stock')->group(function () {
+    Route::prefix('stock')->middleware('permission:' . PERMISSION_GROUPS['inventory'][4])->group(function () {
         Route::resource('stock-levels', StockLevelsController::class);
         Route::post('/adjust', [InventoryTransactionController::class, 'adjustStock'])->name('inventory.stock.adjust');
         Route::post('/bulk-adjust', [InventoryTransactionController::class, 'bulkAdjustStock'])->name('inventory.stock.bulk-adjust');
@@ -169,74 +203,74 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // =============================================================
     // DEPARTMENTS
     // =============================================================
-    Route::prefix('departments')->group(function () {
-        Route::get('/', [DepartmentController::class, 'index'])->middleware('permission:departments.view')->name('department.index');
-        Route::post('/', [DepartmentController::class, 'store'])->middleware('permission:departments.create')->name('department.store');
-        Route::put('/{id}', [DepartmentController::class, 'update'])->middleware('permission:departments.edit')->name('department.update');
-        Route::delete('/{id}', [DepartmentController::class, 'destroy'])->middleware('permission:departments.delete')->name('department.destroy');
+    Route::controller(DepartmentController::class)->prefix('departments')->name('department.')->group(function () {
+        Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['departments'][0])->name('index');
+        Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['departments'][1])->name('store');
+        Route::put('/{id}', 'update')->middleware('permission:' . PERMISSION_GROUPS['departments'][2])->name('update');
+        Route::delete('/{id}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['departments'][3])->name('destroy');
     });
 
     // =============================================================
     // EQUIPMENT/MAINTENANCE
     // =============================================================
-    Route::prefix('equipment')->group(function () {
-        Route::get('/', [MaintenanceRecordController::class, 'index'])->middleware('permission:equipment.view')->name('maintenance_records.index');
-        Route::post('/', [MaintenanceRecordController::class, 'store'])->middleware('permission:equipment.create')->name('maintenance.store');
-        Route::put('/{id}', [MaintenanceRecordController::class, 'update'])->middleware('permission:equipment.edit')->name('maintenance.update');
-        Route::delete('/{id}', [MaintenanceRecordController::class, 'destroy'])->middleware('permission:equipment.delete')->name('maintenance.destroy');
+    Route::controller(MaintenanceRecordController::class)->prefix('equipment')->name('maintenance.')->group(function () {
+        Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['equipment'][0])->name('index');
+        Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['equipment'][1])->name('store');
+        Route::put('/{id}', 'update')->middleware('permission:' . PERMISSION_GROUPS['equipment'][2])->name('update');
+        Route::delete('/{id}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['equipment'][3])->name('destroy');
     });
 
     // =============================================================
     // UNIVERSITIES
     // =============================================================
-    Route::prefix('universities')->group(function () {
-        Route::get('/', [UniversityController::class, 'index'])->middleware('permission:universities.view')->name('universities.index');
-        Route::post('/', [UniversityController::class, 'store'])->middleware('permission:universities.create')->name('universities.store');
-        Route::put('/{id}', [UniversityController::class, 'update'])->middleware('permission:universities.edit')->name('universities.update');
-        Route::delete('/{id}', [UniversityController::class, 'destroy'])->middleware('permission:universities.delete')->name('universities.destroy');
+    Route::controller(UniversityController::class)->prefix('universities')->name('university.')->group(function () {
+        Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['universities'][0])->name('index');
+        Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['universities'][1])->name('store');
+        Route::put('/{id}', 'update')->middleware('permission:' . PERMISSION_GROUPS['universities'][2])->name('update');
+        Route::delete('/{id}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['universities'][3])->name('destroy');
     });
 
     // =============================================================
     // AUDIT LOGS
     // =============================================================
-    Route::prefix('audit-logs')->group(function () {
-        Route::get('/', [AuditLogController::class, 'index'])->middleware('permission:audit_logs.view')->name('audit-logs.index');
-        Route::post('/', [AuditLogController::class, 'store'])->middleware('permission:audit_logs.create')->name('audit-logs.store');
-        Route::put('/{id}', [AuditLogController::class, 'update'])->middleware('permission:audit_logs.edit')->name('audit-logs.update');
-        Route::delete('/{id}', [AuditLogController::class, 'destroy'])->middleware('permission:audit_logs.delete')->name('audit-logs.destroy');
+    Route::controller(AuditLogController::class)->prefix('audit-logs')->name('audit-logs.')->group(function () {
+        Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['audit_logs'][0])->name('index');
+        Route::post('/', 'store')->middleware('permission:' . PERMISSION_GROUPS['audit_logs'][1])->name('store');
+        Route::put('/{id}', 'update')->middleware('permission:' . PERMISSION_GROUPS['audit_logs'][2])->name('update');
+        Route::delete('/{id}', 'destroy')->middleware('permission:' . PERMISSION_GROUPS['audit_logs'][3])->name('destroy');
     });
 
     // =============================================================
     // REPORTS & ANALYTICS
     // =============================================================
-    Route::prefix('reports')->group(function () {
-        Route::get('/', [InventoryReportController::class, 'index'])->middleware('permission:reports.view')->name('inventory-report.index');
-        Route::post('/generate', [InventoryReportController::class, 'generate'])->middleware('permission:reports.generate')->name('inventory-report.generate');
-        Route::get('/quick/{type}', [InventoryReportController::class, 'quickReport'])->name('inventory-report.quick');
-        Route::post('/preview', [InventoryReportController::class, 'preview'])->name('inventory-report.preview');
-        Route::post('/export', [InventoryReportController::class, 'exportReport'])->name('inventory-report.export');
-        Route::post('/clear', [InventoryReportController::class, 'clear'])->name('inventory-report.clear');
-        Route::get('/filter-options', [InventoryReportController::class, 'getFilterOptions'])->name('inventory-report.filter-options');
+    Route::prefix('reports')->name('inventory-report.')->controller(InventoryReportController::class)->group(function () {
+        Route::get('/', 'index')->middleware('permission:' . PERMISSION_GROUPS['reports'][0])->name('index');
+        Route::post('/generate', 'generate')->middleware('permission:' . PERMISSION_GROUPS['reports'][1])->name('generate');
+        Route::get('/quick/{type}', 'quickReport')->name('quick');
+        Route::post('/preview', 'preview')->name('preview');
+        Route::post('/export', 'exportReport')->name('export');
+        Route::post('/clear', 'clear')->name('clear');
+        Route::get('/filter-options', 'getFilterOptions')->name('filter-options');
     });
 
-    Route::prefix('analytics')->group(function () {
-        Route::get('/dashboard', [AnalyticsController::class, 'getDashboardData'])->middleware('permission:reports.view')->name('analytics.dashboard');
-        Route::post('/export', [AnalyticsController::class, 'exportDashboard'])->middleware('permission:reports.generate')->name('analytics.export');
-        Route::get('/refresh', [AnalyticsController::class, 'refreshData'])->middleware('permission:reports.view')->name('analytics.refresh');
+    Route::prefix('analytics')->name('analytics.')->controller(AnalyticsController::class)->group(function () {
+        Route::get('/dashboard', 'getDashboardData')->middleware('permission:' . PERMISSION_GROUPS['reports'][0])->name('dashboard');
+        Route::post('/export', 'exportDashboard')->middleware('permission:' . PERMISSION_GROUPS['reports'][1])->name('export');
+        Route::get('/refresh', 'refreshData')->middleware('permission:' . PERMISSION_GROUPS['reports'][0])->name('refresh');
     });
 
     // =============================================================
     // SETTINGS
     // =============================================================
-    Route::prefix('settings')->middleware('permission:settings.manage')->group(function () {
+    Route::prefix('settings')->middleware('permission:' . PERMISSION_GROUPS['settings'][0])->group(function () {
         Route::get('/', fn() => Inertia::render('Settings/Index'))->name('settings.index');
     });
 
     // =============================================================
     // LOCATIONS & PURCHASE ORDER ITEMS
     // =============================================================
-    Route::resource('locations', LocationController::class)->middleware('permission:inventory.view');
-    Route::resource('purchase-order-items', PurchaseOrderItemController::class)->middleware('permission:purchase_orders.view');
+    Route::resource('locations', LocationController::class)->middleware('permission:' . PERMISSION_GROUPS['inventory'][0]);
+    Route::resource('purchase-order-items', PurchaseOrderItemController::class)->middleware('permission:' . PERMISSION_GROUPS['purchase_orders'][0]);
 
 });
 

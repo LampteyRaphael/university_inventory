@@ -43,18 +43,19 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ], 
             
-             'errors' => fn () => $request->session()->get('errors') 
-            ? $request->session()->get('errors')->getBag('default')->toArray()
-            : (object)[],
+            'errors' => fn () => $request->session()->get('errors') 
+                ? $request->session()->get('errors')->getBag('default')->toArray()
+                : (object)[],
+            
+            // Add message and status props
+            'message' => fn () => $request->session()->get('message'),
+            'status' => fn () => $request->session()->get('status'),
         ];
     }
 
     protected function getUserData($user): array
     {
-        try {
-            // Get the primary role (first role) or default to empty string
-            $primaryRole = $user->roles->first() ? $user->roles->first()->name : '';
-            
+        try {            
             return [
                 'id' => $user->user_id,
                 'name' => $user->name,
@@ -70,9 +71,7 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $user->getPermissionNames()->toArray(),
                 'is_active' => $user->is_active,
             ];
-        } catch (\Exception $e) {
-            Log::error('Error getting user data for Inertia: ' . $e->getMessage());
-            
+        } catch (\Exception $e) {            
             return [
                 'id' => $user->user_id,
                 'name' => $user->name,

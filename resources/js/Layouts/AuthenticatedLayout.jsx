@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AppBar,
   Box,
@@ -62,6 +62,7 @@ import {
 } from '@mui/icons-material';
 import { keyframes } from '@emotion/react';
 import { useForm, usePage } from '@inertiajs/react';
+import Notification from '@/Components/Notification';
 
 // Animation keyframes
 const fadeIn = keyframes`
@@ -119,15 +120,46 @@ const collapsedDrawerWidth = 72;
 
 const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
   const theme = useTheme();
+  const [alert, setAlert] = useState({ open: false, message: "", severity: "success" });
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [anchorEl, setAnchorEl] = useState(null);
   const [openGroups, setOpenGroups] = useState({});
   const { post, get } = useForm();
 
-  const { auth } = usePage().props;
+  const { auth, flash, errors } = usePage().props || {};
 
-  // console.log(auth.user.role.display_name)
+  const showAlert = (message, severity = "success") => {
+    setAlert({ open: true, message, severity });
+  };
+
+  
+useEffect(() => {
+  // Flash success message
+  if (flash?.success) {
+    showAlert(flash.success, "success");
+  }
+
+  // Flash error message
+  if (flash?.error) {
+    showAlert(flash.error, "error");
+  }
+
+  // Validation errors (loop through each field)
+  if (errors && Object.keys(errors).length > 0) {
+    Object.values(errors).forEach((errArray) => {
+      if (Array.isArray(errArray) && errArray.length > 0) {
+        showAlert(errArray[0], "error"); // show first message per field
+      }
+    });
+  }
+
+}, [flash, errors]);
+
+
+  const handleCloseAlert = () => {
+    setAlert((prev) => ({ ...prev, open: false }));
+  };
    
   const handleDrawerToggle = () => {
     setSidebarOpen(!sidebarOpen);
@@ -670,6 +702,12 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
         <Toolbar variant="dense" />
         
         {children}
+        <Notification 
+          open={alert.open} 
+          severity={alert.severity} 
+          message={alert.message}
+          onClose={handleCloseAlert}
+        />
       </Box>
     </Box>
   );

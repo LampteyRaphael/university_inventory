@@ -25,20 +25,20 @@ class PermissionController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('permissions', 'name')
-            ],
-            'description' => 'nullable|string|max:500',
-        ]);
-
         try {
+            $validated = $request->validate([
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('permissions', 'name')
+                ],
+                'description' => 'nullable|string|max:500',
+            ]);
+
             $permission = Permission::create([
-                'name' => $request->name,
-                'description' => $request->description,
+                'name' => $validated['name'],
+                'description' => $validated['description'],
                 'guard_name' => 'web',
             ]);
 
@@ -50,10 +50,16 @@ class PermissionController extends Controller
                 'permission' => $permission
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->errors())
+                ->withInput()
+                ->with(['error' => 'Please fix the validation errors below.']);
+                
         } catch (\Exception $e) {
             return back()->with([
-                'error' => 'Failed to create permission: '
-            ], 500);
+                'error' => 'Failed to create permission: ' . $e->getMessage()
+            ])->withInput();
         }
     }
 

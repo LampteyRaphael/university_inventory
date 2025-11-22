@@ -8,7 +8,9 @@ use App\Repositories\ItemCategoryRepository;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -103,25 +105,45 @@ class ItemCategoryController extends Controller
     public function update(Request $request, $id):RedirectResponse
     {
         try {
-            $validated = $request->validate([
-                'university_id' => 'sometimes|required|exists:universities,university_id',
-                'parent_category_id' => 'nullable|exists:item_categories,category_id',
-                'category_code' => 'sometimes|required|string|max:50|unique:item_categories,category_code,' . $id . ',category_id',
-                'name' => 'sometimes|required|string|max:255',
-                'description' => 'nullable|string',
-                'image_url' => 'nullable|url|max:500',
-                'warranty_period_days' => 'nullable|integer|min:0',
-                'depreciation_rate' => 'nullable|numeric|min:0|max:100',
-                'depreciation_method' => 'nullable|in:straight_line,reducing_balance',
-                'requires_serial_number' => 'boolean',
-                'requires_maintenance' => 'boolean',
-                'lft' => 'nullable|integer|min:0',
-                'rgt' =>'nullable|integer|min:0',
-                'depth' =>'nullable|integer|min:0',
-                'maintenance_interval_days' => 'nullable|integer|min:0',
-                'specification_template' => 'nullable|array',
-                'is_active' => 'boolean',
-            ]);
+
+        if ($request->has('category_code')) {
+            $conflictingCategory = DB::table('item_categories')
+                ->where('category_code', $request->category_code)
+                ->where('category_id', '!=', $id)
+                ->first();
+                
+            if ($conflictingCategory) {
+                return redirect()->back()
+                    ->with('error', "Category code '{$request->category_code}' is already used by: {$conflictingCategory->name}")
+                    ->withInput();
+            }
+        }
+
+        $validated = $request->validate([
+            'university_id' => 'sometimes|required|exists:universities,university_id',
+            'parent_category_id' => 'nullable|exists:item_categories,category_id',
+            'category_code' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('item_categories', 'category_code')->ignore($id, 'category_id')
+            ],
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'image_url' => 'nullable|url|max:500',
+            'warranty_period_days' => 'nullable|integer|min:0',
+            'depreciation_rate' => 'nullable|numeric|min:0|max:100',
+            'depreciation_method' => 'nullable|in:straight_line,reducing_balance',
+            'requires_serial_number' => 'boolean',
+            'requires_maintenance' => 'boolean',
+            'lft' => 'nullable|integer|min:0',
+            'rgt' =>'nullable|integer|min:0',
+            'depth' =>'nullable|integer|min:0',
+            'maintenance_interval_days' => 'nullable|integer|min:0',
+            'specification_template' => 'nullable|array',
+            'is_active' => 'boolean',
+        ]);
 
             $this->itemCategoryRepository->update($id, $validated);
 

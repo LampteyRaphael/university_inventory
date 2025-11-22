@@ -16,21 +16,12 @@ use Inertia\Inertia;
 
 class PurchaseOrderController extends Controller
 {
-    public function __construct()
-    {
-        $this->authorizeResource(PurchaseOrder::class, 'purchaseOrder');
-    }
 
     /**
      * Display a listing of the purchase orders.
      */
     public function index(Request $request)
     {   
-    //     $user=Auth::user();
-    //     if(!$user->hasPermissionTo('purchase_orders.view')){
-
-    //      abort(500, 'you dont have permission');
-    //    };
 
         try {
             $purchaseOrders = PurchaseOrder::with(['university', 'supplier', 'department', 'requestedBy'])
@@ -104,34 +95,6 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new purchase order.
-     */
-    // public function create()
-    // {
-    //     $universities = University::all();
-    //     $suppliers = Supplier::all();
-    //     $departments = Department::all();
-    //     $users = User::all();
-        
-    //     $orderTypes = ['regular', 'emergency', 'capital', 'consumable', 'service'];
-    //     $currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
-    //     $statuses = ['draft', 'submitted', 'approved', 'ordered', 'partially_received', 'received', 'cancelled', 'closed'];
-        
-    //     // Generate PO Number
-    //     $poNumber = 'PO-' . date('Ymd') . '-' . Str::random(6);
-        
-    //     return view('purchase-orders.create', compact(
-    //         'universities', 
-    //         'suppliers', 
-    //         'departments', 
-    //         'users',
-    //         'orderTypes',
-    //         'currencies',
-    //         'statuses',
-    //         'poNumber'
-    //     ));
-    // }
 
     /**
      * Store a newly created purchase order in storage.
@@ -185,64 +148,13 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    /**
-     * Display the specified purchase order.
-     */
-    // public function show($id)
-    // {
-    //     $purchaseOrder = PurchaseOrder::with([
-    //         'university', 
-    //         'supplier', 
-    //         'department', 
-    //         'requestedBy', 
-    //         'approvedBy', 
-    //         'receivedBy'
-    //     ])->findOrFail($id);
-        
-    //     return view('purchase-orders.show', compact('purchaseOrder'));
-    // }
-
-    /**
-     * Show the form for editing the specified purchase order.
-     */
-    // public function edit($id)
-    // {
-    //     $purchaseOrder = PurchaseOrder::findOrFail($id);
-        
-    //     $universities = University::all();
-    //     $suppliers = Supplier::all();
-    //     $departments = Department::all();
-    //     $users = User::all();
-        
-    //     $orderTypes = ['regular', 'emergency', 'capital', 'consumable', 'service'];
-    //     $currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
-    //     $statuses = ['draft', 'submitted', 'approved', 'ordered', 'partially_received', 'received', 'cancelled', 'closed'];
-    //     $paymentStatuses = ['pending', 'partial', 'paid', 'overdue'];
-        
-    //     return view('purchase-orders.edit', compact(
-    //         'purchaseOrder',
-    //         'universities', 
-    //         'suppliers', 
-    //         'departments', 
-    //         'users',
-    //         'orderTypes',
-    //         'currencies',
-    //         'statuses',
-    //         'paymentStatuses'
-    //     ));
-    // }
+    
 
     /**
      * Update the specified purchase order in storage.
      */
     public function update(Request $request, $id)
     {
-
-    //     $user = Auth::user();
-    //    if(!$user->hasPermissionTo('purchase_orders.edit')){
-
-    //      return back()->with('error', 'You do not have permission to perform this action');
-    //    };
 
         $purchaseOrder = PurchaseOrder::findOrFail($id);
                 

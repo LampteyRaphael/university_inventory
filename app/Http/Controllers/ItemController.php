@@ -61,6 +61,8 @@ class ItemController extends Controller
 
     public function store(ItemPostResquest $request): RedirectResponse
     {
+        var_dump($request);die;
+
         try {
 
             $validated = $request->validated();
@@ -104,7 +106,8 @@ class ItemController extends Controller
     }
 
     public function update(Request $request, $id): RedirectResponse
-    {
+    {        
+
         try {
             $validated = $request->validate([
                 'category_id' => 'sometimes|uuid|exists:item_categories,category_id',
@@ -137,17 +140,20 @@ class ItemController extends Controller
                 'is_active' => 'boolean'
             ]);
 
-             $this->itemRepository->update($id, $validated);
-            return redirect()->back()->with('success', 'Item updated successfully');
+                $this->itemRepository->update($id, $validated);
+                return redirect()->back()->with('success', 'Item updated successfully');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-
-            throw $e;
+            } catch (\Illuminate\Validation\ValidationException $e) {
+            // Return validation errors with input
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->with('error',  $e->getMessage())
+                ->withInput();
 
         } catch (\Exception $e) {
-
-              return redirect()->back()->with('error', 'Failed to update item: ' . $e->getMessage());
-
+            return redirect()->back()
+                ->with('error', 'Failed to update item: ' . $e->getMessage())
+                ->withInput();
         }
     }
 

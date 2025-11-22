@@ -103,19 +103,10 @@ export default function InventoryTransactions({ transactions=[], auth, items, de
   const [alert, setAlert] = useState({ open: false, message: "", severity: "success" });
   const [formErrors, setFormErrors] = useState({});
   const fileInputRef = useRef(null);
+  const [deleteProcessing, setDeleteProcessing] = useState(false); 
+
 
   // Transaction types and statuses
-  // const transactionTypes = [
-  //   { value: 'purchase', label: 'Purchase', color: 'success' },
-  //   { value: 'sale', label: 'Sale', color: 'primary' },
-  //   { value: 'transfer', label: 'Transfer', color: 'info' },
-  //   { value: 'adjustment', label: 'Adjustment', color: 'warning' },
-  //   { value: 'return', label: 'Return', color: 'secondary' },
-  //   { value: 'write_off', label: 'Write Off', color: 'error' },
-  //   { value: 'consumption', label: 'Consumption', color: 'default' },
-  //   { value: 'production', label: 'Production', color: 'info' },
-  //   { value: 'donation', label: 'Donation', color: 'success' },
-  // ];
   const transactionTypes = [
   { value: 'purchase', label: 'Purchase', color: 'success', icon: <ShoppingCartIcon /> },
   { value: 'sale', label: 'Sale', color: 'primary', icon: <SellIcon /> },
@@ -162,7 +153,6 @@ const emptyForm = {
 
 const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm(emptyForm);
   const [formData, setFormData] = useState(emptyForm);
- 
   // Process data on component mount
   useEffect(() => {
     setGridLoading(true);
@@ -543,27 +533,35 @@ const handleDeleteClick = useCallback((row) => {
   setOpenDeleteDialog(true);
 }, []);
 
+
 const handleDeleteConfirm = useCallback(() => {
   if (!selectedTransaction) return;
+  
+  setDeleteProcessing(true); // Start delete loading
   
   router.delete(route('inventory-transactions.destroy', selectedTransaction.id), {
     onSuccess: (response) => {
       setOpenDeleteDialog(false);
       setSelectedTransaction(null);
+      setDeleteProcessing(false); // Stop delete loading
       setAlert({ 
         open: true, 
         message: response?.props?.flash?.success, 
-        severity: 'error' 
+        severity: 'success' 
       });
     },
     onError: (errors) => {
-      // console.log(errors)
       setOpenDeleteDialog(false);
+      setSelectedTransaction(null);
+      setDeleteProcessing(false); // Stop delete loading
       setAlert({ 
         open: true, 
-        message: response?.props?.flash?.error, 
+        message: 'Failed to delete transaction', 
         severity: 'error' 
       });
+    },
+    onFinish: () => {
+      setDeleteProcessing(false); // Ensure loading stops in any case
     }
   });
 }, [selectedTransaction]);
@@ -1255,11 +1253,12 @@ const handleSubmit = useCallback(() => {
                 variant="contained" 
                 color="error" 
                 onClick={handleDeleteConfirm}
-                startIcon={<DeleteIcon />}
-                disabled={processing}
+                disabled={deleteProcessing}
+                startIcon={deleteProcessing ? <CircularProgress size={20} /> : <DeleteIcon />}
               >
-                Delete Transaction
+                {deleteProcessing ? 'Deleting...' : 'Delete Transaction'}
               </Button>
+
             </DialogActions>
           </Dialog>
         </Box>

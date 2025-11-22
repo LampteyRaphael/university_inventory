@@ -173,6 +173,7 @@ export default function Suppliers({ suppliers, auth, universities }) {
         quality_rating: Number(supplier?.quality_rating ?? 0),
         payment_terms_days: Number(supplier?.payment_terms_days ?? 30),
         approval_date: supplier?.approval_date ??"",
+        is_approved:supplier?.is_approved??false,
           // moment(supplier.approval_date).format("MMM Do YYYY") : "",
         next_evaluation_date: supplier?.next_evaluation_date ??"", 
           // moment(supplier.next_evaluation_date).format("MMM Do YYYY") : "",
@@ -1013,7 +1014,7 @@ const columns = useMemo(() => [
                   </Grid>
                 </Grid>
               </TabPanel>
-
+              
               <TabPanel value={tabValue} index={3}>
                 <Grid container spacing={3}>
                   <Grid size={{ xs: 12, sm: 6 }}>
@@ -1021,27 +1022,26 @@ const columns = useMemo(() => [
                       <InputLabel>Approval Status</InputLabel>
                       <Select
                         name="is_approved"
-                        value={data.is_approved}
+                        value={data.is_approved ? 'true' : 'false'} // Convert boolean to string for Select
                         label="Approval Status"
-                        onChange={e => setData('is_approved', e.target.value === 'true')}
+                        onChange={e => setData('is_approved', e.target.value === 'true')} // Convert string back to boolean
                       >
-                        <MenuItem value={true}>Approved</MenuItem>
-                        <MenuItem value={false}>Not Approved</MenuItem>
+                        <MenuItem value="true">Approved</MenuItem>
+                        <MenuItem value="false">Not Approved</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
-
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <FormControl fullWidth error={!!errors.is_active} disabled={processing}>
                       <InputLabel>Active Status</InputLabel>
                       <Select
                         name="is_active"
-                        value={data.is_active}
+                        value={data.is_active ? 'true' : 'false'} // Convert boolean to string
                         label="Active Status"
-                        onChange={e => setData('is_active', e.target.value === 'true')}
+                        onChange={e => setData('is_active', e.target.value === 'true')} // Convert string back to boolean
                       >
-                        <MenuItem value={true}>Active</MenuItem>
-                        <MenuItem value={false}>Inactive</MenuItem>
+                        <MenuItem value="true">Active</MenuItem>
+                        <MenuItem value="false">Inactive</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
