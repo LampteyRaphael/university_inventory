@@ -84,7 +84,7 @@ import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturi
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 
 
-export default function InventoryTransactions({ transactions=[], auth, items, departments, locations }) {
+export default function InventoryTransactions({ transactions=[], auth, items, departments, universities, locations }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { flash } = usePage().props;
@@ -138,9 +138,9 @@ export default function InventoryTransactions({ transactions=[], auth, items, de
 // Replace the emptyForm object and formData state with Inertia form
 const emptyForm = {
   transaction_id: "",
-  university_id: auth.user?.university_id || "",
+  university_id: auth?.user?.university_id || "",
   item_id: "",
-  department_id: "",
+  department_id:auth?.user?.department_id || "" ,
   transaction_type: "purchase",
   quantity: 1,
   unit_cost: 0,
@@ -552,7 +552,7 @@ const handleDeleteConfirm = useCallback(() => {
       setSelectedTransaction(null);
       setAlert({ 
         open: true, 
-        message: response.props.flash.success, 
+        message: response?.props?.flash?.success, 
         severity: 'error' 
       });
     },
@@ -561,7 +561,7 @@ const handleDeleteConfirm = useCallback(() => {
       setOpenDeleteDialog(false);
       setAlert({ 
         open: true, 
-        message: response.props.flash.error, 
+        message: response?.props?.flash?.error, 
         severity: 'error' 
       });
     }
@@ -617,7 +617,7 @@ const handleSubmit = useCallback(() => {
     // Update existing transaction
     put(route('inventory-transactions.update', selectedTransaction.id), {
       onSuccess: (response) => {
-        setAlert({ open: true, message: response.props.flash.success, severity: 'success' });
+        setAlert({ open: true, message: response?.props?.flash?.success, severity: 'success' });
         setOpenDialog(false);
         setSelectedTransaction(null);
         reset();
@@ -630,12 +630,12 @@ const handleSubmit = useCallback(() => {
     // Create new transaction
     post(route('inventory-transactions.store'), {
       onSuccess: (response) => {
-        setAlert({ open: true, message: response.props.flash.success, severity: 'success' });
+        setAlert({ open: true, message: response?.props?.flash?.success, severity: 'success' });
         setOpenDialog(false);
         reset();
       },
       onError: (errors) => { 
-        setAlert({ open: true, message: response.props.flash.error, severity: 'error' });
+        setAlert({ open: true, message: response?.props?.flash?.error, severity: 'error' });
       }
     });
   }
@@ -895,6 +895,32 @@ const handleSubmit = useCallback(() => {
               {loading && <LinearProgress />}
               
               <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid size={{ xs:12, sm:12, md:12}}>
+                  <FormControl fullWidth error={!!formErrors.university_id}>
+                    <InputLabel>Campus</InputLabel>
+                    <Select 
+                      name="university_id" 
+                      value={data.university_id || ""} 
+                      label="Campus" 
+                      onChange={handleInputChange}
+                      startAdornment={
+                        <InputAdornment position="start">
+                          <TransactionTypeIcon color="action" />
+                        </InputAdornment>
+                      }
+                    >
+                      {universities?.map(university => (
+                        <MenuItem key={university.university_id} value={university.university_id}>
+                          {university.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {formErrors.university_id && (
+                      <FormHelperText>{formErrors.university_id}</FormHelperText>
+                    )}
+                  </FormControl>
+                </Grid>
+        
                 <Grid size={{ xs:12, sm:6, md:4}}>
                   <FormControl fullWidth error={!!formErrors.transaction_type}>
                     <InputLabel>Transaction Type</InputLabel>
@@ -955,7 +981,7 @@ const handleSubmit = useCallback(() => {
                         <MenuItem key={item.item_id} value={item.item_id}>
                           <Box display="flex" alignItems="center">
                             {item.icon}
-                            <Box ml={1}>{item.item_code}</Box>
+                            <Box ml={1}>{item?.name}</Box>
                           </Box>
                         </MenuItem>
                       ))}
@@ -1135,25 +1161,6 @@ const handleSubmit = useCallback(() => {
                   </FormControl>
                 </Grid>
 
-                {/* <Grid size={{ xs:12, sm:12, md:6}}>
-                  <FormControl fullWidth>
-                    <InputLabel>Destination Location</InputLabel>
-                    <Select 
-                      name="destination_location_id" 
-                      value={data.destination_location_id ||''} 
-                      label="Destination Location" 
-                      onChange={handleInputChange}
-                    >
-                      <MenuItem value="">None</MenuItem>
-                      {locations?.map(location => (
-                        <MenuItem key={location.location_id} value={location.location_id}>
-                          {location.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid> */}
-
                 <Grid size={{ xs:12, sm:12, md:6 }}>
                   <FormControl fullWidth>
                     <InputLabel>Destination Location</InputLabel>
@@ -1186,7 +1193,7 @@ const handleSubmit = useCallback(() => {
                     value={data.notes || ""} 
                     onChange={handleInputChange}
                     multiline
-                    rows={1}
+                    rows={3}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

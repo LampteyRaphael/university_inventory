@@ -7,6 +7,7 @@ use App\Models\InventoryItem;
 use App\Models\Department;
 use App\Models\Location;
 use App\Models\StockLevel;
+use App\Models\University;
 use App\Repositories\InventoryTransactionRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,6 +49,12 @@ class InventoryTransactionController extends Controller
                         ->get()
                 ),
 
+                'universities' => Inertia::defer(fn () =>
+                    University::select('university_id', 'name')
+                        ->orderBy('name')
+                        ->get()
+                ),
+
                 'locations' => Inertia::defer(fn () =>
                     Location::select('location_id', 'name')
                         ->orderBy('name')
@@ -67,7 +74,7 @@ class InventoryTransactionController extends Controller
         } catch (\Exception $e) {
             Log::error('Transaction index error:', ['error' => $e->getMessage()]);
             
-            return Inertia::render('Inventories/Inventories', [ // Fixed path consistency
+            return Inertia::render('Inventories/Inventories', [
                 'transactions' => ['data' => []],
                 'items' => [],
                 'departments' => [],
@@ -239,7 +246,7 @@ class InventoryTransactionController extends Controller
     if ($validator->fails()) {
         return redirect()->route('inventory-transactions.index')
             ->withErrors($validator)
-            ->with('error', 'Validation failed. Please check the form.');
+            ->with('error', 'Validation failed. Please check the form.'.$validator->errors());
     }
 
     // Pre-transaction validations

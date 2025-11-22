@@ -12,22 +12,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
-
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class RoleController extends Controller
 {
-    public function home(){
-        $user = auth()->user();
-        // dd([
-        // 'user_id' => $user->user_id,
-        // 'permissions_relationship_loaded' => $user->relationLoaded('permissions'),
-        // // 'permissions_collection' => $user->permissions,
-        // // 'permissions_collection_count' => $user->permissions->count(),
-        // // 'permissions_via_getPermissionNames' => $user->getPermissionNames(),
-        // // 'permissions_via_getAllPermissions' => $user->getAllPermissions()->pluck('name'),
-        // // 'has_permission_users_view' => $user->hasPermissionTo('users.view'),
-        // ]);
-
+    public function home()
+    {
         $roles = Role::orderBy('name','asc')->withCount(['permissions', 'users'])
                     ->with('permissions:id,name')
                     ->get();

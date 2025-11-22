@@ -49,41 +49,12 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 
-    // protected function getUserData($user): array
-    // {
-    //     try {
-    //         return [
-    //             'id' => $user->user_id,
-    //             'name' => $user->name,
-    //             'email' => $user->email,
-    //             'first_name' => $user->first_name,
-    //             'last_name' => $user->last_name,
-    //             'phone' => $user->phone,
-    //             'position' => $user->position,
-    //             'profile_image' => $user->profile_image,
-    //             'roles' => $user->getRoleNames()->toArray(),
-    //             'permissions' => $user->getPermissionNames()->toArray(),
-    //             'is_active' => $user->is_active,
-    //         ];
-    //     } catch (\Exception $e) {
-    //         Log::error('Error getting user data for Inertia: ' . $e->getMessage());
-            
-    //         return [
-    //             'id' => $user->user_id,
-    //             'name' => $user->name,
-    //             'email' => $user->email,
-    //             'first_name' => $user->first_name,
-    //             'last_name' => $user->last_name,
-    //             'roles' => [],
-    //             'permissions' => [],
-    //         ];
-    //     }
-    // }
-
-
-protected function getUserData($user): array
+    protected function getUserData($user): array
     {
         try {
+            // Get the primary role (first role) or default to empty string
+            $primaryRole = $user->roles->first() ? $user->roles->first()->name : '';
+            
             return [
                 'id' => $user->user_id,
                 'name' => $user->name,
@@ -92,8 +63,10 @@ protected function getUserData($user): array
                 'last_name' => $user->last_name,
                 'phone' => $user->phone,
                 'position' => $user->position,
+                'university_id' => $user->university_id,
+                'department_id' => $user->department_id,
                 'profile_image' => $user->profile_image,
-                'roles' => $user->getRoleNames()->toArray(),
+                'roles' => $user->getRoleNames()->toArray(), // All roles as array
                 'permissions' => $user->getPermissionNames()->toArray(),
                 'is_active' => $user->is_active,
             ];
@@ -106,10 +79,11 @@ protected function getUserData($user): array
                 'email' => $user->email,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
+                'university_id' => $user->university_id,
+                'department_id' => $user->department_id,
                 'roles' => [],
                 'permissions' => [],
             ];
         }
     }
-
 }

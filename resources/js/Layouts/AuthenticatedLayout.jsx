@@ -207,7 +207,7 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
       title: 'Maintenance',
       icon: <MaintenanceIcon />,
       items: [
-        { text: 'Maintenance Records', icon: <MaintenanceIcon />, route: 'maintenance_records.index' }
+        { text: 'Maintenance Records', icon: <MaintenanceIcon />, route: 'maintenance.index' }
       ]
     },
     {
@@ -273,10 +273,10 @@ const AuthenticatedLayout = ({ children, title, breadcrumbs = [] }) => {
             src="https://randomuser.me/api/portraits/men/32.jpg"
           />
           <Typography variant="h6" sx={{ fontWeight: 'medium', fontSize: '1.1rem' }}>
-            {auth?.user?.username??'N/A'}
+            {auth?.user?.name??'N/A'}
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.8rem' }}>
-            {/* Inventory Manager */}{auth?.user?.role?.name??'N/A'}
+            {/* Inventory Manager */}{auth?.user?.position||''}
           </Typography>
           <Chip 
             label="Premium Plan" 
